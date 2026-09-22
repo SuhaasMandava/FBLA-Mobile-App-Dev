@@ -1,11 +1,11 @@
-{
+﻿{
   "expo": {
     "name": "FBLA-Mobile-App-Dev",
     "slug": "FBLA-Mobile-App-Dev",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
     },
@@ -23,3 +23,4 @@
     }
   }
 }
+

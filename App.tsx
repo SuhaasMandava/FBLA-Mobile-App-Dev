@@ -1,20 +1,30 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider } from './context/ThemeContext';
+import { TripProvider } from './context/TripContext';
+import { useTheme } from './hooks/useTheme';
+import RootNavigator from './screens/RootNavigator';
+import { NotificationService } from './services/NotificationService';
 
-export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+function ThemedStatusBar() {
+  const { scheme } = useTheme();
+  return <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />;
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default function App() {
+  useEffect(() => {
+    NotificationService.configure();
+  }, []);
+
+  return (
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <TripProvider>
+          <RootNavigator />
+          <ThemedStatusBar />
+        </TripProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
+  );
+}
