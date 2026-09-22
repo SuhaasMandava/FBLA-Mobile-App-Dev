@@ -8,7 +8,6 @@ export interface Trip {
   destination: string;
   startDate: string; // ISO date (YYYY-MM-DD)
   endDate: string; // ISO date (YYYY-MM-DD)
-  ownerId: string;
   memberIds: string[];
 }
 
@@ -19,7 +18,6 @@ export interface TripRow {
   destination: string;
   start_date: string;
   end_date: string;
-  owner_id: string;
   trip_members?: { user_id: string }[];
 }
 
@@ -33,7 +31,6 @@ export const TripModel = {
       destination: row.destination,
       startDate: row.start_date,
       endDate: row.end_date,
-      ownerId: row.owner_id,
       memberIds: (row.trip_members ?? []).map((m) => m.user_id),
     };
   },
@@ -44,7 +41,6 @@ export const TripModel = {
       destination: trip.destination,
       start_date: trip.startDate,
       end_date: trip.endDate,
-      owner_id: trip.ownerId,
     };
   },
 };
