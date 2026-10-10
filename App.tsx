@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { TripProvider } from './context/TripContext';
 import { useTheme } from './hooks/useTheme';
@@ -20,10 +21,12 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <TripProvider>
-          <RootNavigator />
-          <ThemedStatusBar />
-        </TripProvider>
+        <AuthProvider>
+          <TripProvider>
+            <RootNavigator />
+            <ThemedStatusBar />
+          </TripProvider>
+        </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

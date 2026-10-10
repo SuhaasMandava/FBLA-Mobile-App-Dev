@@ -11,4 +11,6 @@ export type TabParamList = {
 export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabParamList>;
   TripSwitcher: undefined;
+  CreateTrip: undefined;
+  JoinTrip: undefined;
 };

@@ -4,8 +4,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTheme } from '../hooks/useTheme';
 import BudgetScreen from './BudgetScreen';
 import ChecklistScreen from './ChecklistScreen';
+import CreateTripScreen from './CreateTripScreen';
 import HomeScreen from './HomeScreen';
 import ItineraryScreen from './ItineraryScreen';
+import JoinTripScreen from './JoinTripScreen';
 import SettingsScreen from './SettingsScreen';
 import TripSwitcherScreen from './TripSwitcherScreen';
 import { RootStackParamList, TabParamList } from './types';
@@ -49,6 +51,8 @@ export default function RootNavigator() {
           component={TripSwitcherScreen}
           options={{ presentation: 'modal', title: 'Switch Trip' }}
         />
+        <Stack.Screen name="CreateTrip" component={CreateTripScreen} options={{ title: 'Create a Trip' }} />
+        <Stack.Screen name="JoinTrip" component={JoinTripScreen} options={{ title: 'Join a Trip' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
