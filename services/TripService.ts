@@ -1,5 +1,6 @@
 import { PostgrestError } from '@supabase/supabase-js';
 import { getRandomBytes } from 'expo-crypto';
+import { ItineraryItem, ItineraryItemRow, ItineraryModel, NewItineraryItem } from '../models/ItineraryModel';
 import { NewTrip, Trip, TripModel, TripRow } from '../models/TripModel';
 import { generateInviteCode } from '../utils/inviteCode';
 import { TripServiceError } from './errors';
@@ -18,6 +19,19 @@ function toJoinError(error: PostgrestError): unknown {
   }
   if (error.message.includes('already_member') || error.code === UNIQUE_VIOLATION) {
     return new TripServiceError('already_member', "You're already part of this trip.");
+  }
+  return error;
+}
+
+const INSUFFICIENT_PRIVILEGE = '42501';
+
+/** Itinerary writes fail with a database message or a Row Level Security code; turn those into plain language. */
+function toItineraryError(error: PostgrestError): unknown {
+  if (error.message.includes('day_outside_trip')) {
+    return new TripServiceError('day_outside_trip', "That day is outside the trip's dates.");
+  }
+  if (error.code === INSUFFICIENT_PRIVILEGE) {
+    return new TripServiceError('not_permitted', "You're not part of this trip.");
   }
   return error;
 }
@@ -100,6 +114,60 @@ export const TripService = {
     const { data, error } = await supabase.from('trips').delete().eq('id', id).select('id');
     if (error) throw error;
     if (!data || data.length === 0) throw new TripServiceError('not_permitted', NOT_ORGANIZER);
+  },
+
+  /** Every activity on a trip, in day-then-position order. */
+  async getItineraryItems(tripId: string): Promise<ItineraryItem[]> {
+    const { data, error } = await supabase
+      .from('itinerary_items')
+      .select('*')
+      .eq('trip_id', tripId)
+      .order('day')
+      .order('sort_order')
+      .order('created_at');
+    if (error) throw error;
+    return ItineraryModel.sort((data as ItineraryItemRow[]).map(ItineraryModel.fromRow));
+  },
+
+  /** Add an activity at `sortOrder` (its position in the day). Any member of the trip may. */
+  async addItineraryItem(tripId: string, item: NewItineraryItem, sortOrder: number): Promise<ItineraryItem> {
+    const { data, error } = await supabase
+      .from('itinerary_items')
+      .insert(ItineraryModel.toInsertRow(tripId, item, sortOrder))
+      .select('*')
+      .single();
+    if (error) throw toItineraryError(error);
+    return ItineraryModel.fromRow(data as ItineraryItemRow);
+  },
+
+  /** Change an activity. Pass `sortOrder` when it moves to a different day so it lands at the end of that day. */
+  async updateItineraryItem(id: string, patch: Partial<NewItineraryItem>, sortOrder?: number): Promise<ItineraryItem> {
+    const row = ItineraryModel.toUpdateRow(patch);
+    if (sortOrder !== undefined) row.sort_order = sortOrder;
+
+    const { data, error } = await supabase.from('itinerary_items').update(row).eq('id', id).select('*').maybeSingle();
+    if (error) throw toItineraryError(error);
+    if (!data) throw new TripServiceError('item_not_found', 'That activity was removed, so it can no longer be changed.');
+    return ItineraryModel.fromRow(data as ItineraryItemRow);
+  },
+
+  /** Delete an activity. Only whoever added it, or a trip organizer, may. */
+  async deleteItineraryItem(id: string): Promise<void> {
+    const { data, error } = await supabase.from('itinerary_items').delete().eq('id', id).select('id');
+    if (error) throw toItineraryError(error);
+    if (!data || data.length === 0) {
+      throw new TripServiceError('not_permitted', 'Only whoever added this activity, or the trip organizer, can delete it.');
+    }
+  },
+
+  /** Save one day's order: `orderedIds` is every activity of that day in the wanted order. Atomic. */
+  async reorderItems(tripId: string, day: string, orderedIds: string[]): Promise<void> {
+    const { error } = await supabase.rpc('reorder_itinerary_items', {
+      p_trip_id: tripId,
+      p_day: day,
+      p_item_ids: orderedIds,
+    });
+    if (error) throw toItineraryError(error);
   },
 
   /** Leave a trip (yourself) or, as organizer, remove someone else. */

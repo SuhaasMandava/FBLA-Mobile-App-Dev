@@ -4,7 +4,8 @@ import { useTheme } from '../hooks/useTheme';
 interface PrimaryButtonProps {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary';
+  /** `primary` is filled; `secondary` is outlined; `danger` is outlined in red for destructive actions. */
+  variant?: 'primary' | 'secondary' | 'danger';
   loading?: boolean;
   disabled?: boolean;
   /** Extra spoken guidance describing what the button does. */
@@ -15,7 +16,8 @@ export function PrimaryButton({ label, onPress, variant = 'primary', loading = f
   const { colors } = useTheme();
   const inactive = disabled || loading;
   const filled = variant === 'primary';
-  const textColor = filled ? colors.onPrimary : colors.primary;
+  const accent = variant === 'danger' ? colors.danger : colors.primary;
+  const textColor = filled ? colors.onPrimary : accent;
 
   return (
     <Pressable
@@ -27,7 +29,7 @@ export function PrimaryButton({ label, onPress, variant = 'primary', loading = f
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        filled ? { backgroundColor: colors.primary } : { borderColor: colors.primary, borderWidth: 1.5 },
+        filled ? { backgroundColor: colors.primary } : { borderColor: accent, borderWidth: 1.5 },
         { opacity: inactive ? 0.6 : pressed ? 0.85 : 1 },
       ]}
     >

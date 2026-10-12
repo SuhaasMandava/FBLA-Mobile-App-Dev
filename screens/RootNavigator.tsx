@@ -8,6 +8,7 @@ import BudgetScreen from './BudgetScreen';
 import ChecklistScreen from './ChecklistScreen';
 import CreateTripScreen from './CreateTripScreen';
 import HomeScreen from './HomeScreen';
+import ItineraryItemScreen from './ItineraryItemScreen';
 import ItineraryScreen from './ItineraryScreen';
 import JoinTripScreen from './JoinTripScreen';
 import OnboardingScreen from './OnboardingScreen';
@@ -63,6 +64,14 @@ export default function RootNavigator() {
             />
             <Stack.Screen name="CreateTrip" component={CreateTripScreen} options={{ title: 'Create a Trip' }} />
             <Stack.Screen name="JoinTrip" component={JoinTripScreen} options={{ title: 'Join a Trip' }} />
+            <Stack.Screen
+              name="ItineraryItem"
+              component={ItineraryItemScreen}
+              options={({ route }) => ({
+                presentation: 'modal',
+                title: route.params?.itemId ? 'Edit Activity' : 'Add Activity',
+              })}
+            />
           </>
         ) : (
           <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />

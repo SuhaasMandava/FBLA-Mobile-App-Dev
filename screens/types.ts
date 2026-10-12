@@ -14,4 +14,6 @@ export type RootStackParamList = {
   TripSwitcher: undefined;
   CreateTrip: undefined;
   JoinTrip: undefined;
+  /** Add an activity (optionally starting on `day`), or edit the one with `itemId`. */
+  ItineraryItem: { itemId?: string; day?: string } | undefined;
 };
