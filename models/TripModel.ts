@@ -77,6 +77,12 @@ export const TripModel = {
     return member.displayName ?? 'Trip member';
   },
 
+  /** The text people send to invite someone; null if the trip has no invite code. */
+  inviteMessage(trip: Trip): string | null {
+    if (!trip.inviteCode) return null;
+    return `Join my trip "${trip.name}"! In the app, tap Join with a Code and enter ${trip.inviteCode}.`;
+  },
+
   isOrganizer(trip: Trip, userId: string | null): boolean {
     return userId !== null && trip.members.some((m) => m.userId === userId && m.role === 'organizer');
   },

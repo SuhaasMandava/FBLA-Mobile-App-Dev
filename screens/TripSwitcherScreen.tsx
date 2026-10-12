@@ -22,6 +22,9 @@ export default function TripSwitcherScreen() {
 
   return (
     <View style={[styles.flex, { backgroundColor: colors.background }]}>
+      <Text accessibilityRole="header" style={[styles.sheetTitle, { color: colors.text }]}>
+        Your Trips
+      </Text>
       <FlatList
         data={trips}
         keyExtractor={(trip) => trip.id}
@@ -83,6 +86,7 @@ export default function TripSwitcherScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  sheetTitle: { fontSize: 20, fontWeight: '700', paddingHorizontal: 16, paddingTop: 28 },
   list: { flexGrow: 1, padding: 16, gap: 8 },
   row: {
     flexDirection: 'row',

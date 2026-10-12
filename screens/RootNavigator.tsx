@@ -57,13 +57,29 @@ export default function RootNavigator() {
         {status === 'signedIn' ? (
           <>
             <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
+            {/* A bottom sheet that rests at half height and can be pulled up. Title and grabber are drawn by the sheet itself. */}
             <Stack.Screen
               name="TripSwitcher"
               component={TripSwitcherScreen}
-              options={{ presentation: 'modal', title: 'Switch Trip' }}
+              options={{
+                presentation: 'formSheet',
+                headerShown: false,
+                sheetAllowedDetents: [0.55, 0.92],
+                sheetGrabberVisible: true,
+                sheetCornerRadius: 20,
+              }}
             />
-            <Stack.Screen name="CreateTrip" component={CreateTripScreen} options={{ title: 'Create a Trip' }} />
-            <Stack.Screen name="JoinTrip" component={JoinTripScreen} options={{ title: 'Join a Trip' }} />
+            {/* Forms open as full modals (not pushed inside the sheet, which would squeeze them into half a screen). */}
+            <Stack.Screen
+              name="CreateTrip"
+              component={CreateTripScreen}
+              options={{ presentation: 'modal', title: 'Create a Trip' }}
+            />
+            <Stack.Screen
+              name="JoinTrip"
+              component={JoinTripScreen}
+              options={{ presentation: 'modal', title: 'Join a Trip' }}
+            />
             <Stack.Screen
               name="ItineraryItem"
               component={ItineraryItemScreen}
