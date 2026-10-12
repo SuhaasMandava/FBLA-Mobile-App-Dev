@@ -1,6 +1,10 @@
--- Schema for the FBLA mobile app. Paste into the Supabase SQL editor.
+-- BASELINE schema for the FBLA mobile app. Paste into the Supabase SQL editor.
 -- Requires pgcrypto (or pgsodium) for gen_random_uuid(); enabled by default
 -- on Supabase projects.
+--
+-- This file is the starting point only. Everything added afterwards (profiles,
+-- itinerary items, constraints, Row Level Security) lives in supabase/migrations/:
+-- run those files in numeric order after this one. Don't edit this file for new changes.
 --
 -- Safe to re-run: every statement is idempotent. If your database was created
 -- from an earlier version of this file, the "Upgrade" block at the bottom
@@ -19,7 +23,7 @@ create table if not exists trips (
 );
 
 create table if not exists trip_members (
-  trip_id uuid references trips(id),
+  trip_id uuid references trips(id),  
   user_id uuid,
   role text not null default 'member' check (role in ('organizer', 'member')),
   primary key (trip_id, user_id)
