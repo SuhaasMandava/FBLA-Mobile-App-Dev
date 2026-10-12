@@ -10,13 +10,13 @@ export interface TripContextValue {
   activeTripId: string | null;
   /** Derived: the trip matching activeTripId, if any. */
   activeTrip: Trip | null;
-  /** True while signing in or loading trips. */
+  /** True while restoring the saved session or loading trips. */
   loading: boolean;
-  /** Why signing in or loading trips failed, if it did. */
+  /** Why loading trips failed, if it did. */
   error: string | null;
   setTrips: (trips: Trip[]) => void;
   setActiveTripId: (id: string | null) => void;
-  /** Reload the user's trips from Supabase (or retry signing in if that's what failed). */
+  /** Reload the user's trips from Supabase. */
   refresh: () => Promise<void>;
   /** Add a trip the user just created or joined (replacing any copy of it) and make it the active trip. */
   upsertTrip: (trip: Trip) => void;
@@ -39,7 +39,7 @@ async function fetchTrips(userId: string): Promise<LoadResult> {
 }
 
 export function TripProvider({ children }: { children: ReactNode }) {
-  const { userId, status: authStatus, error: authError, retry: retryAuth } = useAuth();
+  const { userId, status: authStatus } = useAuth();
   const [trips, setTripsState] = useState<Trip[]>([]);
   const [activeTripId, setActiveTripId] = useState<string | null>(null);
   // Starts true so the first render shows "loading", not a flash of "no trips".
@@ -77,28 +77,25 @@ export function TripProvider({ children }: { children: ReactNode }) {
   }, [userId, applyLoadResult]);
 
   const refresh = useCallback(async () => {
-    if (!userId) {
-      retryAuth();
-      return;
-    }
+    if (!userId) return;
     setFetching(true);
     setFetchError(null);
     applyLoadResult(await fetchTrips(userId));
-  }, [userId, retryAuth, applyLoadResult]);
+  }, [userId, applyLoadResult]);
 
   const value = useMemo<TripContextValue>(
     () => ({
       trips,
       activeTripId,
       activeTrip: trips.find((t) => t.id === activeTripId) ?? null,
-      loading: authStatus === 'loading' || (authStatus === 'ready' && fetching),
-      error: authError ?? fetchError,
+      loading: authStatus === 'loading' || (authStatus === 'signedIn' && fetching),
+      error: fetchError,
       setTrips,
       setActiveTripId,
       refresh,
       upsertTrip,
     }),
-    [trips, activeTripId, authStatus, authError, fetching, fetchError, setTrips, refresh, upsertTrip],
+    [trips, activeTripId, authStatus, fetching, fetchError, setTrips, refresh, upsertTrip],
   );
 
   return <TripContext.Provider value={value}>{children}</TripContext.Provider>;

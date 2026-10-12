@@ -1,6 +1,8 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StatusMessage } from '../components/StatusMessage';
+import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
 import BudgetScreen from './BudgetScreen';
 import ChecklistScreen from './ChecklistScreen';
@@ -8,6 +10,7 @@ import CreateTripScreen from './CreateTripScreen';
 import HomeScreen from './HomeScreen';
 import ItineraryScreen from './ItineraryScreen';
 import JoinTripScreen from './JoinTripScreen';
+import OnboardingScreen from './OnboardingScreen';
 import SettingsScreen from './SettingsScreen';
 import TripSwitcherScreen from './TripSwitcherScreen';
 import { RootStackParamList, TabParamList } from './types';
@@ -29,7 +32,12 @@ function Tabs() {
 
 export default function RootNavigator() {
   const { scheme, colors } = useTheme();
+  const { status } = useAuth();
   const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+
+  // Restoring the saved session takes a moment at startup; don't flash the sign-in screen at someone already signed in.
+  if (status === 'loading') return <StatusMessage loading title="Loading…" />;
+
   return (
     <NavigationContainer
       theme={{
@@ -45,14 +53,20 @@ export default function RootNavigator() {
       }}
     >
       <Stack.Navigator>
-        <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
-        <Stack.Screen
-          name="TripSwitcher"
-          component={TripSwitcherScreen}
-          options={{ presentation: 'modal', title: 'Switch Trip' }}
-        />
-        <Stack.Screen name="CreateTrip" component={CreateTripScreen} options={{ title: 'Create a Trip' }} />
-        <Stack.Screen name="JoinTrip" component={JoinTripScreen} options={{ title: 'Join a Trip' }} />
+        {status === 'signedIn' ? (
+          <>
+            <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
+            <Stack.Screen
+              name="TripSwitcher"
+              component={TripSwitcherScreen}
+              options={{ presentation: 'modal', title: 'Switch Trip' }}
+            />
+            <Stack.Screen name="CreateTrip" component={CreateTripScreen} options={{ title: 'Create a Trip' }} />
+            <Stack.Screen name="JoinTrip" component={JoinTripScreen} options={{ title: 'Join a Trip' }} />
+          </>
+        ) : (
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

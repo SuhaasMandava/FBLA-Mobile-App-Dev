@@ -1,32 +1,83 @@
+import { AuthError } from '@supabase/supabase-js';
+import { SignInValues, SignUpValues } from '../models/AuthForm';
 import { UserFacingError } from './errors';
 import { supabase } from './supabase';
 
-let pending: Promise<string> | null = null;
+export interface AuthUser {
+  id: string;
+  email: string | null;
+}
 
-async function resolveUserId(): Promise<string> {
-  const { data } = await supabase.auth.getSession();
-  if (data.session) return data.session.user.id;
+export type SignUpOutcome = 'signed_in' | 'confirmation_required';
 
-  const { data: anon, error } = await supabase.auth.signInAnonymously();
-  if (error || !anon.user) {
-    console.error('Anonymous sign-in failed', error);
-    throw new UserFacingError("Couldn't sign you in. Check your connection and try again.");
+function toUser(user: { id: string; email?: string } | null | undefined): AuthUser | null {
+  return user ? { id: user.id, email: user.email ?? null } : null;
+}
+
+/** Turn a Supabase auth failure into a message people can act on. */
+function toUserFacing(error: AuthError): UserFacingError {
+  switch (error.code) {
+    case 'invalid_credentials':
+      return new UserFacingError('Incorrect email or password.');
+    case 'email_not_confirmed':
+      return new UserFacingError('Confirm your email first: open the link we sent you, then sign in.');
+    case 'user_already_exists':
+    case 'email_exists':
+      return new UserFacingError('An account with this email already exists. Try signing in instead.');
+    case 'weak_password':
+      return new UserFacingError('That password is too weak. Use at least 8 characters with a letter and a number.');
+    case 'over_request_rate_limit':
+    case 'over_email_send_rate_limit':
+      return new UserFacingError('Too many attempts. Wait a minute and try again.');
+    case 'signup_disabled':
+      return new UserFacingError('New sign-ups are turned off right now.');
   }
-  return anon.user.id;
+  if (error.name === 'AuthRetryableFetchError') {
+    return new UserFacingError("Couldn't reach the server. Check your connection and try again.");
+  }
+  console.error('Unexpected auth error', error);
+  return new UserFacingError('Something went wrong. Please try again.');
 }
 
 export const AuthService = {
-  /**
-   * The current user's id, signing in anonymously if there's no saved session.
-   * Stand-in until real accounts exist: the session persists on the device, so
-   * the same install keeps the same identity. Requires "Anonymous sign-ins" to
-   * be enabled in the Supabase dashboard (Authentication → Sign In / Providers).
-   */
-  getOrCreateUserId(): Promise<string> {
-    // Share one in-flight request so concurrent callers can't create two anonymous users.
-    pending ??= resolveUserId().finally(() => {
-      pending = null;
+  /** The user from the session saved on this device (works offline), or null if signed out. */
+  async getCurrentUser(): Promise<AuthUser | null> {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw toUserFacing(error);
+    return toUser(data.session?.user);
+  },
+
+  /** Be told whenever the user signs in, signs out, or the saved session loads. Returns an unsubscribe function. */
+  onAuthChange(listener: (user: AuthUser | null) => void): () => void {
+    // Keep this callback synchronous: Supabase can deadlock if it awaits other auth calls in here.
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => listener(toUser(session?.user)));
+    return () => data.subscription.unsubscribe();
+  },
+
+  async signUp({ displayName, email, password }: SignUpValues): Promise<SignUpOutcome> {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      // The signup trigger copies this into the new profile row.
+      options: { data: { display_name: displayName } },
     });
-    return pending;
+    if (error) throw toUserFacing(error);
+
+    // With email confirmation on, signing up an address that already has an account
+    // "succeeds" with a placeholder user that has no identities (to hide which emails exist).
+    if (data.user && data.user.identities?.length === 0) {
+      throw new UserFacingError('An account with this email already exists. Try signing in instead.');
+    }
+    return data.session ? 'signed_in' : 'confirmation_required';
+  },
+
+  async signIn({ email, password }: SignInValues): Promise<void> {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw toUserFacing(error);
+  },
+
+  async signOut(): Promise<void> {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw toUserFacing(error);
   },
 };

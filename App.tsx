@@ -1,9 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SessionProviders } from './components/SessionProviders';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { TripProvider } from './context/TripContext';
 import { useTheme } from './hooks/useTheme';
 import RootNavigator from './screens/RootNavigator';
 import { NotificationService } from './services/NotificationService';
@@ -22,10 +22,10 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <AuthProvider>
-          <TripProvider>
+          <SessionProviders>
             <RootNavigator />
             <ThemedStatusBar />
-          </TripProvider>
+          </SessionProviders>
         </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>

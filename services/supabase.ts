@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import { AppState } from 'react-native';
 
 // Must be static `process.env.EXPO_PUBLIC_*` dot-notation references — the
 // Expo CLI inlines these from .env at build time and won't recognize
@@ -22,4 +23,10 @@ export const supabase = createClient(url, anonKey, {
     persistSession: true,
     detectSessionInUrl: false,
   },
+});
+
+// Only refresh the session token while the app is in the foreground (Supabase's React Native recommendation).
+AppState.addEventListener('change', (state) => {
+  if (state === 'active') supabase.auth.startAutoRefresh();
+  else supabase.auth.stopAutoRefresh();
 });

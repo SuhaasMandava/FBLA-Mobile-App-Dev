@@ -1,53 +1,59 @@
-import { createContext, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { AuthService } from '../services/AuthService';
-import { getErrorMessage } from '../services/errors';
+import { createContext, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AuthService, AuthUser } from '../services/AuthService';
 
-export type AuthStatus = 'loading' | 'ready' | 'error';
+export type AuthStatus = 'loading' | 'signedOut' | 'signedIn';
 
 export interface AuthContextValue {
-  /** The signed-in user's id; null until sign-in finishes (or if it failed). */
-  userId: string | null;
+  /** 'loading' only while the session saved on the device is being read at startup. */
   status: AuthStatus;
-  error: string | null;
-  /** Try signing in again after a failure. */
-  retry: () => void;
+  userId: string | null;
+  email: string | null;
+  signOut: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [status, setStatus] = useState<AuthStatus>('loading');
-  const [error, setError] = useState<string | null>(null);
-  const [attempt, setAttempt] = useState(0);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const loadedRef = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
-    AuthService.getOrCreateUserId()
-      .then((id) => {
-        if (cancelled) return;
-        setUserId(id);
-        setError(null);
-        setStatus('ready');
-      })
-      .catch((e: unknown) => {
-        if (cancelled) return;
-        setError(getErrorMessage(e));
-        setStatus('error');
-      });
-    return () => {
-      cancelled = true;
+    let active = true;
+    const settle = (next: AuthUser | null) => {
+      if (!active) return;
+      loadedRef.current = true;
+      setUser(next);
+      setLoaded(true);
     };
-  }, [attempt]);
 
-  const retry = useCallback(() => {
-    setStatus('loading');
-    setAttempt((n) => n + 1);
+    // The listener is the source of truth (it also reports the saved session at startup);
+    // the direct read is a fallback so startup never hangs on "loading".
+    const unsubscribe = AuthService.onAuthChange(settle);
+    AuthService.getCurrentUser()
+      .then((saved) => {
+        if (!loadedRef.current) settle(saved);
+      })
+      .catch(() => {
+        if (!loadedRef.current) settle(null);
+      });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, []);
 
+  const signOut = useCallback(() => AuthService.signOut(), []);
+
   const value = useMemo<AuthContextValue>(
-    () => ({ userId, status, error, retry }),
-    [userId, status, error, retry],
+    () => ({
+      status: !loaded ? 'loading' : user ? 'signedIn' : 'signedOut',
+      userId: user?.id ?? null,
+      email: user?.email ?? null,
+      signOut,
+    }),
+    [loaded, user, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

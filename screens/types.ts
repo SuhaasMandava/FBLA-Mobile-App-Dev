@@ -9,6 +9,7 @@ export type TabParamList = {
 };
 
 export type RootStackParamList = {
+  Onboarding: undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
   TripSwitcher: undefined;
   CreateTrip: undefined;
