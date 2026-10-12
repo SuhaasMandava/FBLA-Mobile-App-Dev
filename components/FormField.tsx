@@ -39,7 +39,7 @@ export function FormField({ label, error, hint, inputRef, secureTextEntry, ...in
             {
               color: colors.text,
               backgroundColor: colors.surface,
-              borderColor: error ? colors.danger : colors.border,
+              borderColor: error ? colors.danger : colors.inputBorder,
             },
           ]}
           {...inputProps}

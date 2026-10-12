@@ -91,7 +91,7 @@ export function DateTimeField({
           onPress={openPicker}
           style={[
             styles.input,
-            { backgroundColor: colors.surface, borderColor: error ? colors.danger : colors.border },
+            { backgroundColor: colors.surface, borderColor: error ? colors.danger : colors.inputBorder },
           ]}
         >
           <Text style={[styles.value, { color: display ? colors.text : colors.textMuted }]}>

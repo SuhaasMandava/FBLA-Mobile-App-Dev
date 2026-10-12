@@ -20,8 +20,12 @@ const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function Tabs() {
+  const { colors } = useTheme();
   return (
-    <Tab.Navigator>
+    // Explicit tab colors: the default inactive color is a 50% blend that falls below the contrast minimum.
+    <Tab.Navigator
+      screenOptions={{ tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: colors.textMuted }}
+    >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Itinerary" component={ItineraryScreen} />
       <Tab.Screen name="Budget" component={BudgetScreen} />
