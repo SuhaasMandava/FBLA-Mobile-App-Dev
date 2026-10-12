@@ -1,4 +1,4 @@
-﻿{
+{
   "expo": {
     "name": "FBLA-Mobile-App-Dev",
     "slug": "FBLA-Mobile-App-Dev",
@@ -20,7 +20,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ]
   }
 }
-
