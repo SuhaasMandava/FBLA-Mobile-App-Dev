@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FormField } from '../components/FormField';
+import { ControlledFormField } from '../components/ControlledFormField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { useJoinTripForm } from '../hooks/useJoinTripForm';
 import { useTheme } from '../hooks/useTheme';
@@ -12,12 +12,7 @@ export default function JoinTripScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
-  const form = useJoinTripForm();
-
-  const onSubmit = async () => {
-    const trip = await form.submit();
-    if (trip) navigation.popToTop();
-  };
+  const form = useJoinTripForm(() => navigation.popToTop());
 
   return (
     <KeyboardAvoidingView
@@ -32,24 +27,23 @@ export default function JoinTripScreen() {
           Ask the trip organizer for their 6-character invite code.
         </Text>
 
-        <FormField
+        <ControlledFormField
+          control={form.control}
+          name="code"
           label="Invite code"
           hint="Six letters and numbers."
-          value={form.code}
-          onChangeText={form.setCode}
-          error={form.error}
           placeholder="e.g. K7M9PQ"
           autoCapitalize="characters"
           autoCorrect={false}
           maxLength={10}
           returnKeyType="done"
-          onSubmitEditing={onSubmit}
+          onSubmitEditing={form.submit}
         />
 
         <PrimaryButton
           label="Join Trip"
           hint="Adds you to the trip that matches this code."
-          onPress={onSubmit}
+          onPress={form.submit}
           loading={form.submitting}
         />
       </ScrollView>

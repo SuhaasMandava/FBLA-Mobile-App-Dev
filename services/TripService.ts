@@ -1,20 +1,35 @@
+import { PostgrestError } from '@supabase/supabase-js';
 import { getRandomBytes } from 'expo-crypto';
-import { MemberRole, NewTrip, Trip, TripModel, TripRow } from '../models/TripModel';
+import { NewTrip, Trip, TripModel, TripRow } from '../models/TripModel';
 import { generateInviteCode } from '../utils/inviteCode';
 import { TripServiceError } from './errors';
 import { supabase } from './supabase';
 
-const SELECT = '*, trip_members(user_id)';
+const TRIP_SELECT = '*, trip_members(user_id, role, profiles(display_name))';
 const UNIQUE_VIOLATION = '23505';
 const MAX_INVITE_ATTEMPTS = 5;
 
+const NOT_ORGANIZER = 'Only the trip organizer can do that.';
+
+/** The join function reports its failures by message (see 004_access_control.sql). */
+function toJoinError(error: PostgrestError): unknown {
+  if (error.message.includes('invite_not_found')) {
+    return new TripServiceError('invite_not_found', 'No trip matches that invite code. Check it and try again.');
+  }
+  if (error.message.includes('already_member') || error.code === UNIQUE_VIOLATION) {
+    return new TripServiceError('already_member', "You're already part of this trip.");
+  }
+  return error;
+}
+
 export const TripService = {
   /**
-   * Trips the user belongs to, each with its full member list.
+   * Trips the user belongs to, soonest first, each with its full member list.
    * Two queries on purpose: filtering the embedded `trip_members` by user in
    * one query would also trim each trip's member list down to just that user.
+   * (Row Level Security enforces the same boundary on the server.)
    */
-  async listForUser(userId: string): Promise<Trip[]> {
+  async getMyTrips(userId: string): Promise<Trip[]> {
     const { data: memberships, error: membershipError } = await supabase
       .from('trip_members')
       .select('trip_id')
@@ -26,68 +41,46 @@ export const TripService = {
 
     const { data, error } = await supabase
       .from('trips')
-      .select(SELECT)
+      .select(TRIP_SELECT)
       .in('id', tripIds)
       .order('start_date', { ascending: true });
     if (error) throw error;
     return (data as TripRow[]).map(TripModel.fromRow);
   },
 
-  async getById(id: string): Promise<Trip> {
-    const { data, error } = await supabase.from('trips').select(SELECT).eq('id', id).single();
+  async getTrip(id: string): Promise<Trip> {
+    const { data, error } = await supabase.from('trips').select(TRIP_SELECT).eq('id', id).maybeSingle();
     if (error) throw error;
+    if (!data) throw new TripServiceError('trip_not_found', "That trip doesn't exist or you're not part of it.");
     return TripModel.fromRow(data as TripRow);
   },
 
   /**
-   * Create a trip with a fresh invite code and record `creatorId` as its
-   * organizer. Membership lives in trip_members (the trips table has no owner
-   * column), so the trip is only usable once that row exists; if it can't be
-   * written, the trip is removed again rather than left orphaned.
+   * Create a trip with a fresh invite code; the signed-in user becomes its
+   * organizer. The database function writes the trip and the organizer row in
+   * one transaction, so there's never a trip nobody belongs to.
    */
-  async create(input: NewTrip, creatorId: string): Promise<Trip> {
+  async createTrip(input: NewTrip): Promise<Trip> {
     for (let attempt = 0; attempt < MAX_INVITE_ATTEMPTS; attempt++) {
       const inviteCode = generateInviteCode(getRandomBytes);
-      const { data, error } = await supabase
-        .from('trips')
-        .insert(TripModel.toRow(input, inviteCode))
-        .select('*')
-        .single();
+      const { data, error } = await supabase.rpc('create_trip', TripModel.toCreateParams(input, inviteCode));
 
       // invite_code is the only unique column we set, so a unique violation means a code collision: draw another.
       if (error?.code === UNIQUE_VIOLATION) continue;
       if (error) throw error;
-
-      const row = data as TripRow;
-      try {
-        await TripService.addMember(row.id, creatorId, 'organizer');
-      } catch (memberError) {
-        await supabase.from('trips').delete().eq('id', row.id); // best-effort cleanup
-        throw memberError;
-      }
-      return TripModel.fromRow({ ...row, trip_members: [{ user_id: creatorId }] });
+      return TripService.getTrip((data as { id: string }).id);
     }
     throw new TripServiceError('invite_generation_failed', "Couldn't create an invite code. Please try again.");
   },
 
   /** Join the trip with this (already normalized) invite code as a regular member. */
-  async joinByInviteCode(code: string, userId: string): Promise<Trip> {
-    const { data, error } = await supabase.from('trips').select(SELECT).eq('invite_code', code).maybeSingle();
-    if (error) throw error;
-    if (!data) {
-      throw new TripServiceError('invite_not_found', 'No trip matches that invite code. Check it and try again.');
-    }
-
-    const row = data as TripRow;
-    const members = row.trip_members ?? [];
-    if (members.some((m) => m.user_id === userId)) {
-      throw new TripServiceError('already_member', "You're already part of this trip.");
-    }
-
-    await TripService.addMember(row.id, userId, 'member');
-    return TripModel.fromRow({ ...row, trip_members: [...members, { user_id: userId }] });
+  async joinTripByCode(code: string): Promise<Trip> {
+    const { data, error } = await supabase.rpc('join_trip_by_code', { p_code: code });
+    if (error) throw toJoinError(error);
+    return TripService.getTrip((data as { id: string }).id);
   },
 
+  /** Organizers only. Row Level Security turns anyone else's edit into "no rows", which we report as a clear error. */
   async update(id: string, patch: Partial<NewTrip>): Promise<Trip> {
     const row: Record<string, unknown> = {};
     if (patch.name !== undefined) row.name = patch.name;
@@ -95,35 +88,29 @@ export const TripService = {
     if (patch.startDate !== undefined) row.start_date = patch.startDate;
     if (patch.endDate !== undefined) row.end_date = patch.endDate;
     if (patch.budgetCents !== undefined) row.budget_cents = patch.budgetCents;
-    const { data, error } = await supabase
-      .from('trips')
-      .update(row)
-      .eq('id', id)
-      .select(SELECT)
-      .single();
+
+    const { data, error } = await supabase.from('trips').update(row).eq('id', id).select(TRIP_SELECT).maybeSingle();
     if (error) throw error;
+    if (!data) throw new TripServiceError('not_permitted', NOT_ORGANIZER);
     return TripModel.fromRow(data as TripRow);
   },
 
+  /** Organizers only; removes the trip with its members, itinerary and expenses. */
   async remove(id: string): Promise<void> {
-    const { error } = await supabase.from('trips').delete().eq('id', id);
+    const { data, error } = await supabase.from('trips').delete().eq('id', id).select('id');
     if (error) throw error;
+    if (!data || data.length === 0) throw new TripServiceError('not_permitted', NOT_ORGANIZER);
   },
 
-  async addMember(tripId: string, userId: string, role: MemberRole = 'member'): Promise<void> {
-    const { error } = await supabase.from('trip_members').insert({ trip_id: tripId, user_id: userId, role });
-    if (error?.code === UNIQUE_VIOLATION) {
-      throw new TripServiceError('already_member', "You're already part of this trip.");
-    }
-    if (error) throw error;
-  },
-
+  /** Leave a trip (yourself) or, as organizer, remove someone else. */
   async removeMember(tripId: string, userId: string): Promise<void> {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('trip_members')
       .delete()
       .eq('trip_id', tripId)
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .select('user_id');
     if (error) throw error;
+    if (!data || data.length === 0) throw new TripServiceError('not_permitted', NOT_ORGANIZER);
   },
 };

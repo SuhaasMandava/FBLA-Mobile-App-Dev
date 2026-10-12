@@ -6,7 +6,14 @@ export class UserFacingError extends Error {
   }
 }
 
-export type TripServiceErrorCode = 'invite_not_found' | 'already_member' | 'invite_generation_failed';
+export type TripServiceErrorCode =
+  | 'invite_not_found'
+  | 'already_member'
+  | 'invite_generation_failed'
+  | 'trip_not_found'
+  | 'item_not_found'
+  | 'not_permitted'
+  | 'day_outside_trip';
 
 export class TripServiceError extends UserFacingError {
   constructor(
@@ -19,8 +26,16 @@ export class TripServiceError extends UserFacingError {
 }
 
 const GENERIC_MESSAGE = 'Something went wrong. Please try again.';
+const OFFLINE_MESSAGE = "You appear to be offline. Check your connection and try again.";
 
-/** Message to show the user. Unexpected errors (network, database) get a generic one; log the real error separately. */
+/** Does this look like the request never reached the server? (fetch fails with a different message per platform) */
+export function isNetworkError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : typeof error === 'object' && error !== null && 'message' in error ? String((error as { message: unknown }).message) : '';
+  return /network request failed|failed to fetch|network error|load failed/i.test(message);
+}
+
+/** Message to show the user. Unexpected errors (database) get a generic one; log the real error separately. */
 export function getErrorMessage(error: unknown): string {
-  return error instanceof UserFacingError ? error.message : GENERIC_MESSAGE;
+  if (error instanceof UserFacingError) return error.message;
+  return isNetworkError(error) ? OFFLINE_MESSAGE : GENERIC_MESSAGE;
 }

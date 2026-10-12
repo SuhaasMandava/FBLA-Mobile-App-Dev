@@ -31,7 +31,7 @@ type LoadResult = { trips: Trip[] } | { error: string };
 /** Never throws: failures come back as a user-facing message so callers just apply the result. */
 async function fetchTrips(userId: string): Promise<LoadResult> {
   try {
-    return { trips: await TripService.listForUser(userId) };
+    return { trips: await TripService.getMyTrips(userId) };
   } catch (e) {
     console.error('Loading trips failed', e);
     return { error: getErrorMessage(e) };

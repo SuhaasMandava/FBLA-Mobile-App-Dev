@@ -1,56 +1,41 @@
-import { useCallback, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
-import { validateJoinCode } from '../models/TripForm';
+import { useForm } from 'react-hook-form';
+import { EMPTY_JOIN_TRIP_FORM, JoinTripFormValues, validateJoinTripForm } from '../models/TripForm';
 import { Trip } from '../models/TripModel';
 import { getErrorMessage } from '../services/errors';
 import { TripService } from '../services/TripService';
-import { useAuth } from './useAuth';
+import { createResolver } from '../utils/formResolver';
 import { useTrip } from './useTrip';
 
-/** State and submit logic for the Join Trip screen. */
-export function useJoinTripForm() {
-  const { userId } = useAuth();
+/** Form state and submit logic for the Join Trip screen. `onJoined` runs once the user is on the trip. */
+export function useJoinTripForm(onJoined: (trip: Trip) => void) {
   const { upsertTrip } = useTrip();
-  const [code, setCodeState] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  // `data` handed to submit is the normalized code ("abc-234" → "ABC234").
+  const form = useForm<JoinTripFormValues, unknown, string>({
+    defaultValues: EMPTY_JOIN_TRIP_FORM,
+    resolver: createResolver(validateJoinTripForm),
+    reValidateMode: 'onChange',
+  });
 
-  const setCode = useCallback((text: string) => {
-    setCodeState(text);
-    setError(null); // a stale "not found" shouldn't linger once they edit the code
-  }, []);
+  const submit = form.handleSubmit(
+    async (code) => {
+      try {
+        const trip = await TripService.joinTripByCode(code);
+        upsertTrip(trip);
+        onJoined(trip);
+      } catch (e) {
+        console.error('Joining trip failed', e);
+        // Show the problem (unknown code, already a member…) right under the input.
+        const message = getErrorMessage(e);
+        form.setError('code', { type: 'server', message });
+        AccessibilityInfo.announceForAccessibility(message);
+      }
+    },
+    (errors) => {
+      const message = errors.code?.message;
+      if (message) AccessibilityInfo.announceForAccessibility(message);
+    },
+  );
 
-  /** Validate the code, join the trip, and return it; returns null (with the error set) if anything fails. */
-  const submit = useCallback(async (): Promise<Trip | null> => {
-    if (submitting) return null;
-
-    const result = validateJoinCode(code);
-    if (!result.ok) {
-      setError(result.error);
-      AccessibilityInfo.announceForAccessibility(result.error);
-      return null;
-    }
-    if (!userId) {
-      setError("You're not signed in yet. Please try again in a moment.");
-      return null;
-    }
-
-    setSubmitting(true);
-    setError(null);
-    try {
-      const trip = await TripService.joinByInviteCode(result.code, userId);
-      upsertTrip(trip);
-      return trip;
-    } catch (e) {
-      console.error('Joining trip failed', e);
-      const message = getErrorMessage(e);
-      setError(message);
-      AccessibilityInfo.announceForAccessibility(message);
-      return null;
-    } finally {
-      setSubmitting(false);
-    }
-  }, [submitting, code, userId, upsertTrip]);
-
-  return { code, error, submitting, setCode, submit };
+  return { control: form.control, submit, submitting: form.formState.isSubmitting };
 }

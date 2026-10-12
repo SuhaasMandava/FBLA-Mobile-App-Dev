@@ -56,7 +56,7 @@ export default function HomeScreen() {
 
   if (!activeTrip) return null; // setTrips always selects one when trips exist
 
-  const memberCount = activeTrip.memberIds.length;
+  const memberCount = activeTrip.members.length;
   const inviteCode = activeTrip.inviteCode;
 
   return (

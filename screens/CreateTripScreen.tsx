@@ -1,29 +1,23 @@
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useRef } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useWatch } from 'react-hook-form';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FormField } from '../components/FormField';
+import { ControlledDateTimeField } from '../components/ControlledDateTimeField';
+import { ControlledFormField } from '../components/ControlledFormField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { useCreateTripForm } from '../hooks/useCreateTripForm';
 import { useTheme } from '../hooks/useTheme';
+import { todayISO } from '../utils/dates';
 import { RootStackParamList } from './types';
 
 export default function CreateTripScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
-  const form = useCreateTripForm();
-
-  const destinationRef = useRef<TextInput>(null);
-  const startRef = useRef<TextInput>(null);
-  const endRef = useRef<TextInput>(null);
-  const budgetRef = useRef<TextInput>(null);
-
-  const onSubmit = async () => {
-    const trip = await form.submit();
-    if (trip) navigation.popToTop();
-  };
+  const form = useCreateTripForm(() => navigation.popToTop());
+  const startDate = useWatch({ control: form.control, name: 'startDate' });
+  const today = todayISO();
 
   return (
     <KeyboardAvoidingView
@@ -34,74 +28,55 @@ export default function CreateTripScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: 24 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
       >
-        <FormField
+        <ControlledFormField
+          control={form.control}
+          name="name"
           label="Trip name"
-          value={form.values.name}
-          onChangeText={(text) => form.setField('name', text)}
-          error={form.errors.name}
+          hint="Between 3 and 50 characters."
           placeholder="e.g. Smith Family Reunion"
           autoCapitalize="words"
           returnKeyType="next"
-          onSubmitEditing={() => destinationRef.current?.focus()}
         />
-        <FormField
+        <ControlledFormField
+          control={form.control}
+          name="destination"
           label="Destination"
-          inputRef={destinationRef}
-          value={form.values.destination}
-          onChangeText={(text) => form.setField('destination', text)}
-          error={form.errors.destination}
           placeholder="Where are you headed?"
           autoCapitalize="words"
           returnKeyType="next"
-          onSubmitEditing={() => startRef.current?.focus()}
         />
 
         <View style={styles.row}>
           <View style={styles.flex}>
-            <FormField
+            <ControlledDateTimeField
+              control={form.control}
+              name="startDate"
+              mode="date"
               label="Start date"
-              hint="Year, month, then day. Digits only; dashes are added for you."
-              inputRef={startRef}
-              value={form.values.startDate}
-              onChangeText={(text) => form.setField('startDate', text)}
-              error={form.errors.startDate}
-              placeholder="YYYY-MM-DD"
-              keyboardType="numbers-and-punctuation"
-              maxLength={10}
-              autoCorrect={false}
-              returnKeyType="next"
-              onSubmitEditing={() => endRef.current?.focus()}
+              minDate={today}
             />
           </View>
           <View style={styles.flex}>
-            <FormField
+            <ControlledDateTimeField
+              control={form.control}
+              name="endDate"
+              mode="date"
               label="End date"
-              hint="Year, month, then day. Digits only; dashes are added for you."
-              inputRef={endRef}
-              value={form.values.endDate}
-              onChangeText={(text) => form.setField('endDate', text)}
-              error={form.errors.endDate}
-              placeholder="YYYY-MM-DD"
-              keyboardType="numbers-and-punctuation"
-              maxLength={10}
-              autoCorrect={false}
-              returnKeyType="next"
-              onSubmitEditing={() => budgetRef.current?.focus()}
+              minDate={startDate || today}
+              initialDate={startDate || today}
             />
           </View>
         </View>
 
-        <FormField
+        <ControlledFormField
+          control={form.control}
+          name="budget"
           label="Budget (USD)"
           hint="Total trip budget in dollars."
-          inputRef={budgetRef}
-          value={form.values.budget}
-          onChangeText={(text) => form.setField('budget', text)}
-          error={form.errors.budget}
           placeholder="e.g. 1500"
           keyboardType="decimal-pad"
           returnKeyType="done"
-          onSubmitEditing={onSubmit}
+          onSubmitEditing={form.submit}
         />
 
         {form.submitError ? (
@@ -117,7 +92,7 @@ export default function CreateTripScreen() {
         <PrimaryButton
           label="Create Trip"
           hint="Saves the trip and generates an invite code to share."
-          onPress={onSubmit}
+          onPress={form.submit}
           loading={form.submitting}
         />
       </ScrollView>
