@@ -1,6 +1,8 @@
-import { createContext, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { createContext, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useNetwork } from '../hooks/useNetwork';
 import { Trip } from '../models/TripModel';
+import { CacheService } from '../services/CacheService';
 import { getErrorMessage } from '../services/errors';
 import { TripService } from '../services/TripService';
 
@@ -12,7 +14,7 @@ export interface TripContextValue {
   activeTrip: Trip | null;
   /** True while restoring the saved session or loading trips. */
   loading: boolean;
-  /** Why loading trips failed, if it did. */
+  /** Why loading trips failed, if it did. Saved trips are still shown alongside it. */
   error: string | null;
   setTrips: (trips: Trip[]) => void;
   setActiveTripId: (id: string | null) => void;
@@ -25,6 +27,13 @@ export interface TripContextValue {
 export const TripContext = createContext<TripContextValue | undefined>(undefined);
 
 const bySoonestStart = (a: Trip, b: Trip) => a.startDate.localeCompare(b.startDate);
+
+/** What's saved on the device so the trips (and which one was open) are there without a connection. */
+interface TripCache {
+  trips: Trip[];
+  activeTripId: string | null;
+}
+const CACHE_NAME = 'trips';
 
 type LoadResult = { trips: Trip[] } | { error: string };
 
@@ -40,11 +49,14 @@ async function fetchTrips(userId: string): Promise<LoadResult> {
 
 export function TripProvider({ children }: { children: ReactNode }) {
   const { userId, status: authStatus } = useAuth();
+  const { onReconnect } = useNetwork();
   const [trips, setTripsState] = useState<Trip[]>([]);
   const [activeTripId, setActiveTripId] = useState<string | null>(null);
   // Starts true so the first render shows "loading", not a flash of "no trips".
   const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false); // has the saved copy been read yet?
+  const gotFreshData = useRef(false); // a server answer always beats the saved copy
 
   // Keep activeTripId valid: default to the first trip, clear if it disappears.
   const setTrips = useCallback((next: Trip[]) => {
@@ -59,22 +71,41 @@ export function TripProvider({ children }: { children: ReactNode }) {
     setActiveTripId(trip.id);
   }, []);
 
+  const applyCache = useCallback((cached: TripCache | null) => {
+    if (cached && !gotFreshData.current) {
+      setTripsState(cached.trips);
+      setActiveTripId(
+        cached.trips.some((t) => t.id === cached.activeTripId) ? cached.activeTripId : (cached.trips[0]?.id ?? null),
+      );
+    }
+    setHydrated(true);
+  }, []);
+
   const applyLoadResult = useCallback(
     (result: LoadResult) => {
       if ('trips' in result) {
+        gotFreshData.current = true;
         setTrips(result.trips);
         setFetchError(null);
       } else {
-        setFetchError(result.error);
+        setFetchError(result.error); // keep showing the saved trips
       }
       setFetching(false);
     },
     [setTrips],
   );
 
+  // Show the saved copy straight away while the real one loads.
   useEffect(() => {
-    if (userId) void fetchTrips(userId).then(applyLoadResult);
-  }, [userId, applyLoadResult]);
+    if (!userId) return;
+    void CacheService.read<TripCache>(userId, CACHE_NAME).then(applyCache);
+    void fetchTrips(userId).then(applyLoadResult);
+  }, [userId, applyCache, applyLoadResult]);
+
+  // Keep the saved copy current (and remember which trip was open). Waits until the old copy has been read so it isn't overwritten empty.
+  useEffect(() => {
+    if (userId && hydrated) void CacheService.write(userId, CACHE_NAME, { trips, activeTripId } satisfies TripCache);
+  }, [userId, hydrated, trips, activeTripId]);
 
   const refresh = useCallback(async () => {
     if (!userId) return;
@@ -82,6 +113,9 @@ export function TripProvider({ children }: { children: ReactNode }) {
     setFetchError(null);
     applyLoadResult(await fetchTrips(userId));
   }, [userId, applyLoadResult]);
+
+  // Catch up automatically when the connection comes back.
+  useEffect(() => onReconnect(() => void refresh()), [onReconnect, refresh]);
 
   const value = useMemo<TripContextValue>(
     () => ({

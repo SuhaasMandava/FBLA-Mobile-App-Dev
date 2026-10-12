@@ -1,5 +1,6 @@
-import { AuthError } from '@supabase/supabase-js';
+import { AuthChangeEvent, AuthError } from '@supabase/supabase-js';
 import { SignInValues, SignUpValues } from '../models/AuthForm';
+import { CacheService } from './CacheService';
 import { UserFacingError } from './errors';
 import { supabase } from './supabase';
 
@@ -12,6 +13,11 @@ export type SignUpOutcome = 'signed_in' | 'confirmation_required';
 
 function toUser(user: { id: string; email?: string } | null | undefined): AuthUser | null {
   return user ? { id: user.id, email: user.email ?? null } : null;
+}
+
+/** The request never reached the server (as opposed to the server saying no). */
+function isNetworkAuthError(error: AuthError): boolean {
+  return error.name === 'AuthRetryableFetchError';
 }
 
 /** Turn a Supabase auth failure into a message people can act on. */
@@ -40,17 +46,36 @@ function toUserFacing(error: AuthError): UserFacingError {
 }
 
 export const AuthService = {
-  /** The user from the session saved on this device (works offline), or null if signed out. */
+  /**
+   * Who is signed in on this device, or null if nobody. Works with no connection:
+   * an access token that has expired can't be refreshed offline and Supabase then
+   * reports "no session", but the saved login is still good once the network is
+   * back. A network failure therefore keeps the last signed-in user instead of
+   * bouncing them to the sign-in screen with their saved data out of reach.
+   */
   async getCurrentUser(): Promise<AuthUser | null> {
     const { data, error } = await supabase.auth.getSession();
-    if (error) throw toUserFacing(error);
-    return toUser(data.session?.user);
+    const user = toUser(data.session?.user);
+    if (user) {
+      void CacheService.writeLastUser(user);
+      return user;
+    }
+    if (error) {
+      if (isNetworkAuthError(error)) return CacheService.readLastUser();
+      throw toUserFacing(error);
+    }
+    return null;
   },
 
-  /** Be told whenever the user signs in, signs out, or the saved session loads. Returns an unsubscribe function. */
-  onAuthChange(listener: (user: AuthUser | null) => void): () => void {
+  /** Be told whenever the user signs in, signs out, or their session changes. Returns an unsubscribe function. */
+  onAuthChange(listener: (event: AuthChangeEvent, user: AuthUser | null) => void): () => void {
     // Keep this callback synchronous: Supabase can deadlock if it awaits other auth calls in here.
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => listener(toUser(session?.user)));
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      const user = toUser(session?.user);
+      if (user) void CacheService.writeLastUser(user);
+      else if (event === 'SIGNED_OUT') void CacheService.clearLastUser();
+      listener(event, user);
+    });
     return () => data.subscription.unsubscribe();
   },
 
@@ -78,6 +103,8 @@ export const AuthService = {
 
   async signOut(): Promise<void> {
     const { error } = await supabase.auth.signOut();
-    if (error) throw toUserFacing(error);
+    // With no connection the server can't be told, but the session on this device is still removed, so that counts.
+    if (error && !isNetworkAuthError(error)) throw toUserFacing(error);
+    await CacheService.clearLastUser();
   },
 };

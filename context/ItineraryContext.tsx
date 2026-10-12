@@ -1,5 +1,8 @@
-import { createContext, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { createContext, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { useNetwork } from '../hooks/useNetwork';
 import { ItineraryItem, ItineraryModel, NewItineraryItem } from '../models/ItineraryModel';
+import { CacheService } from '../services/CacheService';
 import { getErrorMessage } from '../services/errors';
 import { TripService } from '../services/TripService';
 
@@ -11,7 +14,7 @@ export interface ItineraryContextValue {
   items: ItineraryItem[];
   /** True while the first load for this trip is running or a refresh is in progress. */
   loading: boolean;
-  /** Why loading failed, if it did. */
+  /** Why loading failed, if it did. Saved activities are still shown alongside it. */
   error: string | null;
   refresh: () => Promise<void>;
   addItem: (item: NewItineraryItem) => Promise<MutationResult>;
@@ -50,23 +53,43 @@ async function fetchItems(tripId: string): Promise<LoadResult> {
  * previous trip's activities.
  */
 export function ItineraryProvider({ tripId, children }: { tripId: string | null; children: ReactNode }) {
+  const { userId } = useAuth();
+  const { onReconnect } = useNetwork();
   const [items, setItems] = useState<ItineraryItem[]>([]);
   const [loading, setLoading] = useState(tripId !== null);
   const [error, setError] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false); // has the saved copy been read yet?
+  const gotFreshData = useRef(false); // a server answer always beats the saved copy
+  const cacheName = `itinerary:${tripId}`;
+
+  const applyCache = useCallback((cached: ItineraryItem[] | null) => {
+    if (cached && !gotFreshData.current) setItems(ItineraryModel.sort(cached));
+    setHydrated(true);
+  }, []);
 
   const applyLoadResult = useCallback((result: LoadResult) => {
     if ('items' in result) {
+      gotFreshData.current = true;
       setItems(result.items);
       setError(null);
     } else {
-      setError(result.error);
+      setError(result.error); // keep showing the saved activities
     }
     setLoading(false);
   }, []);
 
+  // Show the saved copy straight away while the real one loads.
   useEffect(() => {
-    if (tripId) void fetchItems(tripId).then(applyLoadResult);
-  }, [tripId, applyLoadResult]);
+    if (!tripId || !userId) return;
+    void CacheService.read<ItineraryItem[]>(userId, cacheName).then(applyCache);
+    void fetchItems(tripId).then(applyLoadResult);
+  }, [tripId, userId, cacheName, applyCache, applyLoadResult]);
+
+  // Keep the saved copy current (including after adds, edits, deletes and reorders).
+  // Waits until the old copy has been read so it isn't overwritten empty.
+  useEffect(() => {
+    if (tripId && userId && hydrated) void CacheService.write(userId, cacheName, items);
+  }, [tripId, userId, hydrated, cacheName, items]);
 
   const refresh = useCallback(async () => {
     if (!tripId) return;
@@ -74,6 +97,9 @@ export function ItineraryProvider({ tripId, children }: { tripId: string | null;
     setError(null);
     applyLoadResult(await fetchItems(tripId));
   }, [tripId, applyLoadResult]);
+
+  // Catch up automatically when the connection comes back.
+  useEffect(() => onReconnect(() => void refresh()), [onReconnect, refresh]);
 
   const addItem = useCallback(
     async (input: NewItineraryItem): Promise<MutationResult> => {

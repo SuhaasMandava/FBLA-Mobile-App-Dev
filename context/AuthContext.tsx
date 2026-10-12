@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AuthService, AuthUser } from '../services/AuthService';
+import { CacheService } from '../services/CacheService';
 
 export type AuthStatus = 'loading' | 'signedOut' | 'signedIn';
 
@@ -27,9 +28,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoaded(true);
     };
 
-    // The listener is the source of truth (it also reports the saved session at startup);
-    // the direct read is a fallback so startup never hangs on "loading".
-    const unsubscribe = AuthService.onAuthChange(settle);
+    // Later changes (sign-in, sign-out, token refresh) come from the listener. Its
+    // INITIAL_SESSION report is skipped: with an expired token and no connection it says
+    // "nobody", whereas getCurrentUser() knows that was a network failure, not a sign-out.
+    const unsubscribe = AuthService.onAuthChange((event, next) => {
+      if (event !== 'INITIAL_SESSION') settle(next);
+    });
     AuthService.getCurrentUser()
       .then((saved) => {
         if (!loadedRef.current) settle(saved);
@@ -44,16 +48,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signOut = useCallback(() => AuthService.signOut(), []);
+  const userId = user?.id ?? null;
+  const signOut = useCallback(async () => {
+    await AuthService.signOut();
+    if (userId) await CacheService.clearUser(userId); // don't leave their saved trips on the device
+  }, [userId]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       status: !loaded ? 'loading' : user ? 'signedIn' : 'signedOut',
-      userId: user?.id ?? null,
+      userId,
       email: user?.email ?? null,
       signOut,
     }),
-    [loaded, user, signOut],
+    [loaded, user, userId, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

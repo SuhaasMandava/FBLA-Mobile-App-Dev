@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import { Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native';
+import { OfflineBanner } from '../components/OfflineBanner';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { StatusMessage } from '../components/StatusMessage';
 import { useItinerary } from '../hooks/useItinerary';
@@ -55,6 +56,7 @@ export default function ItineraryScreen() {
       refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
       ListHeaderComponent={
         <View style={styles.listHeader}>
+          <OfflineBanner />
           {error || moveError ? (
             <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: colors.danger }}>
               {moveError ?? error}

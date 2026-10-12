@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { OfflineBanner } from '../components/OfflineBanner';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { StatusMessage } from '../components/StatusMessage';
 import { useTheme } from '../hooks/useTheme';
@@ -25,6 +26,7 @@ export default function TripSwitcherScreen() {
       <Text accessibilityRole="header" style={[styles.sheetTitle, { color: colors.text }]}>
         Your Trips
       </Text>
+      <OfflineBanner style={styles.banner} />
       <FlatList
         data={trips}
         keyExtractor={(trip) => trip.id}
@@ -87,6 +89,7 @@ export default function TripSwitcherScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   sheetTitle: { fontSize: 20, fontWeight: '700', paddingHorizontal: 16, paddingTop: 28 },
+  banner: { marginHorizontal: 16, marginTop: 12 },
   list: { flexGrow: 1, padding: 16, gap: 8 },
   row: {
     flexDirection: 'row',

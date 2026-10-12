@@ -4,6 +4,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MemberAvatar } from '../components/MemberAvatar';
+import { OfflineBanner } from '../components/OfflineBanner';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { StatusMessage } from '../components/StatusMessage';
 import { useItinerary } from '../hooks/useItinerary';
@@ -88,6 +89,7 @@ export default function HomeScreen() {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
     >
+      <OfflineBanner />
       {error ? (
         <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: colors.danger }}>
           {error}
