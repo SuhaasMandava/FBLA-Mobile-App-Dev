@@ -1,5 +1,5 @@
 import { AuthChangeEvent, AuthError } from '@supabase/supabase-js';
-import { SignInValues, SignUpValues } from '../models/AuthForm';
+import { SignInValues, SignUpData } from '../models/AuthForm';
 import { CacheService } from './CacheService';
 import { UserFacingError } from './errors';
 import { supabase } from './supabase';
@@ -84,7 +84,7 @@ export const AuthService = {
    * "Confirm email" must be off in the Supabase dashboard (Authentication →
    * Sign In / Providers → Email), otherwise Supabase returns no session here.
    */
-  async signUp({ displayName, email, password }: SignUpValues): Promise<void> {
+  async signUp({ displayName, email, password }: SignUpData): Promise<void> {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,

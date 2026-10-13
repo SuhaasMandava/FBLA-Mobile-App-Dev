@@ -9,12 +9,15 @@ interface FormFieldProps extends Omit<TextInputProps, 'style' | 'accessibilityLa
   /** Extra spoken guidance, e.g. the expected format. */
   hint?: string;
   inputRef?: Ref<TextInput>;
+  /** For secure fields: offer a Show/Hide button. Off where the text must stay hidden (e.g. choosing a new password). */
+  revealable?: boolean;
 }
 
-export function FormField({ label, error, hint, inputRef, secureTextEntry, ...inputProps }: FormFieldProps) {
+export function FormField({ label, error, hint, inputRef, secureTextEntry, revealable = true, ...inputProps }: FormFieldProps) {
   const { colors } = useTheme();
   const [revealed, setRevealed] = useState(false);
   const isSecret = secureTextEntry === true;
+  const showToggle = isSecret && revealable;
 
   return (
     <View style={styles.field}>
@@ -35,7 +38,7 @@ export function FormField({ label, error, hint, inputRef, secureTextEntry, ...in
           secureTextEntry={isSecret && !revealed}
           style={[
             styles.input,
-            isSecret && styles.inputWithToggle,
+            showToggle && styles.inputWithToggle,
             {
               color: colors.text,
               backgroundColor: colors.surface,
@@ -44,7 +47,7 @@ export function FormField({ label, error, hint, inputRef, secureTextEntry, ...in
           ]}
           {...inputProps}
         />
-        {isSecret ? (
+        {showToggle ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={revealed ? 'Hide password' : 'Show password'}

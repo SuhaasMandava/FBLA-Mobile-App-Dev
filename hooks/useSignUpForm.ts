@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 import { useForm } from 'react-hook-form';
-import { EMPTY_SIGN_UP, SignUpValues, validateSignUpForm } from '../models/AuthForm';
+import { EMPTY_SIGN_UP, SignUpData, SignUpValues, validateSignUpForm } from '../models/AuthForm';
 import { AuthService } from '../services/AuthService';
 import { getErrorMessage } from '../services/errors';
 import { createResolver } from '../utils/formResolver';
 
 /** Form state and submit logic for creating an account. */
 export function useSignUpForm() {
-  const form = useForm<SignUpValues, unknown, SignUpValues>({
+  const form = useForm<SignUpValues, unknown, SignUpData>({
     defaultValues: EMPTY_SIGN_UP,
     resolver: createResolver(validateSignUpForm),
     reValidateMode: 'onChange',

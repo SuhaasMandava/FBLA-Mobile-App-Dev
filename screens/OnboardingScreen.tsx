@@ -76,12 +76,27 @@ function SignUpForm() {
         textContentType="emailAddress"
         returnKeyType="next"
       />
+      {/* Both password boxes stay hidden (no Show button); the second one catches typos. */}
       <ControlledFormField
         control={form.control}
         name="password"
         label="Password"
         hint="At least 8 characters, with a letter and a number."
         secureTextEntry
+        revealable={false}
+        deps={['confirmPassword']}
+        autoCapitalize="none"
+        autoComplete="new-password"
+        textContentType="newPassword"
+        returnKeyType="next"
+      />
+      <ControlledFormField
+        control={form.control}
+        name="confirmPassword"
+        label="Confirm password"
+        hint="Type the same password again."
+        secureTextEntry
+        revealable={false}
         autoCapitalize="none"
         autoComplete="new-password"
         textContentType="newPassword"

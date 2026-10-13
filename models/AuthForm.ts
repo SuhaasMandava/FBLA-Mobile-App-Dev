@@ -6,14 +6,19 @@ export interface SignInValues {
   password: string;
 }
 
+/** What the Create Account form collects. `confirmPassword` only exists to catch typos. */
 export interface SignUpValues {
   displayName: string;
   email: string;
   password: string;
+  confirmPassword: string;
 }
 
+/** What actually gets sent to create the account. */
+export type SignUpData = Omit<SignUpValues, 'confirmPassword'>;
+
 export const EMPTY_SIGN_IN: SignInValues = { email: '', password: '' };
-export const EMPTY_SIGN_UP: SignUpValues = { displayName: '', email: '', password: '' };
+export const EMPTY_SIGN_UP: SignUpValues = { displayName: '', email: '', password: '', confirmPassword: '' };
 
 const email = z.string().min(1, 'Email is required.').pipe(z.email('Enter a valid email address.'));
 
@@ -23,19 +28,26 @@ const signInSchema = z.object({
   password: z.string().min(1, 'Password is required.'),
 });
 
-const signUpSchema = z.object({
-  displayName: z
-    .string()
-    .min(1, 'Your name is required.')
-    .min(2, 'Your name must be at least 2 characters.')
-    .max(40, 'Keep your name under 40 characters.'),
-  email,
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters.')
-    .max(72, 'Password must be 72 characters or fewer.')
-    .refine((v) => /[A-Za-z]/.test(v) && /\d/.test(v), 'Password must include a letter and a number.'),
-});
+const signUpSchema = z
+  .object({
+    displayName: z
+      .string()
+      .min(1, 'Your name is required.')
+      .min(2, 'Your name must be at least 2 characters.')
+      .max(40, 'Keep your name under 40 characters.'),
+    email,
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters.')
+      .max(72, 'Password must be 72 characters or fewer.')
+      .refine((v) => /[A-Za-z]/.test(v) && /\d/.test(v), 'Password must include a letter and a number.'),
+    confirmPassword: z.string().min(1, 'Re-enter your password.'),
+  })
+  // Compared exactly as typed, spaces included. Skipped while the box is empty so it shows "Re-enter" instead.
+  .refine((v) => v.confirmPassword === '' || v.confirmPassword === v.password, {
+    message: "Passwords don't match.",
+    path: ['confirmPassword'],
+  });
 
 /** Emails are case-insensitive; names and emails ignore stray spaces. Passwords are left exactly as typed. */
 const clean = <T extends { email: string }>(values: T): T => ({ ...values, email: values.email.trim().toLowerCase() });
@@ -45,7 +57,9 @@ export function validateSignInForm(values: SignInValues): Validation<SignInValue
   return result.success ? { ok: true, data: result.data } : { ok: false, errors: firstIssuePerField(result.error) };
 }
 
-export function validateSignUpForm(values: SignUpValues): Validation<SignUpValues, SignUpValues> {
+export function validateSignUpForm(values: SignUpValues): Validation<SignUpValues, SignUpData> {
   const result = signUpSchema.safeParse(clean({ ...values, displayName: values.displayName.trim() }));
-  return result.success ? { ok: true, data: result.data } : { ok: false, errors: firstIssuePerField(result.error) };
+  if (!result.success) return { ok: false, errors: firstIssuePerField(result.error) };
+  const { displayName, email: cleanEmail, password } = result.data;
+  return { ok: true, data: { displayName, email: cleanEmail, password } };
 }
