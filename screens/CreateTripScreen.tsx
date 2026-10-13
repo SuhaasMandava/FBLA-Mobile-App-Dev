@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useWatch } from 'react-hook-form';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ControlledDateTimeField } from '../components/ControlledDateTimeField';
 import { ControlledFormField } from '../components/ControlledFormField';
@@ -46,27 +46,22 @@ export default function CreateTripScreen() {
           returnKeyType="next"
         />
 
-        <View style={styles.row}>
-          <View style={styles.flex}>
-            <ControlledDateTimeField
-              control={form.control}
-              name="startDate"
-              mode="date"
-              label="Start date"
-              minDate={today}
-            />
-          </View>
-          <View style={styles.flex}>
-            <ControlledDateTimeField
-              control={form.control}
-              name="endDate"
-              mode="date"
-              label="End date"
-              minDate={startDate || today}
-              initialDate={startDate || today}
-            />
-          </View>
-        </View>
+        {/* Stacked, not side by side: the iOS calendar opens under its field and needs the full width. */}
+        <ControlledDateTimeField
+          control={form.control}
+          name="startDate"
+          mode="date"
+          label="Start date"
+          minDate={today}
+        />
+        <ControlledDateTimeField
+          control={form.control}
+          name="endDate"
+          mode="date"
+          label="End date"
+          minDate={startDate || today}
+          initialDate={startDate || today}
+        />
 
         <ControlledFormField
           control={form.control}
@@ -103,6 +98,5 @@ export default function CreateTripScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { padding: 16, gap: 16 },
-  row: { flexDirection: 'row', gap: 12 },
   submitError: { fontSize: 14 },
 });
