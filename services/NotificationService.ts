@@ -1,4 +1,4 @@
-import * as Notifications from 'expo-notifications';
+import { isRunningInExpoGo } from 'expo';
 
 /**
  * Local-notification wrapper. Stubbed: methods log and return without
@@ -6,8 +6,14 @@ import * as Notifications from 'expo-notifications';
  * comments so the wiring is obvious when this is filled in.
  */
 export const NotificationService = {
-  /** Call once at app start so foreground notifications are shown. */
-  configure(): void {
+  /**
+   * Call once at app start so foreground notifications are shown. Skipped in
+   * Expo Go, which dropped notification support in SDK 53: there, merely importing
+   * expo-notifications prints warnings, so the module is only loaded when usable.
+   */
+  async configure(): Promise<void> {
+    if (isRunningInExpoGo()) return;
+    const Notifications = await import('expo-notifications');
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
         shouldPlaySound: false,

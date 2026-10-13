@@ -16,7 +16,7 @@ function ThemedStatusBar() {
 
 export default function App() {
   useEffect(() => {
-    NotificationService.configure();
+    void NotificationService.configure();
   }, []);
 
   return (
