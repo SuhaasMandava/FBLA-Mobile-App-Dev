@@ -9,8 +9,6 @@ export interface AuthUser {
   email: string | null;
 }
 
-export type SignUpOutcome = 'signed_in' | 'confirmation_required';
-
 function toUser(user: { id: string; email?: string } | null | undefined): AuthUser | null {
   return user ? { id: user.id, email: user.email ?? null } : null;
 }
@@ -26,7 +24,8 @@ function toUserFacing(error: AuthError): UserFacingError {
     case 'invalid_credentials':
       return new UserFacingError('Incorrect email or password.');
     case 'email_not_confirmed':
-      return new UserFacingError('Confirm your email first: open the link we sent you, then sign in.');
+      // Only accounts created while "Confirm email" was still on can hit this.
+      return new UserFacingError("This account was never confirmed and can't sign in. Create a new account instead.");
     case 'user_already_exists':
     case 'email_exists':
       return new UserFacingError('An account with this email already exists. Try signing in instead.');
@@ -79,7 +78,12 @@ export const AuthService = {
     return () => data.subscription.unsubscribe();
   },
 
-  async signUp({ displayName, email, password }: SignUpValues): Promise<SignUpOutcome> {
+  /**
+   * Create the account and sign straight in. Email confirmation is not used:
+   * "Confirm email" must be off in the Supabase dashboard (Authentication →
+   * Sign In / Providers → Email), otherwise Supabase returns no session here.
+   */
+  async signUp({ displayName, email, password }: SignUpValues): Promise<void> {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -88,12 +92,15 @@ export const AuthService = {
     });
     if (error) throw toUserFacing(error);
 
-    // With email confirmation on, signing up an address that already has an account
-    // "succeeds" with a placeholder user that has no identities (to hide which emails exist).
+    // If confirmation is still switched on, an address that already has an account "succeeds"
+    // with a placeholder user that has no identities (Supabase hides which emails exist).
     if (data.user && data.user.identities?.length === 0) {
       throw new UserFacingError('An account with this email already exists. Try signing in instead.');
     }
-    return data.session ? 'signed_in' : 'confirmation_required';
+    if (!data.session) {
+      console.error('Sign-up returned no session: turn off "Confirm email" in the Supabase dashboard.');
+      throw new UserFacingError("Your account was created but couldn't be signed in. Try signing in.");
+    }
   },
 
   async signIn({ email, password }: SignInValues): Promise<void> {

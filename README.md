@@ -26,7 +26,7 @@ npx expo lint .    # lint (the bare `expo lint` only checks components/)
 ### Setting up Supabase
 
 1. In the SQL editor, run `supabase/schema.sql` (the baseline), then every file in `supabase/migrations/` **in numeric order**. All of them are safe to re-run.
-2. Authentication → Sign In / Providers: keep **Email** enabled. If "Confirm email" is on, sign-up tells people to check their inbox; if it's off, they're signed in immediately. Anonymous sign-ins are not used.
+2. Authentication → Sign In / Providers → **Email**: keep it enabled and turn **"Confirm email" off**. The app doesn't use email confirmation; new accounts are signed in immediately. With it on, sign-up can't complete. Anonymous sign-ins are not used.
 3. Nothing else is needed: Row Level Security is switched on by the migrations (see below).
 
 The anon key in `.env` is public by design (it ships inside the app). Row Level Security is what protects the data, which is why every table has it on.

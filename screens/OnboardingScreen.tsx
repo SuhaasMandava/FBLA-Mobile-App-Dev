@@ -93,11 +93,6 @@ function SignUpForm() {
           {form.submitError}
         </Text>
       ) : null}
-      {form.notice ? (
-        <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: colors.text }}>
-          {form.notice}
-        </Text>
-      ) : null}
       <PrimaryButton label="Create Account" onPress={form.submit} loading={form.submitting} />
     </>
   );
