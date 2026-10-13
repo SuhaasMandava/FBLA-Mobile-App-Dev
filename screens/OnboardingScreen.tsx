@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ControlledFormField } from '../components/ControlledFormField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { SegmentedControl } from '../components/SegmentedControl';
@@ -119,37 +119,38 @@ export default function OnboardingScreen() {
   const [mode, setMode] = useState<Mode>('signIn');
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.flex, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={[styles.content, { paddingTop: 24 + insets.top, paddingBottom: 24 + insets.bottom }]}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>
-          Welcome
-        </Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Plan group trips together.</Text>
+    // This screen has no header, so the safe-area padding sits outside the scroll view: the strip behind the
+    // clock and battery stays solid and the form scrolls away underneath it instead of overlapping them.
+    <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingBottom: 24 + insets.bottom }]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>
+            Welcome
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Plan group trips together.</Text>
 
-        <SegmentedControl
-          options={[
-            { value: 'signIn', label: 'Sign In' },
-            { value: 'signUp', label: 'Create Account' },
-          ]}
-          value={mode}
-          onChange={setMode}
-        />
+          <SegmentedControl
+            options={[
+              { value: 'signIn', label: 'Sign In' },
+              { value: 'signUp', label: 'Create Account' },
+            ]}
+            value={mode}
+            onChange={setMode}
+          />
 
-        {mode === 'signIn' ? <SignInForm /> : <SignUpForm />}
-      </ScrollView>
-    </KeyboardAvoidingView>
+          {mode === 'signIn' ? <SignInForm /> : <SignUpForm />}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 16, gap: 16 },
+  content: { paddingHorizontal: 16, paddingTop: 24, gap: 16 },
   title: { fontSize: 28, fontWeight: '700' },
   subtitle: { fontSize: 15, marginTop: -8 },
 });
