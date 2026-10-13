@@ -31,9 +31,13 @@ function toUserFacing(error: AuthError): UserFacingError {
       return new UserFacingError('An account with this email already exists. Try signing in instead.');
     case 'weak_password':
       return new UserFacingError('That password is too weak. Use at least 8 characters with a letter and a number.');
-    case 'over_request_rate_limit':
     case 'over_email_send_rate_limit':
-      return new UserFacingError('Too many attempts. Wait a minute and try again.');
+      // The app sends no emails, so this only happens while "Confirm email" is still on in Supabase
+      // (its built-in mailer allows just a few emails an hour).
+      console.error('Supabase tried to send a confirmation email: turn off "Confirm email" in Authentication → Sign In / Providers.');
+      return new UserFacingError("Couldn't create your account right now. Please try again later.");
+    case 'over_request_rate_limit':
+      return new UserFacingError("You've tried too many times. Please try again later.");
     case 'signup_disabled':
     case 'email_provider_disabled':
       return new UserFacingError('Email sign-up and sign-in are turned off for this app right now.');
