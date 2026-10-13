@@ -15,7 +15,8 @@ interface StatusMessageProps {
 export function StatusMessage({ loading = false, title, body, children }: StatusMessageProps) {
   const { colors } = useTheme();
   return (
-    <View style={styles.container}>
+    // Paints its own background: it's also shown at startup, before the navigator (which normally supplies one) exists.
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {loading ? <ActivityIndicator accessibilityLabel={title} color={colors.primary} size="large" /> : null}
       <Text style={[styles.title, { color: colors.text }]} accessibilityRole={loading ? undefined : 'header'}>
         {title}
