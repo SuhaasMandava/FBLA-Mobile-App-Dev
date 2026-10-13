@@ -35,7 +35,8 @@ function toUserFacing(error: AuthError): UserFacingError {
     case 'over_email_send_rate_limit':
       return new UserFacingError('Too many attempts. Wait a minute and try again.');
     case 'signup_disabled':
-      return new UserFacingError('New sign-ups are turned off right now.');
+    case 'email_provider_disabled':
+      return new UserFacingError('Email sign-up and sign-in are turned off for this app right now.');
   }
   if (error.name === 'AuthRetryableFetchError') {
     return new UserFacingError("Couldn't reach the server. Check your connection and try again.");
