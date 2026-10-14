@@ -62,7 +62,7 @@ function ItineraryItemForm({ item, defaultDay }: { item?: ItineraryItem; default
           name="day"
           mode="date"
           label="Day"
-          hint="Must be within the trip dates."
+          helper="Must be within the trip dates."
           minDate={form.tripStart}
           maxDate={form.tripEnd}
         />

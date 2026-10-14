@@ -34,8 +34,11 @@ export interface ColorTokens {
   danger: string;
   success: string;
   warning: string;
-  /** Translucent fill for loading skeletons. */
+  /** Fill for loading skeletons. */
   skeleton: string;
+  /** The two companion dots in the three-dot crew motif (decorative, never text). */
+  motifMint: string;
+  motifSun: string;
 }
 
 export const lightColors: ColorTokens = {
@@ -55,6 +58,8 @@ export const lightColors: ColorTokens = {
   success: '#1F7A3A',
   warning: '#9A5B00',
   skeleton: '#E3E9E7',
+  motifMint: '#7FD6CB',
+  motifSun: '#F2B84B',
 };
 
 export const darkColors: ColorTokens = {
@@ -74,6 +79,8 @@ export const darkColors: ColorTokens = {
   success: '#6FD38A',
   warning: '#F5B54A',
   skeleton: '#24302E',
+  motifMint: '#2C8F84',
+  motifSun: '#E0A63A',
 };
 
 /** Applied on top of a scheme when the system asks for more contrast. */

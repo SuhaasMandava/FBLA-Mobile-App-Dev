@@ -1,9 +1,12 @@
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
 import { formatClockTime, formatDate, parseClockTime, parseISODate, toClockTime, toISODate, todayISO } from '../utils/dates';
-import { PrimaryButton } from './PrimaryButton';
+import { AppText } from './AppText';
+import { Button } from './Button';
+import { FieldMessage } from './FieldMessage';
+import { Icon } from './Icon';
 
 interface DateTimeFieldProps {
   label: string;
@@ -12,7 +15,8 @@ interface DateTimeFieldProps {
   value: string;
   onChange: (value: string) => void;
   error?: string | null;
-  hint?: string;
+  /** Visible guidance under the field (also spoken). */
+  helper?: string;
   placeholder?: string;
   /** Earliest and latest selectable day (YYYY-MM-DD). Dates only. */
   minDate?: string;
@@ -33,14 +37,14 @@ export function DateTimeField({
   value,
   onChange,
   error,
-  hint,
+  helper,
   placeholder,
   minDate,
   maxDate,
   initialDate,
   clearable = false,
 }: DateTimeFieldProps) {
-  const { colors, scheme } = useTheme();
+  const { colors, scheme, spacing, radii, layout, motion } = useTheme();
   const [open, setOpen] = useState(false); // iOS: is the inline picker showing
   const isDate = mode === 'date';
 
@@ -74,47 +78,60 @@ export function DateTimeField({
     setOpen((o) => !o);
   };
 
+  const spokenHint = error ? `Error: ${error}` : (helper ?? `Opens the ${isDate ? 'date' : 'time'} picker`);
+
   return (
-    <View style={styles.field}>
-      <Text
-        style={[styles.label, { color: colors.labelSecondary }]}
+    <View style={{ gap: spacing.xs - 2 }}>
+      <AppText
+        variant="subheadStrong"
+        color="labelSecondary"
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
         {label}
-      </Text>
-      <View style={styles.row}>
+      </AppText>
+      <View style={[styles.row, { gap: spacing.xs }]}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`${label}, ${display ?? 'not set'}`}
-          accessibilityHint={hint ?? `Opens the ${isDate ? 'date' : 'time'} picker`}
+          accessibilityHint={spokenHint}
+          accessibilityState={{ expanded: Platform.OS === 'ios' ? open : undefined }}
           onPress={openPicker}
-          style={[
+          style={({ pressed }) => [
             styles.input,
-            { backgroundColor: colors.surface, borderColor: error ? colors.danger : colors.fieldBorder },
+            {
+              minHeight: layout.controlHeight,
+              borderRadius: radii.md,
+              paddingHorizontal: spacing.md,
+              gap: spacing.sm,
+              backgroundColor: colors.surface,
+              borderColor: error ? colors.danger : colors.fieldBorder,
+              borderWidth: error ? 2 : 1,
+            },
+            pressed && { opacity: motion.pressedOpacity },
           ]}
         >
-          <Text style={[styles.value, { color: display ? colors.label : colors.labelSecondary }]}>
+          <Icon name={isDate ? 'calendar-outline' : 'time-outline'} size={20} color="labelSecondary" />
+          <AppText variant="body" color={display ? 'label' : 'labelSecondary'} tabular style={styles.value}>
             {display ?? placeholder ?? (isDate ? 'Select date' : 'Select time')}
-          </Text>
+          </AppText>
         </Pressable>
         {clearable && value ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Clear ${label}`}
+          <Button
+            variant="plain"
+            compact
+            label="Clear"
+            hint={`Clears ${label}`}
             onPress={() => {
               setOpen(false);
               onChange('');
             }}
-            style={styles.clear}
-          >
-            <Text style={[styles.clearText, { color: colors.accent }]}>Clear</Text>
-          </Pressable>
+          />
         ) : null}
       </View>
 
       {Platform.OS === 'ios' && open ? (
-        <View style={styles.picker}>
+        <View style={{ gap: spacing.xs }}>
           <DateTimePicker
             value={pickerValue}
             mode={mode}
@@ -125,38 +142,17 @@ export function DateTimeField({
             accentColor={colors.accent}
             onValueChange={(_event, date) => commit(date)}
           />
-          <PrimaryButton label="Done" variant="secondary" onPress={() => setOpen(false)} />
+          <Button label="Done" variant="tinted" onPress={() => setOpen(false)} />
         </View>
       ) : null}
 
-      {error ? (
-        <Text
-          accessibilityRole="alert"
-          accessibilityLiveRegion="polite"
-          style={[styles.error, { color: colors.danger }]}
-        >
-          {error}
-        </Text>
-      ) : null}
+      <FieldMessage error={error} helper={helper} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  field: { gap: 6 },
-  label: { fontSize: 12, fontWeight: '500' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  input: {
-    flex: 1,
-    minHeight: 48,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-  },
-  value: { fontSize: 16 },
-  clear: { minHeight: 48, minWidth: 56, alignItems: 'center', justifyContent: 'center' },
-  clearText: { fontSize: 14, fontWeight: '600' },
-  picker: { gap: 8 },
-  error: { fontSize: 13 },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  input: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+  value: { flex: 1 },
 });
