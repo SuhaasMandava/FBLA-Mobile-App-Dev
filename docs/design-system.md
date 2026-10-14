@@ -464,7 +464,8 @@ Order follows the skill: accessibility, then conventions, then craft, then polis
 
 Out of scope (no business logic, service, schema, or validation changes): expense tracking on the Budget tab, checklist data, haptics (would need `expo-haptics`), and any change to what the forms accept.
 
-**Decisions for you:**
+**Decisions made (approved):**
 
-- **Folder for tokens.** This repo has no `src/` folder; code lives in root folders (`components/`, `context/`, `screens/`, …) as the README documents. Recommendation: put tokens in a new root `theme/theme.ts` and keep components in `components/`, instead of moving the whole app under `src/`.
-- **Home large title.** On iOS a large title is one line, so a long trip name (up to 50 characters) truncates there; the full name always appears in the hero card. Alternative: keep the trip name only in the hero and title the tab "Trip". Recommendation: large title with the hero as backup.
+- Tokens live in a root `theme/theme.ts`; components stay in `components/`. The repo keeps its root-folder layout instead of moving under `src/`.
+- Home's iOS large title is the trip name. Names longer than 22 characters are also shown in full in the hero card, since a large title is one line.
+- The icon and splash are drawn by `scripts/make-icons.py` (Pillow) so they can be regenerated from one geometry.

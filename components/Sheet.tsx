@@ -1,4 +1,5 @@
-import { ReactNode } from 'react';
+import { HeaderHeightContext } from '@react-navigation/elements';
+import { ReactNode, useContext } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../hooks/useTheme';
@@ -22,11 +23,14 @@ interface SheetProps {
 export function Sheet({ children, title, subtitle, footer }: SheetProps) {
   const { colors, spacing, layout, scheme } = useTheme();
   const insets = useSafeAreaInsets();
+  // The keyboard is measured from the top of the screen, so account for the header above this view.
+  const headerHeight = useContext(HeaderHeightContext) ?? 0;
   const background = scheme === 'dark' ? colors.surfaceRaised : colors.background;
   return (
     <KeyboardAvoidingView
       style={[styles.flex, { backgroundColor: background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={headerHeight}
     >
       <ScrollView
         contentContainerStyle={{

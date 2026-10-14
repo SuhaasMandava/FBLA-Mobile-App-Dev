@@ -21,6 +21,7 @@ Restart the dev server after changing it. Checks to run before committing:
 ```bash
 npx tsc --noEmit   # types
 npx expo lint .    # lint (the bare `expo lint` only checks components/)
+npm run check:contrast  # WCAG contrast of the color tokens
 ```
 
 ### Setting up Supabase
@@ -38,10 +39,32 @@ The anon key in `.env` is public by design (it ships inside the app). Row Level 
 | `models/` | Plain data types, row mapping, and rules. Validation lives here as zod schemas (`TripForm`, `ItineraryForm`, `AuthForm`). No React, no network. |
 | `services/` | Everything that talks to Supabase or the device: `TripService`, `AuthService`, `CacheService`, `NetworkService`, `ShareService`. They throw typed errors with user-safe messages. |
 | `context/`, `hooks/` | App state (auth, trips, itinerary, network, theme) and the form hooks that tie react-hook-form to the models and services. |
-| `screens/`, `components/` | Presentation only. Navigation is React Navigation (`App.tsx` → `screens/RootNavigator.tsx`). |
+| `theme/` | Design tokens (`theme.ts`): colors for light and dark, type roles, spacing, radii, motion. Read through `useTheme()`. |
+| `screens/`, `components/` | Presentation only. Navigation is React Navigation (`App.tsx` → `screens/RootNavigator.tsx`). Screens are built from the shared components; none defines its own button, row, or field styles. |
+| `scripts/` | `check-contrast.js` (WCAG check of the color tokens) and `make-icons.py` (draws the app icon and splash). |
 | `supabase/` | `schema.sql` (baseline) and `migrations/` (everything since). |
 
 Forms use react-hook-form, with the rules themselves written in zod under `models/` so they can be tested without React.
+
+## Design system & accessibility
+
+The full design plan, UX audit, user journey, and rationale are in [docs/design-system.md](docs/design-system.md). In short:
+
+- **Look and feel.** Familiar iOS patterns that also work on Android: a bottom tab bar with icons, native large-title headers on iOS (a standard top bar on Android), grouped lists, native sheets for forms and the trip switcher, and system confirmations (action sheets on iOS, dialogs on Android) for destructive actions. Brand teal is used only for things you can tap, selection, and the Route.
+- **Signature element: the Route.** A dotted teal line with round stops. It links each day's activities on the Itinerary, shows trip progress on Home, and appears with three overlapping "crew" dots in the app icon, splash screen, and empty states.
+- **Tokens.** Everything visual comes from `theme/theme.ts`. Colors follow the system light or dark setting; there's deliberately no in-app switch. When the system asks for more contrast (Increase Contrast on iOS, High contrast text on Android), secondary text and separators get stronger.
+- **Icons.** Ionicons from `@expo/vector-icons`, through `components/Icon.tsx`. No Apple logos, trademarks, or SF Symbols artwork. The app icon is original; regenerate it with `python scripts/make-icons.py`.
+
+Accessibility commitments, checked before each release:
+
+| Area | What the app does |
+| --- | --- |
+| Text size | All text uses the token type styles and scales with the system setting. Rows, headers, and segmented controls stack vertically at accessibility sizes (`useLargeText`). Icons grow with the text. Only bar labels (tab bar, header buttons) are capped, at 1.4–1.5x, because the system fixes their height. |
+| Contrast | Every text pair meets WCAG AA (4.5:1) and every control outline 3:1, in light and dark. Run `npm run check:contrast` after changing a color. |
+| Touch targets | Every interactive element is at least 44 x 44 pt. |
+| Screen readers | Every control has `accessibilityRole` and a label; icon-only buttons are labeled; decorative graphics are hidden; headings are marked; field errors are announced and repeated when you return to the field; itinerary rows offer "Move earlier / Move later" actions. |
+| Color alone | Errors, offline, today, and the current trip always have an icon, a badge, or words as well as color. |
+| Motion | Only the Route fill-in on Home and the loading-skeleton pulse animate. Both stop when Reduce Motion is on. |
 
 ## Offline behavior
 
