@@ -1,7 +1,11 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { StatusMessage } from '../components/StatusMessage';
+import { DarkTheme, DefaultTheme, NavigationContainer, useNavigation } from '@react-navigation/native';
+import { createNativeStackNavigator, NativeStackNavigationOptions } from '@react-navigation/native-stack';
+import { ComponentType } from 'react';
+import { Platform, Text } from 'react-native';
+import { HeaderButton } from '../components/HeaderButton';
+import { Icon, IconName } from '../components/Icon';
+import { LoadingScreen } from '../components/LoadingScreen';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
 import BudgetScreen from './BudgetScreen';
@@ -14,34 +18,105 @@ import JoinTripScreen from './JoinTripScreen';
 import OnboardingScreen from './OnboardingScreen';
 import SettingsScreen from './SettingsScreen';
 import TripSwitcherScreen from './TripSwitcherScreen';
-import { RootStackParamList, TabParamList } from './types';
+import { RootStackParamList, TabParamList, TabStackParamList } from './types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const TabStack = createNativeStackNavigator<TabStackParamList>();
+
+/** Header look shared by every native stack: system font, theme colors, no hairline under large titles. */
+function useHeaderOptions(): NativeStackNavigationOptions {
+  const { colors } = useTheme();
+  return {
+    headerStyle: { backgroundColor: colors.background },
+    headerTintColor: colors.accent,
+    headerTitleStyle: { color: colors.label },
+    headerLargeTitleStyle: { color: colors.label },
+    headerLargeTitleShadowVisible: false,
+    headerShadowVisible: false,
+    headerBackButtonDisplayMode: 'minimal',
+  };
+}
+
+/** Wraps a tab's screen in its own stack so it gets a native header: large title on iOS, top app bar on Android. */
+function tabStack(component: ComponentType, title: string) {
+  function TabStackScreen() {
+    const headerOptions = useHeaderOptions();
+    return (
+      <TabStack.Navigator screenOptions={{ ...headerOptions, headerLargeTitleEnabled: Platform.OS === 'ios' }}>
+        <TabStack.Screen name="Main" component={component} options={{ title }} />
+      </TabStack.Navigator>
+    );
+  }
+  TabStackScreen.displayName = `${title}Stack`;
+  return TabStackScreen;
+}
+
+const HomeStack = tabStack(HomeScreen, 'Home');
+const ItineraryStack = tabStack(ItineraryScreen, 'Itinerary');
+const BudgetStack = tabStack(BudgetScreen, 'Budget');
+const ChecklistStack = tabStack(ChecklistScreen, 'Checklist');
+const SettingsStack = tabStack(SettingsScreen, 'Settings');
+
+const tabIcons: Record<keyof TabParamList, [active: IconName, inactive: IconName]> = {
+  Home: ['home', 'home-outline'],
+  Itinerary: ['map', 'map-outline'],
+  Budget: ['wallet', 'wallet-outline'],
+  Checklist: ['checkbox', 'checkbox-outline'],
+  Settings: ['settings', 'settings-outline'],
+};
 
 function Tabs() {
   const { colors } = useTheme();
   return (
-    // Explicit tab colors: the default inactive color is a 50% blend that falls below the contrast minimum.
     <Tab.Navigator
-      screenOptions={{ tabBarActiveTintColor: colors.accent, tabBarInactiveTintColor: colors.labelSecondary }}
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        // Explicit colors: the default inactive tint is a 50% blend that falls below the contrast minimum.
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.labelSecondary,
+        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.separator },
+        // The bar's height is fixed by the system, so labels grow only so far with the text size.
+        tabBarLabel: ({ color, children }) => (
+          <Text maxFontSizeMultiplier={1.5} style={{ color, fontSize: 11, lineHeight: 13, fontWeight: '500' }}>
+            {children}
+          </Text>
+        ),
+        tabBarIcon: ({ focused, color, size }) => (
+          <Icon name={tabIcons[route.name][focused ? 0 : 1]} tint={color} size={size} fixedSize />
+        ),
+      })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Itinerary" component={ItineraryScreen} />
-      <Tab.Screen name="Budget" component={BudgetScreen} />
-      <Tab.Screen name="Checklist" component={ChecklistScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen name="Home" component={HomeStack} />
+      <Tab.Screen name="Itinerary" component={ItineraryStack} />
+      <Tab.Screen name="Budget" component={BudgetStack} />
+      <Tab.Screen name="Checklist" component={ChecklistStack} />
+      <Tab.Screen name="Settings" component={SettingsStack} />
     </Tab.Navigator>
   );
+}
+
+/** Leading Cancel for form sheets on iOS. Android modals already have a back arrow. */
+function CancelButton() {
+  const navigation = useNavigation();
+  return <HeaderButton label="Cancel" onPress={() => navigation.goBack()} />;
 }
 
 export default function RootNavigator() {
   const { scheme, colors } = useTheme();
   const { status } = useAuth();
+  const headerOptions = useHeaderOptions();
   const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
 
   // Restoring the saved session takes a moment at startup; don't flash the sign-in screen at someone already signed in.
-  if (status === 'loading') return <StatusMessage loading title="Loading…" />;
+  if (status === 'loading') return <LoadingScreen />;
+
+  const formSheet: NativeStackNavigationOptions = {
+    presentation: 'modal',
+    headerLeft: Platform.OS === 'ios' ? () => <CancelButton /> : undefined,
+    // Dark mode shows modals on a raised surface, the way the system does.
+    headerStyle: { backgroundColor: scheme === 'dark' ? colors.surfaceRaised : colors.background },
+  };
 
   return (
     <NavigationContainer
@@ -54,10 +129,11 @@ export default function RootNavigator() {
           text: colors.label,
           border: colors.separator,
           primary: colors.accent,
+          notification: colors.danger,
         },
       }}
     >
-      <Stack.Navigator>
+      <Stack.Navigator screenOptions={headerOptions}>
         {status === 'signedIn' ? (
           <>
             <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
@@ -70,26 +146,19 @@ export default function RootNavigator() {
                 headerShown: false,
                 sheetAllowedDetents: [0.55, 0.92],
                 sheetGrabberVisible: true,
-                sheetCornerRadius: 20,
+                sheetCornerRadius: 24,
+                contentStyle: { backgroundColor: scheme === 'dark' ? colors.surfaceRaised : colors.background },
               }}
             />
             {/* Forms open as full modals (not pushed inside the sheet, which would squeeze them into half a screen). */}
-            <Stack.Screen
-              name="CreateTrip"
-              component={CreateTripScreen}
-              options={{ presentation: 'modal', title: 'Create a Trip' }}
-            />
-            <Stack.Screen
-              name="JoinTrip"
-              component={JoinTripScreen}
-              options={{ presentation: 'modal', title: 'Join a Trip' }}
-            />
+            <Stack.Screen name="CreateTrip" component={CreateTripScreen} options={{ ...formSheet, title: 'New Trip' }} />
+            <Stack.Screen name="JoinTrip" component={JoinTripScreen} options={{ ...formSheet, title: 'Join Trip' }} />
             <Stack.Screen
               name="ItineraryItem"
               component={ItineraryItemScreen}
               options={({ route }) => ({
-                presentation: 'modal',
-                title: route.params?.itemId ? 'Edit Activity' : 'Add Activity',
+                ...formSheet,
+                title: route.params?.itemId ? 'Edit Activity' : 'New Activity',
               })}
             />
           </>
