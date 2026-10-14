@@ -1,21 +1,23 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ControlledFormField } from '../components/ControlledFormField';
-import { PrimaryButton } from '../components/PrimaryButton';
+import { AppText } from '../components/AppText';
+import { Button } from '../components/Button';
+import { ControlledTextField } from '../components/ControlledTextField';
+import { InlineBanner } from '../components/InlineBanner';
+import { CrewMark } from '../components/Route';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { useSignInForm } from '../hooks/useSignInForm';
 import { useSignUpForm } from '../hooks/useSignUpForm';
 import { useTheme } from '../hooks/useTheme';
 
-type Mode = 'signIn' | 'signUp';
+type Mode = 'signUp' | 'signIn';
 
 function SignInForm() {
-  const { colors } = useTheme();
   const form = useSignInForm();
   return (
     <>
-      <ControlledFormField
+      <ControlledTextField
         control={form.control}
         name="email"
         label="Email"
@@ -27,7 +29,7 @@ function SignInForm() {
         textContentType="emailAddress"
         returnKeyType="next"
       />
-      <ControlledFormField
+      <ControlledTextField
         control={form.control}
         name="password"
         label="Password"
@@ -38,33 +40,28 @@ function SignInForm() {
         returnKeyType="done"
         onSubmitEditing={form.submit}
       />
-      {form.submitError ? (
-        <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: colors.danger }}>
-          {form.submitError}
-        </Text>
-      ) : null}
-      <PrimaryButton label="Sign In" onPress={form.submit} loading={form.submitting} />
+      {form.submitError ? <InlineBanner tone="error" message={form.submitError} /> : null}
+      <Button label="Sign In" onPress={form.submit} loading={form.submitting} />
     </>
   );
 }
 
 function SignUpForm() {
-  const { colors } = useTheme();
   const form = useSignUpForm();
   return (
     <>
-      <ControlledFormField
+      <ControlledTextField
         control={form.control}
         name="displayName"
         label="Your name"
-        hint="Shown to the people on your trips."
+        helper="Shown to the people on your trips."
         placeholder="e.g. Alex Rivera"
         autoCapitalize="words"
         autoComplete="name"
         textContentType="name"
         returnKeyType="next"
       />
-      <ControlledFormField
+      <ControlledTextField
         control={form.control}
         name="email"
         label="Email"
@@ -77,11 +74,11 @@ function SignUpForm() {
         returnKeyType="next"
       />
       {/* Both password boxes stay hidden (no Show button); the second one catches typos. */}
-      <ControlledFormField
+      <ControlledTextField
         control={form.control}
         name="password"
         label="Password"
-        hint="At least 8 characters, with a letter and a number."
+        helper="At least 8 characters, with a letter and a number."
         secureTextEntry
         revealable={false}
         deps={['confirmPassword']}
@@ -90,11 +87,11 @@ function SignUpForm() {
         textContentType="newPassword"
         returnKeyType="next"
       />
-      <ControlledFormField
+      <ControlledTextField
         control={form.control}
         name="confirmPassword"
         label="Confirm password"
-        hint="Type the same password again."
+        helper="Type the same password again."
         secureTextEntry
         revealable={false}
         autoCapitalize="none"
@@ -103,20 +100,17 @@ function SignUpForm() {
         returnKeyType="done"
         onSubmitEditing={form.submit}
       />
-      {form.submitError ? (
-        <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: colors.danger }}>
-          {form.submitError}
-        </Text>
-      ) : null}
-      <PrimaryButton label="Create Account" onPress={form.submit} loading={form.submitting} />
+      {form.submitError ? <InlineBanner tone="error" message={form.submitError} /> : null}
+      <Button label="Create Account" onPress={form.submit} loading={form.submitting} />
     </>
   );
 }
 
 export default function OnboardingScreen() {
-  const { colors } = useTheme();
+  const { colors, spacing, layout } = useTheme();
   const insets = useSafeAreaInsets();
-  const [mode, setMode] = useState<Mode>('signIn');
+  // New people are the common case on first launch; signing in is one tap away.
+  const [mode, setMode] = useState<Mode>('signUp');
 
   return (
     // This screen has no header, so the safe-area padding sits outside the scroll view: the strip behind the
@@ -124,24 +118,33 @@ export default function OnboardingScreen() {
     <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
-          contentContainerStyle={[styles.content, { paddingBottom: 24 + insets.bottom }]}
+          contentContainerStyle={{ padding: spacing.md, paddingTop: spacing.xl, paddingBottom: spacing.lg + insets.bottom }}
           keyboardShouldPersistTaps="handled"
         >
-          <Text accessibilityRole="header" style={[styles.title, { color: colors.label }]}>
-            TripHub
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.labelSecondary }]}>Plan the trip together, from first idea to last stop.</Text>
+          <View style={[styles.column, { maxWidth: layout.maxContentWidth, gap: spacing.md }]}>
+            <View style={[styles.hero, { gap: spacing.xs, marginBottom: spacing.sm }]}>
+              <View style={{ marginBottom: spacing.sm }}>
+                <CrewMark size={32} />
+              </View>
+              <AppText variant="largeTitle" accessibilityRole="header">
+                TripHub
+              </AppText>
+              <AppText variant="callout" color="labelSecondary">
+                Plan the trip together, from first idea to last stop.
+              </AppText>
+            </View>
 
-          <SegmentedControl
-            options={[
-              { value: 'signIn', label: 'Sign In' },
-              { value: 'signUp', label: 'Create Account' },
-            ]}
-            value={mode}
-            onChange={setMode}
-          />
+            <SegmentedControl
+              options={[
+                { value: 'signUp', label: 'Create Account' },
+                { value: 'signIn', label: 'Sign In' },
+              ]}
+              value={mode}
+              onChange={setMode}
+            />
 
-          {mode === 'signIn' ? <SignInForm /> : <SignUpForm />}
+            {mode === 'signIn' ? <SignInForm /> : <SignUpForm />}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -150,7 +153,6 @@ export default function OnboardingScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 16, paddingTop: 24, gap: 16 },
-  title: { fontSize: 28, fontWeight: '700' },
-  subtitle: { fontSize: 15, marginTop: -8 },
+  column: { width: '100%', alignSelf: 'center' },
+  hero: { alignItems: 'flex-start' },
 });

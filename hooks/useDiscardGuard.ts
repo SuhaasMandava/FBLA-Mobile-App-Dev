@@ -1,25 +1,25 @@
 import { NavigationAction, useNavigation, usePreventRemove } from '@react-navigation/native';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Control, FieldValues, useFormState } from 'react-hook-form';
 import { confirmDestructive } from '../utils/confirm';
 
 /**
  * Asks before a form sheet with unsaved changes is closed (Cancel, swipe down, or Android back).
- * Returns `leave`, which closes the sheet without asking: call it once the form has saved.
+ * Once `done` turns true (the form saved), the guard lifts and `leave` runs to close the sheet.
  */
 export function useDiscardGuard<T extends FieldValues, Data>(
   control: Control<T, unknown, Data>,
-  leaveAction: () => void,
+  done: boolean,
+  leave: () => void,
 ) {
   const navigation = useNavigation();
   const { isDirty } = useFormState({ control });
-  const [leaving, setLeaving] = useState(false);
-  const leaveRef = useRef(leaveAction);
+  const leaveRef = useRef(leave);
   useEffect(() => {
-    leaveRef.current = leaveAction;
+    leaveRef.current = leave;
   });
 
-  usePreventRemove(isDirty && !leaving, ({ data }: { data: { action: NavigationAction } }) => {
+  usePreventRemove(isDirty && !done, ({ data }: { data: { action: NavigationAction } }) => {
     confirmDestructive({
       title: 'Discard changes?',
       message: "What you've entered won't be saved.",
@@ -29,10 +29,8 @@ export function useDiscardGuard<T extends FieldValues, Data>(
     });
   });
 
-  // Leave after the render that lifts the guard, so the navigation isn't blocked.
+  // Leave after the render that lifted the guard, so the navigation isn't blocked.
   useEffect(() => {
-    if (leaving) leaveRef.current();
-  }, [leaving]);
-
-  return useCallback(() => setLeaving(true), []);
+    if (done) leaveRef.current();
+  }, [done]);
 }

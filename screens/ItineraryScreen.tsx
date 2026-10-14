@@ -1,155 +1,275 @@
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
-import { Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native';
+import { useLayoutEffect, useState } from 'react';
+import { Pressable, RefreshControl, SectionList, StyleSheet, View } from 'react-native';
+import { AppText } from '../components/AppText';
+import { Badge } from '../components/Badge';
+import { Button } from '../components/Button';
+import { EmptyState } from '../components/EmptyState';
+import { HeaderButton } from '../components/HeaderButton';
+import { Icon } from '../components/Icon';
+import { InlineBanner } from '../components/InlineBanner';
 import { OfflineBanner } from '../components/OfflineBanner';
-import { PrimaryButton } from '../components/PrimaryButton';
-import { StatusMessage } from '../components/StatusMessage';
+import { DottedLine, RouteStop } from '../components/Route';
+import { Screen } from '../components/Screen';
+import { SkeletonList } from '../components/Skeleton';
 import { useItinerary } from '../hooks/useItinerary';
+import { useLargeText } from '../hooks/useLargeText';
 import { useTheme } from '../hooks/useTheme';
 import { useTrip } from '../hooks/useTrip';
 import { ItineraryItem, ItineraryModel } from '../models/ItineraryModel';
 import { daysBetween, formatClockTime, formatDayHeading, todayISO } from '../utils/dates';
-import { RootStackParamList } from './types';
+import { TabScreenNavigation } from './types';
+
+const RAIL = 28;
+
+interface StopRowProps {
+  item: ItineraryItem;
+  state: 'past' | 'current' | 'future';
+  first: boolean;
+  last: boolean;
+  editing: boolean;
+  onOpen: () => void;
+  onMove: (direction: -1 | 1) => void;
+}
+
+/** One activity, hung on the Route. Reorder arrows show in edit mode; screen readers always get Move actions. */
+function StopRow({ item, state, first, last, editing, onOpen, onMove }: StopRowProps) {
+  const { colors, spacing, radii, layout, motion } = useTheme();
+  const largeText = useLargeText();
+  const spoken = [item.time ? formatClockTime(item.time) : null, item.title, item.location].filter(Boolean).join(', ');
+
+  const actions = [
+    ...(first ? [] : [{ name: 'moveEarlier', label: 'Move earlier' }]),
+    ...(last ? [] : [{ name: 'moveLater', label: 'Move later' }]),
+  ];
+
+  return (
+    <View style={styles.stopRow}>
+      <View style={[styles.rail, { width: RAIL }]}>
+        <View style={styles.railSegment}>{first ? null : <DottedLine faded={state === 'future'} />}</View>
+        <RouteStop state={state} />
+        <View style={styles.railSegment}>{last ? null : <DottedLine faded={state === 'future'} />}</View>
+      </View>
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: colors.surface, borderRadius: radii.lg, marginVertical: spacing.xxs, marginLeft: spacing.xs },
+        ]}
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={spoken}
+          accessibilityHint="Opens the activity to edit or delete it"
+          accessibilityActions={actions}
+          onAccessibilityAction={(e) => onMove(e.nativeEvent.actionName === 'moveEarlier' ? -1 : 1)}
+          onPress={onOpen}
+          style={({ pressed }) => [
+            styles.cardMain,
+            { minHeight: layout.minTarget + 12, padding: spacing.sm, paddingLeft: spacing.md, gap: 2 },
+            pressed && { opacity: motion.pressedOpacity },
+          ]}
+        >
+          {item.time ? (
+            <AppText variant="subheadStrong" color="labelSecondary" tabular>
+              {formatClockTime(item.time)}
+            </AppText>
+          ) : null}
+          <AppText variant="headline">{item.title}</AppText>
+          {item.location ? (
+            <View style={[styles.inline, { gap: spacing.xxs }]}>
+              <Icon name="location-outline" size={14} color="labelSecondary" />
+              <AppText variant="subhead" color="labelSecondary" style={styles.shrink}>
+                {item.location}
+              </AppText>
+            </View>
+          ) : null}
+        </Pressable>
+        {editing ? (
+          // Edit mode's reorder buttons. Screen readers can also use the row's Move actions at any time.
+          <View style={[styles.reorder, largeText && styles.reorderStacked]}>
+            {([-1, 1] as const).map((direction) => {
+              const disabled = direction === -1 ? first : last;
+              return (
+                <Pressable
+                  key={direction}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Move ${item.title} ${direction === -1 ? 'earlier' : 'later'}`}
+                  accessibilityState={{ disabled }}
+                  disabled={disabled}
+                  onPress={() => onMove(direction)}
+                  style={({ pressed }) => [
+                    styles.arrow,
+                    { width: layout.minTarget, minHeight: layout.minTarget },
+                    disabled && styles.arrowDisabled,
+                    pressed && { opacity: motion.pressedOpacity },
+                  ]}
+                >
+                  <Icon name={direction === -1 ? 'arrow-up' : 'arrow-down'} size={20} color="accent" />
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
+}
 
 export default function ItineraryScreen() {
-  const { colors } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { colors, spacing, layout } = useTheme();
+  const navigation = useNavigation<TabScreenNavigation>();
   const { activeTrip } = useTrip();
   const { items, loading, error, refresh, moveItem } = useItinerary();
   const [moveError, setMoveError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+
+  const days = activeTrip ? daysBetween(activeTrip.startDate, activeTrip.endDate) : [];
+  const today = todayISO();
+  const firstDay = days.includes(today) ? today : days[0];
+  const canEdit = items.length > 0;
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: activeTrip
+        ? () => (
+            <View style={styles.inline}>
+              {canEdit ? (
+                <HeaderButton
+                  label={editing ? 'Done' : 'Edit'}
+                  prominent={editing}
+                  accessibilityLabel={editing ? 'Done reordering' : 'Reorder activities'}
+                  onPress={() => setEditing((e) => !e)}
+                />
+              ) : null}
+              <HeaderButton
+                icon="add"
+                accessibilityLabel="Add activity"
+                onPress={() => navigation.navigate('ItineraryItem', { day: firstDay })}
+              />
+            </View>
+          )
+        : undefined,
+    });
+  }, [navigation, activeTrip, canEdit, editing, firstDay]);
 
   if (!activeTrip) {
     return (
-      <StatusMessage title="No trip selected" body="Create a trip, or join one with an invite code, to plan its itinerary.">
-        <PrimaryButton label="Create a Trip" onPress={() => navigation.navigate('CreateTrip')} />
-        <PrimaryButton label="Join with a Code" variant="secondary" onPress={() => navigation.navigate('JoinTrip')} />
-      </StatusMessage>
+      <EmptyState title="No trip selected" body="Create a trip, or join one with a code, to plan its days.">
+        <Button label="Create Trip" icon="add" onPress={() => navigation.navigate('CreateTrip')} />
+        <Button label="Join with Code" variant="tinted" onPress={() => navigation.navigate('JoinTrip')} />
+      </EmptyState>
     );
   }
-  if (loading && items.length === 0) return <StatusMessage loading title="Loading itinerary…" />;
+  if (loading && items.length === 0) {
+    return (
+      <Screen>
+        <SkeletonList rows={4} label="Loading the itinerary" />
+      </Screen>
+    );
+  }
   if (error && items.length === 0) {
     return (
-      <StatusMessage title="Couldn't load the itinerary" body={error}>
-        <PrimaryButton label="Try Again" onPress={refresh} />
-      </StatusMessage>
+      <EmptyState tone="error" title="Couldn't load the itinerary" body={error}>
+        <Button label="Try Again" onPress={refresh} />
+      </EmptyState>
     );
   }
 
-  const days = daysBetween(activeTrip.startDate, activeTrip.endDate);
-  const today = todayISO();
-  const firstDay = days.includes(today) ? today : days[0];
-  const sections = ItineraryModel.groupByDay(items, days).map((group) => ({ day: group.day, data: group.items }));
+  const sections = ItineraryModel.groupByDay(items, days).map((group, index) => ({
+    day: group.day,
+    index,
+    data: group.items,
+  }));
 
   const move = async (item: ItineraryItem, direction: -1 | 1) => {
     const result = await moveItem(item.id, direction);
     setMoveError(result.ok ? null : result.error);
   };
 
+  const stateOf = (day: string) => (day < today ? 'past' : day === today ? 'current' : 'future');
+
   return (
     <SectionList
       style={{ backgroundColor: colors.background }}
-      contentContainerStyle={styles.content}
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={[
+        styles.content,
+        { padding: spacing.md, paddingBottom: spacing.xl, maxWidth: layout.maxContentWidth },
+      ]}
       sections={sections}
       keyExtractor={(item) => item.id}
       stickySectionHeadersEnabled={false}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
+      refreshControl={
+        <RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.accent} colors={[colors.accent]} />
+      }
       ListHeaderComponent={
-        <View style={styles.listHeader}>
+        <View style={{ gap: spacing.sm }}>
           <OfflineBanner />
           {error || moveError ? (
-            <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: colors.danger }}>
-              {moveError ?? error}
-            </Text>
+            <InlineBanner
+              tone="error"
+              message={moveError ?? error ?? ''}
+              action={moveError ? undefined : { label: 'Try Again', onPress: refresh }}
+            />
           ) : null}
-          <PrimaryButton
-            label="Add Activity"
-            hint="Adds something to the trip's day-by-day plan."
-            onPress={() => navigation.navigate('ItineraryItem', { day: firstDay })}
-          />
         </View>
       }
       renderSectionHeader={({ section }) => (
-        <View style={styles.dayHeader}>
-          <Text accessibilityRole="header" style={[styles.dayTitle, { color: colors.label }]}>
-            {formatDayHeading(section.day)}
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Add activity on ${formatDayHeading(section.day)}`}
+        <View style={[styles.dayHeader, { marginTop: spacing.lg, marginBottom: spacing.xxs, gap: spacing.xs }]}>
+          <View style={[styles.dayTitle, { gap: spacing.xs }]}>
+            <AppText variant="title3" accessibilityRole="header">
+              {`Day ${section.index + 1} · ${formatDayHeading(section.day)}`}
+            </AppText>
+            {section.day === today ? <Badge label="Today" /> : null}
+          </View>
+          <Button
+            variant="plain"
+            compact
+            icon="add"
+            label="Add"
+            hint={`Adds an activity on ${formatDayHeading(section.day)}`}
             onPress={() => navigation.navigate('ItineraryItem', { day: section.day })}
-            style={styles.addDay}
-          >
-            <Text style={[styles.addDayText, { color: colors.accent }]}>+ Add</Text>
-          </Pressable>
+          />
         </View>
       )}
       renderSectionFooter={({ section }) =>
         section.data.length === 0 ? (
-          <Text style={[styles.empty, { color: colors.labelSecondary }]}>Nothing planned yet.</Text>
+          <View style={[styles.emptyDay, { paddingLeft: RAIL + spacing.xs, paddingVertical: spacing.xxs }]}>
+            <AppText variant="subhead" color="labelSecondary">
+              Nothing planned. Tap Add to plan this day.
+            </AppText>
+          </View>
         ) : null
       }
       renderItem={({ item, index, section }) => (
-        <View style={[styles.row, { backgroundColor: colors.surface }]}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={[item.title, item.time ? formatClockTime(item.time) : null, item.location]
-              .filter(Boolean)
-              .join(', ')}
-            accessibilityHint="Opens the activity to edit or delete it"
-            onPress={() => navigation.navigate('ItineraryItem', { itemId: item.id })}
-            style={styles.rowMain}
-          >
-            {item.time ? <Text style={[styles.time, { color: colors.accent }]}>{formatClockTime(item.time)}</Text> : null}
-            <Text style={[styles.title, { color: colors.label }]}>{item.title}</Text>
-            {item.location ? <Text style={[styles.location, { color: colors.labelSecondary }]}>{item.location}</Text> : null}
-          </Pressable>
-
-          <View style={styles.reorder}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Move ${item.title} earlier`}
-              accessibilityState={{ disabled: index === 0 }}
-              disabled={index === 0}
-              onPress={() => move(item, -1)}
-              style={[styles.arrow, index === 0 && styles.arrowDisabled]}
-            >
-              <Text style={[styles.arrowText, { color: colors.label }]}>▲</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Move ${item.title} later`}
-              accessibilityState={{ disabled: index === section.data.length - 1 }}
-              disabled={index === section.data.length - 1}
-              onPress={() => move(item, 1)}
-              style={[styles.arrow, index === section.data.length - 1 && styles.arrowDisabled]}
-            >
-              <Text style={[styles.arrowText, { color: colors.label }]}>▼</Text>
-            </Pressable>
-          </View>
-        </View>
+        <StopRow
+          item={item}
+          state={stateOf(section.day)}
+          first={index === 0}
+          last={index === section.data.length - 1}
+          editing={editing}
+          onOpen={() => navigation.navigate('ItineraryItem', { itemId: item.id })}
+          onMove={(direction) => move(item, direction)}
+        />
       )}
-      ItemSeparatorComponent={() => <View style={styles.separator} />}
     />
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, paddingBottom: 32 },
-  listHeader: { gap: 12, marginBottom: 8 },
-  dayHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, marginBottom: 8 },
-  dayTitle: { fontSize: 17, fontWeight: '700' },
-  addDay: { minHeight: 44, minWidth: 60, alignItems: 'flex-end', justifyContent: 'center' },
-  addDayText: { fontSize: 14, fontWeight: '600' },
-  empty: { fontSize: 14, paddingVertical: 4 },
-  separator: { height: 8 },
-  row: { flexDirection: 'row', alignItems: 'center', borderRadius: 14 },
-  rowMain: { flex: 1, minHeight: 56, paddingVertical: 12, paddingLeft: 16, gap: 2, justifyContent: 'center' },
-  time: { fontSize: 13, fontWeight: '600' },
-  title: { fontSize: 16, fontWeight: '600' },
-  location: { fontSize: 13 },
+  content: { width: '100%', alignSelf: 'center' },
+  inline: { flexDirection: 'row', alignItems: 'center' },
+  shrink: { flexShrink: 1 },
+  dayHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' },
+  dayTitle: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flexShrink: 1 },
+  emptyDay: { minHeight: 32, justifyContent: 'center' },
+  stopRow: { flexDirection: 'row', alignItems: 'stretch' },
+  rail: { alignItems: 'center' },
+  railSegment: { flex: 1, minHeight: 8, alignItems: 'center' },
+  card: { flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
+  cardMain: { flex: 1, justifyContent: 'center' },
   reorder: { flexDirection: 'row' },
-  arrow: { width: 44, height: 56, alignItems: 'center', justifyContent: 'center' },
-  arrowDisabled: { opacity: 0.25 },
-  arrowText: { fontSize: 16 },
+  reorderStacked: { flexDirection: 'column' },
+  arrow: { alignItems: 'center', justifyContent: 'center' },
+  arrowDisabled: { opacity: 0.3 },
 });
