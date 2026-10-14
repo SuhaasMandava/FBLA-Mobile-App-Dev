@@ -128,9 +128,9 @@ export default function OnboardingScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>
-            Welcome
+            TripHub
           </Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Plan group trips together.</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Plan the trip together, from first idea to last stop.</Text>
 
           <SegmentedControl
             options={[

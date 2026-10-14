@@ -1,6 +1,6 @@
-# FBLA Mobile App
+# TripHub
 
-A group trip planner built with Expo and React Native. People sign up, create or join a trip with an invite code, and plan its itinerary together. Data lives in Supabase.
+TripHub is a group trip planner built with Expo and React Native. People sign up, create or join a trip with an invite code, and plan its itinerary together. Data lives in Supabase.
 
 ## Getting started
 
