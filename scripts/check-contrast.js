@@ -38,6 +38,9 @@ const pairs = [
   ['fieldBorder', 'surface', 3],
   ['fieldBorder', 'background', 3],
   ['surface', 'danger', 4.5], // white text on a destructive fill
+  ['onHero', 'hero', 4.5],
+  ['onHeroSecondary', 'hero', 4.5],
+  ['heroAccent', 'hero', 3], // Route and icons on the hero card
 ];
 
 let failures = 0;

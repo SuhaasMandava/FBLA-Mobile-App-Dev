@@ -47,25 +47,27 @@ function TripHero({ trip }: { trip: Trip }) {
     >
       <View style={{ gap: spacing.xxs }}>
         {/* An iOS large title is one line; a long trip name gets cut off there, so show it in full here. */}
-        {trip.name.length > LONG_NAME ? <AppText variant="title3">{trip.name}</AppText> : null}
+        {trip.name.length > LONG_NAME ? <AppText variant="title3" color="onHero">
+            {trip.name}
+          </AppText> : null}
         <View style={[styles.inline, { gap: spacing.xs }]}>
-          <Icon name="location-outline" size={18} color="accent" />
-          <AppText variant="headline" style={styles.shrink}>
+          <Icon name="location-outline" size={18} color="heroAccent" />
+          <AppText variant="headline" color="onHero" style={styles.shrink}>
             {trip.destination}
           </AppText>
         </View>
-        <AppText variant="subhead" color="labelSecondary" tabular>
+        <AppText variant="subhead" color="onHeroSecondary" tabular>
           {dates}
         </AppText>
       </View>
-      <RouteProgress key={trip.id} dayCount={progress.dayCount} todayIndex={progress.todayIndex} />
+      <RouteProgress key={trip.id} onHero dayCount={progress.dayCount} todayIndex={progress.todayIndex} />
       <View style={[styles.heroFooter, largeText && styles.stacked, { gap: spacing.xs }]}>
-        <AppText variant="subheadStrong" color="labelSecondary" tabular>
+        <AppText variant="subheadStrong" color="onHeroSecondary" tabular>
           {progress.label}
         </AppText>
         <View style={[styles.inline, { gap: spacing.xs }]}>
-          <AvatarStack names={trip.members.map((m) => m.displayName)} />
-          <AppText variant="subhead" color="labelSecondary">
+          <AvatarStack onHero names={trip.members.map((m) => m.displayName)} />
+          <AppText variant="subhead" color="onHeroSecondary">
             {people}
           </AppText>
         </View>

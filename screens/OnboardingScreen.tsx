@@ -124,7 +124,7 @@ export default function OnboardingScreen() {
           <View style={[styles.column, { maxWidth: layout.maxContentWidth, gap: spacing.md }]}>
             <View style={[styles.hero, { gap: spacing.xs, marginBottom: spacing.sm }]}>
               <View style={{ marginBottom: spacing.sm }}>
-                <CrewMark size={32} />
+                <CrewMark size={44} />
               </View>
               <AppText variant="largeTitle" accessibilityRole="header">
                 TripHub

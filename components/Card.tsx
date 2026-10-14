@@ -4,7 +4,7 @@ import { useTheme } from '../hooks/useTheme';
 
 interface CardProps extends Omit<ViewProps, 'style'> {
   children: ReactNode;
-  /** `hero` is the larger, softly raised card at the top of Home. */
+  /** `hero` is the larger midnight-navy card at the top of Home; put `onHero` colors inside it. */
   variant?: 'plain' | 'hero';
   style?: StyleProp<ViewStyle>;
 }
@@ -16,12 +16,12 @@ export function Card({ children, variant = 'plain', style, ...rest }: CardProps)
     <View
       style={[
         {
-          backgroundColor: hero && scheme === 'dark' ? colors.surfaceRaised : colors.surface,
+          backgroundColor: hero ? colors.hero : colors.surface,
           borderRadius: hero ? radii.xl : radii.lg,
           padding: hero ? spacing.lg - spacing.xxs : spacing.md,
           gap: spacing.sm,
         },
-        // Light mode only: dark mode shows elevation with a lighter surface instead.
+        // Light mode only: in dark mode the navy already stands off the background.
         hero &&
           scheme === 'light' && {
             shadowColor: colors.label,

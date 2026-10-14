@@ -22,7 +22,7 @@ export interface ColorTokens {
   separator: string;
   /** Outline of inputs and pickers (3:1 or more against `surface`). */
   fieldBorder: string;
-  /** Brand teal. Only for things people can act on, selection, and the Route. */
+  /** Brand sunset. Only for things people can act on, selection, and the Route. */
   accent: string;
   accentPressed: string;
   /** Text and icons drawn on `accent`. */
@@ -31,56 +31,78 @@ export interface ColorTokens {
   accentTint: string;
   /** Text on `accentTint` (plain `accent` is below 4.5:1 there). */
   onAccentTint: string;
+  /** Errors and destructive actions. Rose, so it stays apart from the orange accent; always paired with an icon or words. */
   danger: string;
   success: string;
   warning: string;
   /** Fill for loading skeletons. */
   skeleton: string;
-  /** The two companion dots in the three-dot crew motif (decorative, never text). */
-  motifMint: string;
-  motifSun: string;
+  /** Midnight navy: the trip hero card on Home. */
+  hero: string;
+  /** Text on `hero`. */
+  onHero: string;
+  onHeroSecondary: string;
+  /** The Route and icons drawn on `hero` (decorative). */
+  heroAccent: string;
+  /** The Pin & Crew mark: the pin, then its three dots (decorative, never text). */
+  pin: string;
+  crewFirst: string;
+  crewCoral: string;
+  crewGold: string;
 }
 
 export const lightColors: ColorTokens = {
-  background: '#F2F5F4',
+  background: '#F3F5F9',
   surface: '#FFFFFF',
   surfaceRaised: '#FFFFFF',
-  label: '#14201F',
-  labelSecondary: '#5B6770',
-  separator: '#DCE3E1',
-  fieldBorder: '#78838A',
-  accent: '#0E7C74',
-  accentPressed: '#0B5F59',
+  label: '#111827',
+  labelSecondary: '#586174',
+  separator: '#DDE2EA',
+  fieldBorder: '#7A8394',
+  accent: '#C2410C',
+  accentPressed: '#9A3412',
   onAccent: '#FFFFFF',
-  accentTint: '#E6F3F1',
-  onAccentTint: '#0B5F59',
-  danger: '#B42318',
-  success: '#1F7A3A',
-  warning: '#9A5B00',
-  skeleton: '#E3E9E7',
-  motifMint: '#7FD6CB',
-  motifSun: '#F2B84B',
+  accentTint: '#FDEBE4',
+  onAccentTint: '#9A3412',
+  danger: '#BE123C',
+  success: '#15803D',
+  warning: '#A16207',
+  skeleton: '#E4E8EF',
+  hero: '#152B5C',
+  onHero: '#FFFFFF',
+  onHeroSecondary: '#C9D3EA',
+  heroAccent: '#FF8A7A',
+  pin: '#152B5C',
+  crewFirst: '#FFFFFF',
+  crewCoral: '#FF8A7A',
+  crewGold: '#FFC857',
 };
 
 export const darkColors: ColorTokens = {
-  background: '#0E1514',
-  surface: '#18211F',
-  surfaceRaised: '#1F2A28',
-  label: '#EEF3F2',
-  labelSecondary: '#9AA7A4',
-  separator: '#2B3735',
-  fieldBorder: '#76857F',
-  accent: '#4FD1C1',
-  accentPressed: '#3BB8A9',
-  onAccent: '#06201D',
-  accentTint: '#123B37',
-  onAccentTint: '#4FD1C1',
-  danger: '#FF8A80',
-  success: '#6FD38A',
-  warning: '#F5B54A',
-  skeleton: '#24302E',
-  motifMint: '#2C8F84',
-  motifSun: '#E0A63A',
+  background: '#0B1020',
+  surface: '#151C30',
+  surfaceRaised: '#1C2540',
+  label: '#EEF1F7',
+  labelSecondary: '#A3ADC2',
+  separator: '#283252',
+  fieldBorder: '#6F7B96',
+  accent: '#FF8A7A',
+  accentPressed: '#FF7563',
+  onAccent: '#2A0A05',
+  accentTint: '#3A1E22',
+  onAccentTint: '#FF9C8E',
+  danger: '#FB7185',
+  success: '#6EE7A0',
+  warning: '#FBBF24',
+  skeleton: '#222B45',
+  hero: '#18264A',
+  onHero: '#FFFFFF',
+  onHeroSecondary: '#C9D3EA',
+  heroAccent: '#FF8A7A',
+  pin: '#EEF1F7',
+  crewFirst: '#152B5C',
+  crewCoral: '#FF8A7A',
+  crewGold: '#FFC857',
 };
 
 /** Applied on top of a scheme when the system asks for more contrast. */

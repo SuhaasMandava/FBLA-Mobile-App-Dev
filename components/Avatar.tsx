@@ -26,7 +26,16 @@ export function Avatar({ name, size = 36 }: { name: string | null; size?: number
 }
 
 /** Up to three overlapping avatars and a "+N" count, for the trip hero. */
-export function AvatarStack({ names, size = 32 }: { names: (string | null)[]; size?: number }) {
+export function AvatarStack({
+  names,
+  size = 32,
+  onHero = false,
+}: {
+  names: (string | null)[];
+  size?: number;
+  /** Drawn on the navy hero card. */
+  onHero?: boolean;
+}) {
   const { colors } = useTheme();
   const shown = names.slice(0, 3);
   const extra = names.length - shown.length;
@@ -39,14 +48,14 @@ export function AvatarStack({ names, size = 32 }: { names: (string | null)[]; si
             marginLeft: i === 0 ? 0 : -size * 0.3,
             borderRadius: size,
             borderWidth: 2,
-            borderColor: colors.surface,
+            borderColor: onHero ? colors.hero : colors.surface,
           }}
         >
           <Avatar name={name} size={size} />
         </View>
       ))}
       {extra > 0 ? (
-        <AppText variant="subheadStrong" color="labelSecondary" style={{ marginLeft: 6 }}>
+        <AppText variant="subheadStrong" color={onHero ? 'onHeroSecondary' : 'labelSecondary'} style={{ marginLeft: 6 }}>
           +{extra}
         </AppText>
       ) : null}
