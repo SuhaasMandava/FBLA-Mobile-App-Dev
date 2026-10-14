@@ -17,11 +17,11 @@ export function StatusMessage({ loading = false, title, body, children }: Status
   return (
     // Paints its own background: it's also shown at startup, before the navigator (which normally supplies one) exists.
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {loading ? <ActivityIndicator accessibilityLabel={title} color={colors.primary} size="large" /> : null}
-      <Text style={[styles.title, { color: colors.text }]} accessibilityRole={loading ? undefined : 'header'}>
+      {loading ? <ActivityIndicator accessibilityLabel={title} color={colors.accent} size="large" /> : null}
+      <Text style={[styles.title, { color: colors.label }]} accessibilityRole={loading ? undefined : 'header'}>
         {title}
       </Text>
-      {body ? <Text style={[styles.body, { color: colors.textMuted }]}>{body}</Text> : null}
+      {body ? <Text style={[styles.body, { color: colors.labelSecondary }]}>{body}</Text> : null}
       {children ? <View style={styles.actions}>{children}</View> : null}
     </View>
   );

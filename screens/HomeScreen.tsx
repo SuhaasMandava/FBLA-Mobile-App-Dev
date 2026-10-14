@@ -33,8 +33,8 @@ function InfoCard({ label, value, spokenLabel }: { label: string; value: string;
       accessibilityLabel={spokenLabel ?? `${label}: ${value}`}
       style={[styles.card, { backgroundColor: colors.surface }]}
     >
-      <Text style={[styles.cardLabel, { color: colors.textMuted }]}>{label}</Text>
-      <Text style={[styles.cardValue, { color: colors.text }]}>{value}</Text>
+      <Text style={[styles.cardLabel, { color: colors.labelSecondary }]}>{label}</Text>
+      <Text style={[styles.cardValue, { color: colors.label }]}>{value}</Text>
     </View>
   );
 }
@@ -104,16 +104,16 @@ export default function HomeScreen() {
           onPress={() => navigation.navigate('TripSwitcher')}
           style={styles.titleRow}
         >
-          <Text style={[styles.title, { color: colors.text }]}>{activeTrip.name}</Text>
+          <Text style={[styles.title, { color: colors.label }]}>{activeTrip.name}</Text>
           <Text
-            style={[styles.chevron, { color: colors.textMuted }]}
+            style={[styles.chevron, { color: colors.labelSecondary }]}
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           >
             ▾
           </Text>
         </Pressable>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+        <Text style={[styles.subtitle, { color: colors.labelSecondary }]}>
           {activeTrip.destination} · {formatDateRange(activeTrip.startDate, activeTrip.endDate)}
         </Text>
       </View>
@@ -122,7 +122,7 @@ export default function HomeScreen() {
 
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <View style={styles.cardHeader}>
-          <Text accessibilityRole="header" style={[styles.cardLabel, { color: colors.textMuted }]}>
+          <Text accessibilityRole="header" style={[styles.cardLabel, { color: colors.labelSecondary }]}>
             Coming up
           </Text>
           {upcoming.length > 0 ? (
@@ -132,13 +132,13 @@ export default function HomeScreen() {
               onPress={() => navigation.navigate('Itinerary')}
               style={styles.seeAll}
             >
-              <Text style={[styles.seeAllText, { color: colors.primary }]}>See all</Text>
+              <Text style={[styles.seeAllText, { color: colors.accent }]}>See all</Text>
             </Pressable>
           ) : null}
         </View>
         {upcoming.length === 0 ? (
           <>
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>Nothing planned yet.</Text>
+            <Text style={[styles.emptyText, { color: colors.labelSecondary }]}>Nothing planned yet.</Text>
             <PrimaryButton label="Plan the Itinerary" variant="secondary" onPress={() => navigation.navigate('Itinerary')} />
           </>
         ) : (
@@ -151,11 +151,11 @@ export default function HomeScreen() {
               onPress={() => navigation.navigate('Itinerary')}
               style={styles.upcomingRow}
             >
-              <Text style={[styles.upcomingWhen, { color: colors.primary }]}>
+              <Text style={[styles.upcomingWhen, { color: colors.accent }]}>
                 {formatDayHeading(item.day)}
                 {item.time ? ` · ${formatClockTime(item.time)}` : ''}
               </Text>
-              <Text style={[styles.upcomingTitle, { color: colors.text }]}>{item.title}</Text>
+              <Text style={[styles.upcomingTitle, { color: colors.label }]}>{item.title}</Text>
             </Pressable>
           ))
         )}
@@ -166,15 +166,15 @@ export default function HomeScreen() {
         accessibilityLabel={`Members, ${activeTrip.members.length}: ${memberSummary}`}
         style={[styles.card, { backgroundColor: colors.surface }]}
       >
-        <Text style={[styles.cardLabel, { color: colors.textMuted }]}>
+        <Text style={[styles.cardLabel, { color: colors.labelSecondary }]}>
           Members · {activeTrip.members.length}
         </Text>
         {activeTrip.members.map((member) => (
           <View key={member.userId} style={styles.memberRow}>
             <MemberAvatar name={member.displayName} />
-            <Text style={[styles.memberName, { color: colors.text }]}>{TripModel.memberName(member)}</Text>
+            <Text style={[styles.memberName, { color: colors.label }]}>{TripModel.memberName(member)}</Text>
             {member.role === 'organizer' ? (
-              <Text style={[styles.memberRole, { color: colors.textMuted }]}>Organizer</Text>
+              <Text style={[styles.memberRole, { color: colors.labelSecondary }]}>Organizer</Text>
             ) : null}
           </View>
         ))}
@@ -186,8 +186,8 @@ export default function HomeScreen() {
             accessible
             accessibilityLabel={`Invite code: ${inviteCode.split('').join(' ')}. Share it so others can join this trip.`}
           >
-            <Text style={[styles.cardLabel, { color: colors.textMuted }]}>Invite code</Text>
-            <Text selectable style={[styles.cardValue, { color: colors.text }]}>
+            <Text style={[styles.cardLabel, { color: colors.labelSecondary }]}>Invite code</Text>
+            <Text selectable style={[styles.cardValue, { color: colors.label }]}>
               {inviteCode}
             </Text>
           </View>

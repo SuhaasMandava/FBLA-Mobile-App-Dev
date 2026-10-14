@@ -6,7 +6,7 @@ export function ScreenPlaceholder({ title }: { title: string }) {
   const { colors } = useTheme();
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+      <Text style={[styles.title, { color: colors.label }]}>{title}</Text>
     </View>
   );
 }

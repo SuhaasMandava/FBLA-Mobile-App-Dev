@@ -23,7 +23,7 @@ export default function TripSwitcherScreen() {
 
   return (
     <View style={[styles.flex, { backgroundColor: colors.background }]}>
-      <Text accessibilityRole="header" style={[styles.sheetTitle, { color: colors.text }]}>
+      <Text accessibilityRole="header" style={[styles.sheetTitle, { color: colors.label }]}>
         Your Trips
       </Text>
       <OfflineBanner style={styles.banner} />
@@ -55,18 +55,18 @@ export default function TripSwitcherScreen() {
               onPress={() => select(trip.id)}
               style={[
                 styles.row,
-                { backgroundColor: colors.surface, borderColor: active ? colors.primary : 'transparent' },
+                { backgroundColor: colors.surface, borderColor: active ? colors.accent : 'transparent' },
               ]}
             >
               <View style={styles.rowText}>
-                <Text style={[styles.name, { color: colors.text }]}>{trip.name}</Text>
-                <Text style={[styles.meta, { color: colors.textMuted }]}>
+                <Text style={[styles.name, { color: colors.label }]}>{trip.name}</Text>
+                <Text style={[styles.meta, { color: colors.labelSecondary }]}>
                   {trip.destination} · {dates}
                 </Text>
               </View>
               {active ? (
                 <Text
-                  style={[styles.check, { color: colors.primary }]}
+                  style={[styles.check, { color: colors.accent }]}
                   accessibilityElementsHidden
                   importantForAccessibility="no-hide-descendants"
                 >
@@ -78,7 +78,7 @@ export default function TripSwitcherScreen() {
         }}
       />
 
-      <View style={[styles.footer, { borderTopColor: colors.border, paddingBottom: 16 + insets.bottom }]}>
+      <View style={[styles.footer, { borderTopColor: colors.separator, paddingBottom: 16 + insets.bottom }]}>
         <PrimaryButton label="Create New Trip" onPress={() => navigation.navigate('CreateTrip')} />
         <PrimaryButton label="Join with a Code" variant="secondary" onPress={() => navigation.navigate('JoinTrip')} />
       </View>

@@ -24,7 +24,7 @@ function Tabs() {
   return (
     // Explicit tab colors: the default inactive color is a 50% blend that falls below the contrast minimum.
     <Tab.Navigator
-      screenOptions={{ tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: colors.textMuted }}
+      screenOptions={{ tabBarActiveTintColor: colors.accent, tabBarInactiveTintColor: colors.labelSecondary }}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Itinerary" component={ItineraryScreen} />
@@ -51,9 +51,9 @@ export default function RootNavigator() {
           ...base.colors,
           background: colors.background,
           card: colors.surface,
-          text: colors.text,
-          border: colors.border,
-          primary: colors.primary,
+          text: colors.label,
+          border: colors.separator,
+          primary: colors.accent,
         },
       }}
     >

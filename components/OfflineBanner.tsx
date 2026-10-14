@@ -12,7 +12,7 @@ export function OfflineBanner({ style }: { style?: StyleProp<ViewStyle> }) {
     <View
       accessibilityRole="alert"
       accessibilityLiveRegion="polite"
-      style={[styles.banner, { backgroundColor: colors.text }, style]}
+      style={[styles.banner, { backgroundColor: colors.label }, style]}
     >
       <Text style={[styles.text, { color: colors.background }]}>{"You're offline. Showing your saved data."}</Text>
     </View>

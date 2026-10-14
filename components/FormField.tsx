@@ -23,7 +23,7 @@ export function FormField({ label, error, hint, inputRef, secureTextEntry, revea
     <View style={styles.field}>
       {/* The input carries its own accessibilityLabel, so hide the visible label to avoid it being read twice. */}
       <Text
-        style={[styles.label, { color: colors.textMuted }]}
+        style={[styles.label, { color: colors.labelSecondary }]}
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
@@ -34,15 +34,15 @@ export function FormField({ label, error, hint, inputRef, secureTextEntry, revea
           ref={inputRef}
           accessibilityLabel={label}
           accessibilityHint={hint}
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.labelSecondary}
           secureTextEntry={isSecret && !revealed}
           style={[
             styles.input,
             showToggle && styles.inputWithToggle,
             {
-              color: colors.text,
+              color: colors.label,
               backgroundColor: colors.surface,
-              borderColor: error ? colors.danger : colors.inputBorder,
+              borderColor: error ? colors.danger : colors.fieldBorder,
             },
           ]}
           {...inputProps}
@@ -55,7 +55,7 @@ export function FormField({ label, error, hint, inputRef, secureTextEntry, revea
             hitSlop={4}
             style={styles.toggle}
           >
-            <Text style={[styles.toggleText, { color: colors.primary }]}>{revealed ? 'Hide' : 'Show'}</Text>
+            <Text style={[styles.toggleText, { color: colors.accent }]}>{revealed ? 'Hide' : 'Show'}</Text>
           </Pressable>
         ) : null}
       </View>

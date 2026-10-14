@@ -23,7 +23,7 @@ export default function JoinTripScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: 24 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={[styles.intro, { color: colors.textMuted }]}>
+        <Text style={[styles.intro, { color: colors.labelSecondary }]}>
           Ask the trip organizer for their 6-character invite code.
         </Text>
 

@@ -16,8 +16,8 @@ export function PrimaryButton({ label, onPress, variant = 'primary', loading = f
   const { colors } = useTheme();
   const inactive = disabled || loading;
   const filled = variant === 'primary';
-  const accent = variant === 'danger' ? colors.danger : colors.primary;
-  const textColor = filled ? colors.onPrimary : accent;
+  const accent = variant === 'danger' ? colors.danger : colors.accent;
+  const textColor = filled ? colors.onAccent : accent;
 
   return (
     <Pressable
@@ -29,7 +29,7 @@ export function PrimaryButton({ label, onPress, variant = 'primary', loading = f
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        filled ? { backgroundColor: colors.primary } : { borderColor: accent, borderWidth: 1.5 },
+        filled ? { backgroundColor: colors.accent } : { borderColor: accent, borderWidth: 1.5 },
         { opacity: inactive ? 0.6 : pressed ? 0.85 : 1 },
       ]}
     >

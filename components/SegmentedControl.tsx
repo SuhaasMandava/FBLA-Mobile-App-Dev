@@ -21,9 +21,9 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
             accessibilityLabel={option.label}
             accessibilityState={{ selected }}
             onPress={() => onChange(option.value)}
-            style={[styles.segment, selected && { backgroundColor: colors.primary }]}
+            style={[styles.segment, selected && { backgroundColor: colors.accent }]}
           >
-            <Text style={[styles.label, { color: selected ? colors.onPrimary : colors.text }]}>{option.label}</Text>
+            <Text style={[styles.label, { color: selected ? colors.onAccent : colors.label }]}>{option.label}</Text>
           </Pressable>
         );
       })}

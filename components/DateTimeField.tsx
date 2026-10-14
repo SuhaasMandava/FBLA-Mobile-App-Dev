@@ -77,7 +77,7 @@ export function DateTimeField({
   return (
     <View style={styles.field}>
       <Text
-        style={[styles.label, { color: colors.textMuted }]}
+        style={[styles.label, { color: colors.labelSecondary }]}
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
@@ -91,10 +91,10 @@ export function DateTimeField({
           onPress={openPicker}
           style={[
             styles.input,
-            { backgroundColor: colors.surface, borderColor: error ? colors.danger : colors.inputBorder },
+            { backgroundColor: colors.surface, borderColor: error ? colors.danger : colors.fieldBorder },
           ]}
         >
-          <Text style={[styles.value, { color: display ? colors.text : colors.textMuted }]}>
+          <Text style={[styles.value, { color: display ? colors.label : colors.labelSecondary }]}>
             {display ?? placeholder ?? (isDate ? 'Select date' : 'Select time')}
           </Text>
         </Pressable>
@@ -108,7 +108,7 @@ export function DateTimeField({
             }}
             style={styles.clear}
           >
-            <Text style={[styles.clearText, { color: colors.primary }]}>Clear</Text>
+            <Text style={[styles.clearText, { color: colors.accent }]}>Clear</Text>
           </Pressable>
         ) : null}
       </View>
@@ -122,7 +122,7 @@ export function DateTimeField({
             minimumDate={minimumDate}
             maximumDate={maximumDate}
             themeVariant={scheme}
-            accentColor={colors.primary}
+            accentColor={colors.accent}
             onValueChange={(_event, date) => commit(date)}
           />
           <PrimaryButton label="Done" variant="secondary" onPress={() => setOpen(false)} />

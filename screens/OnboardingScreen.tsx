@@ -127,10 +127,10 @@ export default function OnboardingScreen() {
           contentContainerStyle={[styles.content, { paddingBottom: 24 + insets.bottom }]}
           keyboardShouldPersistTaps="handled"
         >
-          <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>
+          <Text accessibilityRole="header" style={[styles.title, { color: colors.label }]}>
             TripHub
           </Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Plan the trip together, from first idea to last stop.</Text>
+          <Text style={[styles.subtitle, { color: colors.labelSecondary }]}>Plan the trip together, from first idea to last stop.</Text>
 
           <SegmentedControl
             options={[

@@ -71,7 +71,7 @@ export default function ItineraryScreen() {
       }
       renderSectionHeader={({ section }) => (
         <View style={styles.dayHeader}>
-          <Text accessibilityRole="header" style={[styles.dayTitle, { color: colors.text }]}>
+          <Text accessibilityRole="header" style={[styles.dayTitle, { color: colors.label }]}>
             {formatDayHeading(section.day)}
           </Text>
           <Pressable
@@ -80,13 +80,13 @@ export default function ItineraryScreen() {
             onPress={() => navigation.navigate('ItineraryItem', { day: section.day })}
             style={styles.addDay}
           >
-            <Text style={[styles.addDayText, { color: colors.primary }]}>+ Add</Text>
+            <Text style={[styles.addDayText, { color: colors.accent }]}>+ Add</Text>
           </Pressable>
         </View>
       )}
       renderSectionFooter={({ section }) =>
         section.data.length === 0 ? (
-          <Text style={[styles.empty, { color: colors.textMuted }]}>Nothing planned yet.</Text>
+          <Text style={[styles.empty, { color: colors.labelSecondary }]}>Nothing planned yet.</Text>
         ) : null
       }
       renderItem={({ item, index, section }) => (
@@ -100,9 +100,9 @@ export default function ItineraryScreen() {
             onPress={() => navigation.navigate('ItineraryItem', { itemId: item.id })}
             style={styles.rowMain}
           >
-            {item.time ? <Text style={[styles.time, { color: colors.primary }]}>{formatClockTime(item.time)}</Text> : null}
-            <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
-            {item.location ? <Text style={[styles.location, { color: colors.textMuted }]}>{item.location}</Text> : null}
+            {item.time ? <Text style={[styles.time, { color: colors.accent }]}>{formatClockTime(item.time)}</Text> : null}
+            <Text style={[styles.title, { color: colors.label }]}>{item.title}</Text>
+            {item.location ? <Text style={[styles.location, { color: colors.labelSecondary }]}>{item.location}</Text> : null}
           </Pressable>
 
           <View style={styles.reorder}>
@@ -114,7 +114,7 @@ export default function ItineraryScreen() {
               onPress={() => move(item, -1)}
               style={[styles.arrow, index === 0 && styles.arrowDisabled]}
             >
-              <Text style={[styles.arrowText, { color: colors.text }]}>▲</Text>
+              <Text style={[styles.arrowText, { color: colors.label }]}>▲</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -124,7 +124,7 @@ export default function ItineraryScreen() {
               onPress={() => move(item, 1)}
               style={[styles.arrow, index === section.data.length - 1 && styles.arrowDisabled]}
             >
-              <Text style={[styles.arrowText, { color: colors.text }]}>▼</Text>
+              <Text style={[styles.arrowText, { color: colors.label }]}>▼</Text>
             </Pressable>
           </View>
         </View>

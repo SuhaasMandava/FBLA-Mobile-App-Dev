@@ -11,10 +11,10 @@ export function MemberAvatar({ name, size = 36 }: { name: string | null; size?: 
       importantForAccessibility="no-hide-descendants"
       style={[
         styles.circle,
-        { width: size, height: size, borderRadius: size / 2, backgroundColor: colors.primary },
+        { width: size, height: size, borderRadius: size / 2, backgroundColor: colors.accent },
       ]}
     >
-      <Text style={[styles.initials, { color: colors.onPrimary, fontSize: size * 0.38 }]}>{initialsOf(name)}</Text>
+      <Text style={[styles.initials, { color: colors.onAccent, fontSize: size * 0.38 }]}>{initialsOf(name)}</Text>
     </View>
   );
 }

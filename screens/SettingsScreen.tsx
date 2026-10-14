@@ -32,8 +32,8 @@ export default function SettingsScreen() {
   return (
     <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={styles.content}>
       <View accessible accessibilityLabel={`Signed in as ${email ?? 'unknown'}`} style={[styles.card, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.cardLabel, { color: colors.textMuted }]}>Signed in as</Text>
-        <Text style={[styles.cardValue, { color: colors.text }]}>{email ?? 'Unknown'}</Text>
+        <Text style={[styles.cardLabel, { color: colors.labelSecondary }]}>Signed in as</Text>
+        <Text style={[styles.cardValue, { color: colors.label }]}>{email ?? 'Unknown'}</Text>
       </View>
       <PrimaryButton label="Sign Out" variant="secondary" onPress={confirmSignOut} loading={signingOut} />
     </ScrollView>
