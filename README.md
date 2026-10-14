@@ -50,8 +50,8 @@ Forms use react-hook-form, with the rules themselves written in zod under `model
 
 The full design plan, UX audit, user journey, and rationale are in [docs/design-system.md](docs/design-system.md). In short:
 
-- **Look and feel.** Familiar iOS patterns that also work on Android: a bottom tab bar with icons, native large-title headers on iOS (a standard top bar on Android), grouped lists, native sheets for forms and the trip switcher, and system confirmations (action sheets on iOS, dialogs on Android) for destructive actions. Brand teal is used only for things you can tap, selection, and the Route.
-- **Signature element: the Route.** A dotted teal line with round stops. It links each day's activities on the Itinerary, shows trip progress on Home, and appears with three overlapping "crew" dots in the app icon, splash screen, and empty states.
+- **Look and feel.** Familiar iOS patterns that also work on Android: a bottom tab bar with icons, native large-title headers on iOS (a standard top bar on Android), grouped lists, native sheets for forms and the trip switcher, and system confirmations (action sheets on iOS, dialogs on Android) for destructive actions. Midnight & Sunset palette: navy carries the identity (icon, trip hero card) and sunset orange is used only for things you can tap, selection, and the Route.
+- **Signature element: the Route.** A dotted sunset-orange line with round stops. It links each day's activities on the Itinerary, shows trip progress on Home, and leads into the Pin & Crew mark (a map pin holding three dots, one per person) in the app icon, splash screen, and empty states.
 - **Tokens.** Everything visual comes from `theme/theme.ts`. Colors follow the system light or dark setting; there's deliberately no in-app switch. When the system asks for more contrast (Increase Contrast on iOS, High contrast text on Android), secondary text and separators get stronger.
 - **Icons.** Ionicons from `@expo/vector-icons`, through `components/Icon.tsx`. No Apple logos, trademarks, or SF Symbols artwork. The app icon is original; regenerate it with `python scripts/make-icons.py`.
 

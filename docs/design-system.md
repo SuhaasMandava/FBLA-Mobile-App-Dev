@@ -31,7 +31,7 @@ Guidelines are cited as `file.md › Heading` from Apple's Human Interface Guide
 - **Familiar first.** Navigation and controls use the patterns people already know from iOS and Android: a bottom tab bar, large titles, grouped lists, native sheets, system dialogs. `branding.md › Best practices`: "Express your brand with familiar components."
 - **Readable anywhere.** Large text by default (17 pt body), WCAG AA contrast in light and dark, and layouts that survive the largest text sizes. Travelers check plans in sunlight and at night.
 - **One idea of personality, used well.** The Route, a dotted path that connects the stops of a trip, is TripHub's visual signature (see section 5). Everything else stays quiet. `branding.md`: "Apply your app's accent color judiciously."
-- **Together is the point.** The app icon, empty states, and member list share one motif: three dots gathering on a path, one for each person heading to the same place.
+- **Together is the point.** The app icon, empty states, and member list share one motif: a map pin holding three dots, one for each person heading to the same place.
 
 ## 2. User journey
 
@@ -78,7 +78,7 @@ Scope: every screen in `screens/` and component in `components/`, read from code
 
 **Summary.** The app is careful underneath: tap targets are 44 pt or more almost everywhere, text contrast passes AA in both appearances, form errors are announced, and the trip switcher is already a native half-height sheet. Visually it has no point of view. The name is "FBLA-Mobile-App-Dev", the icon is Expo's default, the palette is a stock blue-and-gray set (`#2563EB`, `#111827`), the tab bar has no icons, and two of the five tabs show a single word. **Rating: Critical issues** (the tab bar and font-scaling findings below), most of which are quick to fix.
 
-The brand color in code today is blue (`#2563EB`), not teal. This plan moves the brand to teal as requested.
+The brand color in code today is blue (`#2563EB`), not teal. The plan first moved the brand to teal as requested; at review it became Midnight & Sunset (section 4).
 
 ### Critical
 
@@ -107,7 +107,7 @@ The brand color in code today is blue (`#2563EB`), not teal. This plan moves the
 **H1. No identity: name, icon, and palette are defaults.** (High)
 - **What:** App name "FBLA-Mobile-App-Dev" (shows under the home-screen icon), Expo's placeholder icon and splash, Tailwind-default blue and gray, and "Welcome" as the only first-run text.
 - **Why:** `branding.md › Best practices`: "Use your brand's unique voice and tone." The skill's craft lens: a palette that "arrives with no reason rooted in the product is a default, not a choice."
-- **Fix:** Rename to TripHub, create the icon and splash in section 5, adopt the teal palette in section 4, and give Welcome one line of value: "Plan the trip together, from first idea to last stop."
+- **Fix:** Rename to TripHub, create the icon and splash in section 5, adopt the palette in section 4, and give Welcome one line of value: "Plan the trip together, from first idea to last stop."
 
 **H2. Budget and Checklist tabs show only their own name.** (High)
 - **What:** `ScreenPlaceholder` renders the word "Budget" or "Checklist" centered on a blank screen.
@@ -132,7 +132,7 @@ The brand color in code today is blue (`#2563EB`), not teal. This plan moves the
 **M1. One color means two things.** (Medium)
 - **What:** Brand blue marks buttons and links ("See all", "+ Add", "Clear", "Show"), and also non-interactive text (activity times, "Coming up" dates).
 - **Why:** `color.md › Best practices`: "Avoid using the same color to mean different things … using the same or similar color to stylize noninteractive text is confusing."
-- **Fix:** Teal text is reserved for things you can tap. Times and dates use the primary label color with tabular figures. Teal also appears in the Route graphic, which is decorative and never text.
+- **Fix:** Accent-colored text is reserved for things you can tap. Times and dates use the primary label color with tabular figures. The accent also appears in the Route graphic, which is decorative and never text.
 
 **M2. Every block is the same gray card.** (Medium)
 - **What:** Home is five identical `surface` cards, each starting with a 12 pt gray label. Nothing leads; the invite code (the most important thing for a new trip) looks the same as the budget.
@@ -193,32 +193,36 @@ All tokens live in one typed file and reach screens only through `useTheme()`. N
 
 ### Color
 
-Six roles, each with a light and dark value. Contrast is WCAG 2 ratio against the surface it sits on. Neutrals are tinted slightly toward teal instead of pure gray, so the app feels like one material.
+**Palette: Midnight & Sunset.** A navy night sky over a warm horizon: the feeling of setting off on a trip. Navy carries identity (the icon, the trip hero card); sunset orange marks everything you can tap. It was chosen over the first teal palette because it reads as more premium and stands apart from the many teal and blue travel apps. Every value is checked by `npm run check:contrast`. Ratios are WCAG 2, against the surface each color sits on.
 
 | Token | Role | Light | Dark | Contrast (light / dark) |
 | --- | --- | --- | --- | --- |
-| `background` | Grouped screen background | `#F2F5F4` | `#0E1514` | |
-| `surface` | Cards, list rows, fields | `#FFFFFF` | `#18211F` | |
-| `surfaceRaised` | Sheets, menus (dark elevation) | `#FFFFFF` | `#1F2A28` | |
-| `label` | Primary text | `#14201F` | `#EEF3F2` | 16.72 on surface / 14.68 on surface |
-| `labelSecondary` | Supporting text, helper text, placeholders | `#5B6770` | `#9AA7A4` | 5.80 / 6.61 on surface; 5.29 / 7.43 on background |
-| `separator` | Hairlines (decorative only) | `#DCE3E1` | `#2B3735` | not used for meaning |
-| `fieldBorder` | Outline of inputs and pickers | `#78838A` | `#76857F` | 3.88 / 4.26 on surface (3:1 non-text minimum) |
-| `accent` | Brand teal: primary buttons, links, selection, the Route | `#0E7C74` | `#4FD1C1` | 5.06 on white / 8.79 on surface |
-| `accentPressed` | Pressed state of filled buttons | `#0B5F59` | `#3BB8A9` | |
-| `onAccent` | Text and icons on `accent` | `#FFFFFF` | `#06201D` | 5.06 / 9.11 |
-| `accentTint` | Fill of tinted (secondary) buttons, selected rows, badges | `#E6F3F1` | `#123B37` | |
-| `onAccentTint` | Text on `accentTint` | `#0B5F59` | `#4FD1C1` | 6.60 / 6.58 |
-| `danger` | Errors and destructive actions | `#B42318` | `#FF8A80` | 6.57 / 7.21 on surface |
-| `success` | Confirmation (always with an icon) | `#1F7A3A` | `#6FD38A` | 5.38 / 8.90 |
-| `warning` | Offline, caution (always with an icon) | `#9A5B00` | `#F5B54A` | 5.43 / 9.08 |
+| `background` | Grouped screen background | `#F3F5F9` | `#0B1020` | |
+| `surface` | Cards, list rows, fields | `#FFFFFF` | `#151C30` | |
+| `surfaceRaised` | Sheets, menus (dark elevation) | `#FFFFFF` | `#1C2540` | |
+| `label` | Primary text | `#111827` | `#EEF1F7` | 17.7 / 14.96 on surface |
+| `labelSecondary` | Supporting text, helper text, placeholders | `#586174` | `#A3ADC2` | 6.22 / 7.51 on surface; 5.70 / 8.40 on background |
+| `separator` | Hairlines (decorative only) | `#DDE2EA` | `#283252` | not used for meaning |
+| `fieldBorder` | Outline of inputs and pickers | `#7A8394` | `#6F7B96` | 3.82 / 3.99 on surface (3:1 non-text minimum) |
+| `accent` | Sunset: primary buttons, links, selection, the Route | `#C2410C` | `#FF8A7A` | 5.18 on white / 7.39 on surface |
+| `accentPressed` | Pressed state of filled buttons | `#9A3412` | `#FF7563` | |
+| `onAccent` | Text and icons on `accent` | `#FFFFFF` | `#2A0A05` | 5.18 / 8.01 |
+| `accentTint` | Fill of tinted (secondary) buttons, selected rows, badges | `#FDEBE4` | `#3A1E22` | |
+| `onAccentTint` | Text on `accentTint` | `#9A3412` | `#FF9C8E` | 6.33 / 7.49 |
+| `danger` | Errors and destructive actions (rose, kept apart from the orange accent) | `#BE123C` | `#FB7185` | 6.29 / 6.29 on surface |
+| `success` | Confirmation (always with an icon) | `#15803D` | `#6EE7A0` | 4.60 on background / 9.80 |
+| `warning` | Offline, caution (always with an icon) | `#A16207` | `#FBBF24` | 4.51 on background / 9.06 |
+| `hero` | Midnight navy trip hero card | `#152B5C` | `#18264A` | |
+| `onHero`, `onHeroSecondary` | Text on the hero card | `#FFFFFF`, `#C9D3EA` | same | 13.71 and 9.13 / 14.84 and 9.89 |
+| `heroAccent` | The Route and icons on the hero card | `#FF8A7A` | `#FF8A7A` | 5.98 / 6.48 (3:1 non-text) |
+| `pin`, `crewFirst`, `crewCoral`, `crewGold` | The Pin & Crew mark (decorative) | navy pin; white, coral, gold dots | light pin; navy, coral, gold dots | not text |
 
 Rules:
 
-- **Teal means "you can act on this" or "this is the Route."** Never body text or times.
-- **Signal colors always travel with an icon or words.** Red never stands alone (`color.md › Inclusive color`).
-- `accent` text on `accentTint` is 4.44:1, below AA. Tinted buttons use `onAccentTint` instead.
-- `fieldBorder` is only drawn on `surface`. On `background` it would be 3.54:1 (light), still above 3:1.
+- **Sunset orange means "you can act on this" or "this is the Route."** Never body text or times.
+- **Signal colors always travel with an icon or words.** Errors use rose, not orange, and always carry an alert icon (`color.md › Inclusive color`). Orange and rose can look alike to some people, so the icon is what tells them apart.
+- `accent` text on `accentTint` is below AA in light mode. Tinted buttons use `onAccentTint` instead.
+- `fieldBorder` passes 3:1 on both `surface` and `background` (3.50:1 on the light background).
 - **Increased contrast:** when the system's Increase Contrast setting (iOS) or high-contrast text (Android) is on, `labelSecondary` becomes `label` and `separator` becomes `fieldBorder`. Read via `AccessibilityInfo.isDarkerSystemColorsEnabled()` on iOS and `AccessibilityInfo.isHighTextContrastEnabled()` on Android, with change listeners. **Verify on device.**
 
 ### Type
@@ -273,29 +277,28 @@ Sheets keep the native corner radius.
 
 ### Elevation
 
-Flat in light mode except one soft shadow on the trip hero (`0 2 8 rgba(20,32,31,0.08)`). In dark mode, elevation is shown with `surfaceRaised`, not shadows (`dark-mode.md › Mobile`: the system "uses the elevated background" for things in front).
+Flat in light mode except one soft shadow under the navy trip hero. In dark mode, elevation is shown with `surfaceRaised`, not shadows (`dark-mode.md › Mobile`: the system "uses the elevated background" for things in front).
 
 ## 5. Signature element: the Route
 
-**What it is:** a dotted teal line with round stops. It connects the days of a trip, the way a route connects stops on a map.
+**What it is:** a dotted sunset-orange line with round stops. It connects the days of a trip, the way a route connects stops on a map.
 
 **Where it appears (and nowhere else):**
 
 1. **Itinerary.** Each day section hangs off a vertical dotted line in the leading margin. Every activity is a small stop on the line; today's stop is filled and slightly larger. The line is decorative (hidden from screen readers); the day heading and row carry the meaning.
 2. **Home hero.** A short horizontal Route under the trip name shows trip progress: one stop per day, past days filled, today ringed, future days hollow. Spoken as "Day 2 of 5" (or "Starts in 12 days").
-3. **App icon and splash.** A white route curving up across a teal field, ending in a cluster of three overlapping dots: the group arriving together.
-4. **Empty states.** The three-dot cluster sits on a short Route above the title.
+3. **App icon and splash: Pin & Crew.** A white map pin on a midnight-to-sunset field holds three dots (navy, coral, gold), one for each person, and a faint dotted route leads into its point: the group arriving together.
+4. **Welcome, loading, and empty states.** A small Pin & Crew mark, drawn in theme colors, with a short Route leading in.
 
 **Why it belongs to TripHub:** an itinerary is a route, and a group trip is several people on the same one. The motif says "trip" and "together" without a logo, a suitcase, or an airplane (which every travel app uses). `branding.md › Best practices`: "Ensure branding always defers to content." The Route is built from the content itself (days and stops), so it adds meaning instead of decoration.
 
 **App icon specification** (no Apple artwork, trademarks, or SF Symbols assets; `branding.md › Follow Apple's trademark guidelines`, `app-icons.md`):
 
-- 1024 x 1024 vector source in `assets/brand/icon.svg`, exported to PNG.
-- Background: teal gradient `#0E7C74` → `#12968C`, top to bottom.
-- Foreground: a white rounded route (stroke 64, round caps) from lower left, curving up to the right, with three overlapping filled circles at its end in white, `#BFEDE6`, and `#FFD27A` at 90% opacity. Filled, overlapping shapes with clear edges (`app-icons.md › Design`: "Consider basing your icon design around filled, overlapping shapes"). No text, no shadows or highlights (the system adds those).
-- Android adaptive icon: the same foreground on its own layer within the 66% safe zone, solid `#0E7C74` background, and a single-color monochrome layer for themed icons.
-- Dark and tinted variants keep the same shapes (`app-icons.md › Appearances`).
-- Splash: the foreground motif centered on `#F2F5F4` (light) and `#0E1514` (dark), no text (`branding.md`: "Avoid using a launch screen as a branding opportunity").
+- Drawn by `scripts/make-icons.py` at 4x and downsampled, so every size comes from one geometry.
+- Background: diagonal midnight gradient `#070E22` → `#152B5C` → `#2C4F9A`, with a soft coral (`#FF8A7A`) glow at the top left, like a sunset.
+- Foreground: a white map pin shading to blush (`#FBE9E4`) at its point, a soft drop shadow beneath it, three crew dots in its head (`#152B5C`, `#FF8A7A`, `#FFC857`), and seven translucent white route dots curving in from the lower left. A simple, filled shape that stays legible at 40 px. No text.
+- Android adaptive icon: the motif shrunk into the 66% safe zone over the gradient background layer, and a monochrome layer (white pin with the dots cut out) for themed icons.
+- Splash: the mark alone, navy on `#F3F5F9` (light) and light on `#0B1020` (dark), no text (`branding.md`: "Avoid using a launch screen as a branding opportunity").
 
 ## 6. Motion
 
@@ -314,7 +317,7 @@ Screens compose these; no screen defines its own button, row, or field styles. E
 
 | Component | Replaces | What it does |
 | --- | --- | --- |
-| `Button` | `PrimaryButton` | Variants: `filled` (teal), `tinted` (teal tint), `plain` (text only), `destructive`. Capsule, min height 50, optional leading Ionicon, loading state keeps its width, `accessibilityRole="button"` and `accessibilityState` built in |
+| `Button` | `PrimaryButton` | Variants: `filled` (sunset), `tinted` (sunset tint), `plain` (text only), `destructive`. Capsule, min height 50, optional leading Ionicon, loading state keeps its width, `accessibilityRole="button"` and `accessibilityState` built in |
 | `Card` | ad hoc `styles.card` | `surface` background, `lg` radius, `md` padding; `variant="hero"` for the trip hero |
 | `ListSection` | | Grouped container: optional `SectionHeader`, rows with inset separators, optional footer text |
 | `ListRow` | trip rows, member rows, settings rows | Leading icon or avatar, title, subtitle, trailing value / chevron / checkmark / badge. Min height 44. Stacks vertically when text is large. One `accessibilityLabel` for the whole row |
@@ -435,8 +438,8 @@ These are the acceptance criteria for Phase 3.
 **Would this plan fit any other app?** The first draft would have. It was "teal accent, white cards, system font, rounded corners": the look of most travel and fintech starter templates, and nothing in it said "group trip." Three changes make it specific:
 
 1. **The Route replaced a generic hero.** The first draft had a big gradient header card with the trip name. That's decoration. The Route is built from the trip's own days and stops, so it carries information (where you are in the trip) and identity at the same time.
-2. **Tinted neutrals instead of stock grays.** Text is a deep green-black (`#14201F`) and backgrounds lean toward teal (`#F2F5F4`). It's subtle, but the app reads as one material instead of "teal on Tailwind gray."
-3. **The group is visible.** The three-dot motif in the icon, the avatar stack in the hero, and the Crew section put the "together" in "Together We Go" on screen instead of only in the pitch.
+2. **A palette with a story.** Midnight navy and sunset orange come from travel itself (setting off at dusk), and the navy hero card gives Home one rich, premium moment while everything else stays light and quiet. (The first draft used teal; it was replaced at review because it looked like many other travel apps.)
+3. **The group is visible.** The Pin & Crew mark in the icon, the avatar stack in the hero, and the Crew section put the "together" in "Together We Go" on screen instead of only in the pitch.
 
 **What was rejected and why:**
 
