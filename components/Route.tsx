@@ -88,55 +88,102 @@ export function RouteStop({
 }
 
 /**
- * The Pin & Crew mark from the app icon: a map pin holding three dots (the group),
- * reached by a short dotted route. Used on Welcome, the loading screen, and empty states.
- * `size` is the width of the pin's head.
+ * The app mark, drawn from the icon: a navy disc holding a white map pin with an amber
+ * center, a tilted orbit ring, and two blue dots on it (the group traveling together),
+ * with a short dotted route leading to the pin's point. Used on Welcome, the loading
+ * screen, and empty states. `size` is the disc's diameter.
  */
-export function CrewMark({ size = 32 }: { size?: number }) {
+export function AppMark({ size = 56 }: { size?: number }) {
   const { colors } = useTheme();
-  const height = size * 1.21; // head plus the point of the rotated square
-  const dot = size * 0.3;
-  const center = size / 2;
-  const dots = [
-    { x: center, y: center - size * 0.15, color: colors.crewFirst },
-    { x: center - size * 0.14, y: center + size * 0.1, color: colors.crewCoral },
-    { x: center + size * 0.14, y: center + size * 0.1, color: colors.crewGold },
-  ];
+  const head = size * 0.42; // pin head width
+  const pinLeft = size * 0.5 - head / 2;
+  const pinTop = size * 0.2;
+  const headCenter = { x: size * 0.5, y: pinTop + head / 2 };
+  const sun = head * 0.32;
+  const planet = head * 0.2;
+  const orbitW = size * 0.66;
+  const orbitH = size * 0.3;
+  const routeDot = Math.max(2, size * 0.035);
   return (
-    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.markRow}>
-      <View style={{ width: size * 1.4, height: DOT, marginRight: size * 0.15, marginBottom: 1 }}>
-        <DottedLine direction="horizontal" />
-      </View>
-      <View style={{ width: size, height }}>
-        {/* A square with one sharp corner, turned 45° so the corner points down: the pin. */}
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={[
+        styles.disc,
+        { width: size, height: size, borderRadius: size / 2, backgroundColor: colors.markDisc },
+      ]}
+    >
+      {/* A square with one sharp corner, turned 45° so the corner points down: the pin. */}
+      <View
+        style={[
+          styles.pin,
+          {
+            left: pinLeft,
+            top: pinTop,
+            width: head,
+            height: head,
+            borderRadius: head / 2,
+            borderBottomRightRadius: head * 0.08,
+            backgroundColor: colors.markPin,
+          },
+        ]}
+      />
+      <View
+        style={[
+          styles.orbit,
+          {
+            left: headCenter.x - orbitW / 2,
+            top: headCenter.y - orbitH / 2,
+            width: orbitW,
+            height: orbitH,
+            borderRadius: orbitH / 2,
+            borderColor: colors.markPin,
+          },
+        ]}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          left: headCenter.x - sun / 2,
+          top: headCenter.y - sun / 2,
+          width: sun,
+          height: sun,
+          borderRadius: sun / 2,
+          backgroundColor: colors.markSun,
+        }}
+      />
+      {[
+        { x: headCenter.x - head * 0.36, y: headCenter.y - head * 0.3 },
+        { x: headCenter.x + head * 0.3, y: headCenter.y + head * 0.24 },
+      ].map((p, i) => (
         <View
-          style={[
-            styles.pin,
-            {
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              borderBottomRightRadius: size * 0.08,
-              backgroundColor: colors.pin,
-              shadowColor: '#000000',
-            },
-          ]}
+          key={i}
+          style={{
+            position: 'absolute',
+            left: p.x - planet / 2,
+            top: p.y - planet / 2,
+            width: planet,
+            height: planet,
+            borderRadius: planet / 2,
+            backgroundColor: colors.markPlanet,
+          }}
         />
-        {dots.map((d, i) => (
-          <View
-            key={i}
-            style={{
-              position: 'absolute',
-              left: d.x - dot / 2,
-              top: d.y - dot / 2,
-              width: dot,
-              height: dot,
-              borderRadius: dot / 2,
-              backgroundColor: d.color,
-            }}
-          />
-        ))}
-      </View>
+      ))}
+      {Array.from({ length: 4 }, (_, i) => (
+        <View
+          key={`route-${i}`}
+          style={{
+            position: 'absolute',
+            left: size * (0.24 + i * 0.065),
+            top: size * (0.78 - i * 0.025),
+            width: routeDot,
+            height: routeDot,
+            borderRadius: routeDot / 2,
+            backgroundColor: colors.markPin,
+            opacity: 0.8,
+          }}
+        />
+      ))}
     </View>
   );
 }
@@ -227,17 +274,16 @@ const styles = StyleSheet.create({
   lineVertical: { flex: 1, width: DOT },
   lineHorizontal: { flex: 1, flexDirection: 'row', height: DOT },
   faded: { opacity: 0.45 },
-  markRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center' },
-  pin: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    transform: [{ rotate: '45deg' }],
-    shadowOpacity: 0.18,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+  disc: {
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
   },
+  pin: { position: 'absolute', transform: [{ rotate: '45deg' }] },
+  orbit: { position: 'absolute', borderWidth: 1, opacity: 0.6, transform: [{ rotate: '-22deg' }] },
   progress: { flexDirection: 'row', alignItems: 'center', minHeight: 20 },
   progressCell: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   progressLast: { flex: 0 },

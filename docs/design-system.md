@@ -31,7 +31,7 @@ Guidelines are cited as `file.md › Heading` from Apple's Human Interface Guide
 - **Familiar first.** Navigation and controls use the patterns people already know from iOS and Android: a bottom tab bar, large titles, grouped lists, native sheets, system dialogs. `branding.md › Best practices`: "Express your brand with familiar components."
 - **Readable anywhere.** Large text by default (17 pt body), WCAG AA contrast in light and dark, and layouts that survive the largest text sizes. Travelers check plans in sunlight and at night.
 - **One idea of personality, used well.** The Route, a dotted path that connects the stops of a trip, is TripHub's visual signature (see section 5). Everything else stays quiet. `branding.md`: "Apply your app's accent color judiciously."
-- **Together is the point.** The app icon, empty states, and member list share one motif: a map pin holding three dots, one for each person heading to the same place.
+- **Together is the point.** The app icon, empty states, and member list share one motif: a map pin with the group orbiting together inside it.
 
 ## 2. User journey
 
@@ -215,7 +215,7 @@ All tokens live in one typed file and reach screens only through `useTheme()`. N
 | `hero` | Midnight navy trip hero card | `#152B5C` | `#18264A` | |
 | `onHero`, `onHeroSecondary` | Text on the hero card | `#FFFFFF`, `#C9D3EA` | same | 13.71 and 9.13 / 14.84 and 9.89 |
 | `heroAccent` | The Route and icons on the hero card | `#FF8A7A` | `#FF8A7A` | 5.98 / 6.48 (3:1 non-text) |
-| `pin`, `crewFirst`, `crewCoral`, `crewGold` | The Pin & Crew mark (decorative) | navy pin; white, coral, gold dots | light pin; navy, coral, gold dots | not text |
+| `markDisc`, `markPin`, `markSun`, `markPlanet` | The app mark (decorative) | navy disc, white pin, amber center, blue dots | same | not text |
 
 Rules:
 
@@ -287,18 +287,19 @@ Flat in light mode except one soft shadow under the navy trip hero. In dark mode
 
 1. **Itinerary.** Each day section hangs off a vertical dotted line in the leading margin. Every activity is a small stop on the line; today's stop is filled and slightly larger. The line is decorative (hidden from screen readers); the day heading and row carry the meaning.
 2. **Home hero.** A short horizontal Route under the trip name shows trip progress: one stop per day, past days filled, today ringed, future days hollow. Spoken as "Day 2 of 5" (or "Starts in 12 days").
-3. **App icon and splash: Pin & Crew.** A white map pin on a midnight-to-sunset field holds three dots (navy, coral, gold), one for each person, and a faint dotted route leads into its point: the group arriving together.
-4. **Welcome, loading, and empty states.** A small Pin & Crew mark, drawn in theme colors, with a short Route leading in.
+3. **App icon and splash: Pin & Orbit.** A white map pin on a midnight-navy disc, with the group (two blue dots) orbiting an amber center inside it, and a trail of route dots leading to its point.
+4. **Welcome, loading, and empty states.** `AppMark`, a small version of the icon drawn in code (navy disc, white pin, amber center, orbit ring, route dots).
 
 **Why it belongs to TripHub:** an itinerary is a route, and a group trip is several people on the same one. The motif says "trip" and "together" without a logo, a suitcase, or an airplane (which every travel app uses). `branding.md › Best practices`: "Ensure branding always defers to content." The Route is built from the content itself (days and stops), so it adds meaning instead of decoration.
 
 **App icon specification** (no Apple artwork, trademarks, or SF Symbols assets; `branding.md › Follow Apple's trademark guidelines`, `app-icons.md`):
 
-- Drawn by `scripts/make-icons.py` at 4x and downsampled, so every size comes from one geometry.
-- Background: diagonal midnight gradient `#070E22` → `#152B5C` → `#2C4F9A`, with a soft coral (`#FF8A7A`) glow at the top left, like a sunset.
-- Foreground: a white map pin shading to blush (`#FBE9E4`) at its point, a soft drop shadow beneath it, three crew dots in its head (`#152B5C`, `#FF8A7A`, `#FFC857`), and seven translucent white route dots curving in from the lower left. A simple, filled shape that stays legible at 40 px. No text.
-- Android adaptive icon: the motif shrunk into the 66% safe zone over the gradient background layer, and a monochrome layer (white pin with the dots cut out) for themed icons.
-- Splash: the mark alone, navy on `#F3F5F9` (light) and light on `#0B1020` (dark), no text (`branding.md`: "Avoid using a launch screen as a branding opportunity").
+- Source artwork: `assets/TripHub Icon.jpg`, supplied by the team. `scripts/make-icons.py` cuts the round icon out of that sheet and builds every asset from it.
+- The artwork: a white map pin on a brushed midnight-navy disc. Inside the pin, an amber center is circled by an orbit ring with two blue dots (the group, traveling together), and a short trail of dots leads to the pin's point (the Route).
+- App icon: the disc's shading is extended outward to fill a full-bleed square (no visible circle edge), with the pin covering about 70% of the width. The system applies its own rounded mask.
+- Android adaptive icon: the same artwork at 50% inside the safe zone, a solid navy (`#223658`) background layer, and a white silhouette of the pin for themed icons.
+- Splash: the round disc itself, centered on `#F3F5F9` (light) and `#0B1020` (dark), with no text (`branding.md`: "Avoid using a launch screen as a branding opportunity").
+- Resolution: the source sheet is an 832 px JPEG, so the 1024 px icon is enlarged about 1.7x from it. A 1024 px (or larger) PNG of the round icon alone would make every size sharper; drop it in and rerun the script.
 
 ## 6. Motion
 
@@ -439,7 +440,7 @@ These are the acceptance criteria for Phase 3.
 
 1. **The Route replaced a generic hero.** The first draft had a big gradient header card with the trip name. That's decoration. The Route is built from the trip's own days and stops, so it carries information (where you are in the trip) and identity at the same time.
 2. **A palette with a story.** Midnight navy and sunset orange come from travel itself (setting off at dusk), and the navy hero card gives Home one rich, premium moment while everything else stays light and quiet. (The first draft used teal; it was replaced at review because it looked like many other travel apps.)
-3. **The group is visible.** The Pin & Crew mark in the icon, the avatar stack in the hero, and the Crew section put the "together" in "Together We Go" on screen instead of only in the pitch.
+3. **The group is visible.** The orbiting dots in the icon, the avatar stack in the hero, and the Crew section put the "together" in "Together We Go" on screen instead of only in the pitch.
 
 **What was rejected and why:**
 
@@ -471,4 +472,4 @@ Out of scope (no business logic, service, schema, or validation changes): expens
 
 - Tokens live in a root `theme/theme.ts`; components stay in `components/`. The repo keeps its root-folder layout instead of moving under `src/`.
 - Home's iOS large title is the trip name. Names longer than 22 characters are also shown in full in the hero card, since a large title is one line.
-- The icon and splash are drawn by `scripts/make-icons.py` (Pillow) so they can be regenerated from one geometry.
+- The icon is the team's supplied artwork (`assets/TripHub Icon.jpg`); `scripts/make-icons.py` (Pillow) builds the icon, Android layers, splash, and favicon from it.

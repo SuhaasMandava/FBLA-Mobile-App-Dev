@@ -5,7 +5,7 @@ import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
 import { ControlledTextField } from '../components/ControlledTextField';
 import { InlineBanner } from '../components/InlineBanner';
-import { CrewMark } from '../components/Route';
+import { AppMark } from '../components/Route';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { useSignInForm } from '../hooks/useSignInForm';
 import { useSignUpForm } from '../hooks/useSignUpForm';
@@ -124,7 +124,7 @@ export default function OnboardingScreen() {
           <View style={[styles.column, { maxWidth: layout.maxContentWidth, gap: spacing.md }]}>
             <View style={[styles.hero, { gap: spacing.xs, marginBottom: spacing.sm }]}>
               <View style={{ marginBottom: spacing.sm }}>
-                <CrewMark size={44} />
+                <AppMark size={72} />
               </View>
               <AppText variant="largeTitle" accessibilityRole="header">
                 TripHub

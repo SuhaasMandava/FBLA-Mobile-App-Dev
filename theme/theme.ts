@@ -44,11 +44,11 @@ export interface ColorTokens {
   onHeroSecondary: string;
   /** The Route and icons drawn on `hero` (decorative). */
   heroAccent: string;
-  /** The Pin & Crew mark: the pin, then its three dots (decorative, never text). */
-  pin: string;
-  crewFirst: string;
-  crewCoral: string;
-  crewGold: string;
+  /** The app mark from the icon (decorative, never text): navy disc, white pin, amber center, blue orbiting dots. */
+  markDisc: string;
+  markPin: string;
+  markSun: string;
+  markPlanet: string;
 }
 
 export const lightColors: ColorTokens = {
@@ -72,10 +72,10 @@ export const lightColors: ColorTokens = {
   onHero: '#FFFFFF',
   onHeroSecondary: '#C9D3EA',
   heroAccent: '#FF8A7A',
-  pin: '#152B5C',
-  crewFirst: '#FFFFFF',
-  crewCoral: '#FF8A7A',
-  crewGold: '#FFC857',
+  markDisc: '#223658',
+  markPin: '#F4F6FA',
+  markSun: '#D9822B',
+  markPlanet: '#1E3F8F',
 };
 
 export const darkColors: ColorTokens = {
@@ -99,10 +99,10 @@ export const darkColors: ColorTokens = {
   onHero: '#FFFFFF',
   onHeroSecondary: '#C9D3EA',
   heroAccent: '#FF8A7A',
-  pin: '#EEF1F7',
-  crewFirst: '#152B5C',
-  crewCoral: '#FF8A7A',
-  crewGold: '#FFC857',
+  markDisc: '#223658',
+  markPin: '#F4F6FA',
+  markSun: '#D9822B',
+  markPlanet: '#1E3F8F',
 };
 
 /** Applied on top of a scheme when the system asks for more contrast. */

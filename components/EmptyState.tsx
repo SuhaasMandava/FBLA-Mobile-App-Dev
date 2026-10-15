@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
 import { AppText } from './AppText';
 import { Icon } from './Icon';
-import { CrewMark } from './Route';
+import { AppMark } from './Route';
 
 interface EmptyStateProps {
   title: string;
@@ -29,7 +29,7 @@ export function EmptyState({ title, body, children, tone = 'empty', inline = fal
     >
       <View style={[styles.inner, { maxWidth: layout.maxContentWidth, gap: spacing.sm }]}>
         <View style={{ marginBottom: spacing.xs }}>
-          {tone === 'error' ? <Icon name="alert-circle" size={44} color="danger" /> : <CrewMark />}
+          {tone === 'error' ? <Icon name="alert-circle" size={44} color="danger" /> : <AppMark />}
         </View>
         <AppText variant="title2" align="center" accessibilityRole="header">
           {title}
