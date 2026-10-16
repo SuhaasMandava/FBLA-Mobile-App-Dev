@@ -18,6 +18,8 @@ export type RootStackParamList = {
   JoinTrip: undefined;
   /** Add an activity (optionally starting on `day`), or edit the one with `itemId`. */
   ItineraryItem: { itemId?: string; day?: string } | undefined;
+  /** Log a new expense, or edit the one with `expenseId`. */
+  Expense: { expenseId?: string } | undefined;
 };
 
 /** Each tab is a one-screen native stack, which gives it a native (large-title on iOS) header. */

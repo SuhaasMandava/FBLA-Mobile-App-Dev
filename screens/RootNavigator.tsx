@@ -11,6 +11,7 @@ import { useTheme } from '../hooks/useTheme';
 import BudgetScreen from './BudgetScreen';
 import ChecklistScreen from './ChecklistScreen';
 import CreateTripScreen from './CreateTripScreen';
+import ExpenseScreen from './ExpenseScreen';
 import HomeScreen from './HomeScreen';
 import ItineraryItemScreen from './ItineraryItemScreen';
 import ItineraryScreen from './ItineraryScreen';
@@ -159,6 +160,14 @@ export default function RootNavigator() {
               options={({ route }) => ({
                 ...formSheet,
                 title: route.params?.itemId ? 'Edit Activity' : 'New Activity',
+              })}
+            />
+            <Stack.Screen
+              name="Expense"
+              component={ExpenseScreen}
+              options={({ route }) => ({
+                ...formSheet,
+                title: route.params?.expenseId ? 'Edit Expense' : 'New Expense',
               })}
             />
           </>

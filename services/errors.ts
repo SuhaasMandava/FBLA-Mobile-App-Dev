@@ -13,7 +13,9 @@ export type TripServiceErrorCode =
   | 'trip_not_found'
   | 'item_not_found'
   | 'not_permitted'
-  | 'day_outside_trip';
+  | 'day_outside_trip'
+  | 'expense_not_found'
+  | 'invalid_split';
 
 export class TripServiceError extends UserFacingError {
   constructor(

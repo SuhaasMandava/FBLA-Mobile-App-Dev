@@ -6,8 +6,8 @@ import { Icon } from './Icon';
 
 interface InlineBannerProps {
   message: string;
-  /** `offline` is a caution, `error` is a problem. Both carry an icon, so color is never the only signal. */
-  tone: 'offline' | 'error';
+  /** `offline` and `warning` are cautions, `error` is a problem. Each carries an icon, so color is never the only signal. */
+  tone: 'offline' | 'warning' | 'error';
   action?: { label: string; onPress: () => void };
   style?: StyleProp<ViewStyle>;
 }
@@ -16,6 +16,7 @@ interface InlineBannerProps {
 export function InlineBanner({ message, tone, action, style }: InlineBannerProps) {
   const { colors, radii, spacing } = useTheme();
   const color = tone === 'error' ? 'danger' : 'warning';
+  const icon = tone === 'error' ? 'alert-circle' : tone === 'warning' ? 'warning-outline' : 'cloud-offline-outline';
   return (
     <View
       accessibilityRole="alert"
@@ -34,7 +35,7 @@ export function InlineBanner({ message, tone, action, style }: InlineBannerProps
       ]}
     >
       <View style={[styles.row, { gap: spacing.sm }]}>
-        <Icon name={tone === 'error' ? 'alert-circle' : 'cloud-offline-outline'} size={20} color={color} />
+        <Icon name={icon} size={20} color={color} />
         <AppText variant="subhead" style={styles.text}>
           {message}
         </AppText>

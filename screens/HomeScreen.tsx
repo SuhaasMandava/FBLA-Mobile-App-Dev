@@ -16,6 +16,7 @@ import { OfflineBanner } from '../components/OfflineBanner';
 import { RouteProgress } from '../components/Route';
 import { Screen } from '../components/Screen';
 import { SkeletonList } from '../components/Skeleton';
+import { useExpenses } from '../hooks/useExpenses';
 import { useItinerary } from '../hooks/useItinerary';
 import { useLargeText } from '../hooks/useLargeText';
 import { useTheme } from '../hooks/useTheme';
@@ -117,6 +118,8 @@ export default function HomeScreen() {
   const navigation = useNavigation<TabScreenNavigation>();
   const { activeTrip, trips, loading, error, refresh } = useTrip();
   const { items } = useItinerary();
+  const { expenses } = useExpenses();
+  const spentCents = expenses.reduce((sum, e) => sum + e.amountCents, 0);
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
 
@@ -226,8 +229,15 @@ export default function HomeScreen() {
       <ListSection header="Budget">
         <ListRow
           leading={<Icon name="wallet-outline" size={22} color="accent" />}
-          title="Trip budget"
-          value={activeTrip.budgetCents > 0 ? formatCents(activeTrip.budgetCents) : 'Not set'}
+          title={activeTrip.budgetCents > 0 ? 'Spent of budget' : 'Spent so far'}
+          value={
+            activeTrip.budgetCents > 0
+              ? `${formatCents(spentCents)} of ${formatCents(activeTrip.budgetCents)}`
+              : formatCents(spentCents)
+          }
+          trailing="chevron"
+          accessibilityHint="Opens the budget and settle-up"
+          onPress={() => navigation.navigate('Budget')}
         />
       </ListSection>
 

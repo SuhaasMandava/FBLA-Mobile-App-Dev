@@ -1,6 +1,6 @@
 # TripHub
 
-TripHub is a group trip planner built with Expo and React Native. People sign up, create or join a trip with an invite code, and plan its itinerary together. Data lives in Supabase.
+TripHub is a group trip planner built with Expo and React Native. People sign up, create or join a trip with an invite code, plan its itinerary together, and track what the group spends, with a settle-up that works out who owes whom in the fewest payments. Data lives in Supabase.
 
 ## Getting started
 
@@ -21,6 +21,7 @@ Restart the dev server after changing it. Checks to run before committing:
 ```bash
 npx tsc --noEmit   # types
 npx expo lint .    # lint (the bare `expo lint` only checks components/)
+npm test           # unit tests (Jest): budget math and expense validation
 npm run check:contrast  # WCAG contrast of the color tokens
 ```
 
@@ -36,15 +37,25 @@ The anon key in `.env` is public by design (it ships inside the app). Row Level 
 
 | Folder | What lives there |
 | --- | --- |
-| `models/` | Plain data types, row mapping, and rules. Validation lives here as zod schemas (`TripForm`, `ItineraryForm`, `AuthForm`). No React, no network. |
-| `services/` | Everything that talks to Supabase or the device: `TripService`, `AuthService`, `CacheService`, `NetworkService`, `ShareService`. They throw typed errors with user-safe messages. |
-| `context/`, `hooks/` | App state (auth, trips, itinerary, network, theme) and the form hooks that tie react-hook-form to the models and services. |
+| `models/` | Plain data types, row mapping, and rules. Validation lives here as zod schemas (`TripForm`, `ItineraryForm`, `ExpenseForm`, `AuthForm`); the money math (splits, budget summary, settle-up) is `BudgetCalculator`. No React, no network. Unit tests sit next to them in `models/__tests__/`. |
+| `services/` | Everything that talks to Supabase or the device: `TripService`, `ExpenseService`, `AuthService`, `CacheService`, `NetworkService`, `ShareService`. They throw typed errors with user-safe messages. |
+| `context/`, `hooks/` | App state (auth, trips, itinerary, expenses, network, theme) and the form hooks that tie react-hook-form to the models and services. |
 | `theme/` | Design tokens (`theme.ts`): colors for light and dark, type roles, spacing, radii, motion. Read through `useTheme()`. |
 | `screens/`, `components/` | Presentation only. Navigation is React Navigation (`App.tsx` → `screens/RootNavigator.tsx`). Screens are built from the shared components; none defines its own button, row, or field styles. |
 | `scripts/` | `check-contrast.js` (WCAG check of the color tokens) and `make-icons.py` (builds the app icon, Android icon layers, splash, and favicon from `assets/TripHub Icon.jpg`). |
 | `supabase/` | `schema.sql` (baseline) and `migrations/` (everything since). |
 
 Forms use react-hook-form, with the rules themselves written in zod under `models/` so they can be tested without React.
+
+## Budget and settle-up
+
+The Budget tab shows what the active trip has spent against its budget (with how much is left, or how far over it is), who owes whom, and every expense.
+
+- **Expenses.** Description, amount, category, who paid, and how it's split: **evenly** among the people you pick, or **by shares** (a couple takes 2). Each person's amount previews as you type, and the sheet warns before an expense takes the trip over budget.
+- **Exact money.** Amounts are integer cents. A split always adds up to exactly the expense; leftover cents go to the largest remainders, ties in roster order (`BudgetCalculator.splitByShare`).
+- **Settle-up in the fewest payments.** Each person's balance is what they paid minus what they owe. People can always settle in one fewer payment than there are people with a balance, and every group within them whose balances cancel out saves one more. `BudgetCalculator.settleUp` searches for the largest number of such groups exactly (fine for groups up to 15 people; larger groups fall back to pairing the largest debtor with the largest creditor), then settles each group. The tests include a case where the simple pairing needs 4 payments and TripHub needs 3.
+- **Who can change what.** You log what you paid; an organizer can log an expense for anyone. Only whoever paid, or an organizer, can edit or delete it. The app hides editing from everyone else, and the database enforces the same rule (see `expenses` below).
+- **Validation.** Syntactic: description required and under 80 characters, an amount like `42.50`, whole-number shares from 0 to 99. Semantic: more than $0 and at most $1,000,000, the payer and everyone in the split are on the trip, and at least one person shares the cost. The database checks the split again with a trigger.
 
 ## Design system & accessibility
 
@@ -68,7 +79,7 @@ Accessibility commitments, checked before each release:
 
 ## Offline behavior
 
-Trips (and which one is open) and each trip's itinerary are saved on the device per user and shown immediately at launch, then replaced with fresh data. A banner shows while the device has no connection, and data reloads when it returns. Edits made offline are rejected with a clear message rather than queued. Signing out erases the saved data.
+Trips (and which one is open) and each trip's itinerary and expenses are saved on the device per user and shown immediately at launch, then replaced with fresh data. The budget summary and settle-up are worked out on the phone, so they're readable offline too. A banner shows while the device has no connection, and data reloads when it returns. Edits made offline are rejected with a clear message rather than queued (expense changes say so straight away, without waiting for the request to fail). Signing out erases the saved data.
 
 ## Database schema
 
@@ -121,7 +132,19 @@ One activity on one day of a trip.
 | `created_at` | |
 
 ### `expenses`
-Reserved for the Budget feature (not built yet). Belongs to a trip; deleted with it.
+One thing the group paid for. Tightened in `005_expenses.sql`.
+
+| Column | Notes |
+| --- | --- |
+| `id` | Primary key |
+| `trip_id` | References `trips`; deleted with the trip |
+| `paid_by` | References `profiles`; must be a member of the trip (trigger) |
+| `description` | 1–80 characters |
+| `amount_cents` | More than 0, at most 100,000,000 ($1,000,000) |
+| `category` | `lodging`, `food`, `transport`, `activities`, `shopping` or `other` |
+| `splits` | JSON object: member user id → cents they owe. Whole, non-negative cents, only trip members, adding up to exactly `amount_cents` (trigger) |
+| `shares` | JSON object of weights 0–99 when split by shares; `NULL` when split evenly |
+| `created_at` | |
 
 ### Functions
 
@@ -130,15 +153,16 @@ Reserved for the Budget feature (not built yet). Belongs to a trip; deleted with
 | `create_trip(...)` | Creates a trip and records the caller as its organizer in one transaction. Raises `unique_violation` if the invite code is taken (the app retries with a new code). |
 | `join_trip_by_code(code)` | Finds the trip by invite code and adds the caller as a `member`. Raises `invite_not_found` or `already_member`. |
 | `reorder_itinerary_items(trip, day, ids[])` | Saves one day's order atomically. Runs as the caller, so the itinerary policies still apply. |
+| `check_expense_splits()` | Trigger on `expenses`: the payer and everyone in the split are on the trip, and the split adds up to the amount. Raises `payer_not_member`, `split_member_not_on_trip`, `splits_total_mismatch` or `invalid_splits`. |
 | `is_trip_member(trip)`, `is_trip_organizer(trip)`, `shares_trip_with(user)` | Helpers used by the policies. They are `SECURITY DEFINER` because a policy that queries `trip_members` directly would recurse forever. |
 
 Signed-out visitors cannot call any of these.
 
 ## Row Level Security
 
-Rule of thumb: **you can only see and change trips you are a member of; only an organizer can edit or delete a trip; any member can plan the itinerary.** RLS is enabled on every table, and the `anon` role (not signed in) has no access to any of them.
+Rule of thumb: **you can only see and change trips you are a member of; only an organizer can edit or delete a trip; any member can plan the itinerary; only whoever paid, or an organizer, can change an expense.** RLS is enabled on every table, and the `anon` role (not signed in) has no access to any of them.
 
-Policies are defined, with comments, in `supabase/migrations/004_access_control.sql`.
+Policies are defined, with comments, in `supabase/migrations/004_access_control.sql` and, for expenses, `005_expenses.sql`.
 
 ### `profiles`
 
@@ -178,7 +202,10 @@ Policies are defined, with comments, in `supabase/migrations/004_access_control.
 
 | Operation | Who | Policy |
 | --- | --- | --- |
-| All | Members of the trip | Members have full access to their trip's expenses |
+| Read | Members | Members can read their trip's expenses |
+| Insert | Members, for an expense they paid; organizers, for anyone | Members log what they paid; organizers log for anyone |
+| Update | Whoever paid, or an organizer; only `paid_by`, `description`, `amount_cents`, `category`, `splits`, `shares` (an expense can't move to another trip). A member can't hand an expense to someone else. | Payers and organizers can edit expenses |
+| Delete | Whoever paid, or an organizer | Payers and organizers can delete expenses |
 
 ### Why invites go through a function
 

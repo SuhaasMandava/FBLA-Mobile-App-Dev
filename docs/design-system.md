@@ -57,6 +57,10 @@ Guidelines are cited as `file.md › Heading` from Apple's Human Interface Guide
                 │  tap a stop ──▶ edit or delete (confirmation)
                 │  Edit ──▶ reorder stops
                 ▼
+          Budget tab: spent vs. budget ─ Settle Up ─ Expenses
+                │  + ──▶ Expense sheet (what, amount, category, who paid, split)
+                │  tap your expense ──▶ edit or delete (confirmation)
+                ▼
           Trip switcher (half-height sheet) ◀── from Home, any time
                 ▼
           Settings: account, about, sign out (confirmation)
@@ -70,6 +74,7 @@ Moments that matter, and the design answer:
 | No trips yet | A clear next step | Empty state with two actions: Create Trip, Join with Code |
 | Just created a trip | Get friends in | Invite code is the most prominent thing on Home until someone joins |
 | During the trip | "What's next?" | Home's Coming up shows the next three stops, with today marked on the Route |
+| Someone paid for dinner | "What do I owe, and to whom?" | Log it in seconds with a live per-person preview; Settle Up lists the fewest payments that square everyone up |
 | Offline | Trust the data on screen | Banner says the data is saved on this phone; edits explain why they can't be saved |
 
 ## 3. Audit of the current app
@@ -329,7 +334,10 @@ Screens compose these; no screen defines its own button, row, or field styles. E
 | `EmptyState` | `ScreenPlaceholder`, empty `StatusMessage` | Route-motif graphic, title, body, up to two actions |
 | `ErrorState` | error `StatusMessage` | Same layout as EmptyState with an `alert-circle` icon and "Try Again" |
 | `Skeleton` | loading `StatusMessage` | Placeholder rows shaped like the content; pulses unless Reduce Motion is on; hidden from screen readers with a single "Loading" label on the container |
-| `InlineBanner` | `OfflineBanner`, red error text | Icon + message + optional action. Tones: `offline` (warning), `error` (danger) |
+| `InlineBanner` | `OfflineBanner`, red error text | Icon + message + optional action. Tones: `offline` (warning, cloud icon), `warning` (warning, triangle icon, e.g. "puts the trip over budget"), `error` (danger) |
+| `ChoiceChips` | | One-of-several choice as wrapping capsules (expense category). Announced as a radio group; the selected chip gets a tint, a heavier outline, and a checkmark in place of its icon, so selection isn't color alone. 44 pt tall |
+| `Stepper` | | − value + for whole numbers (expense shares). One adjustable element for screen readers (swipe up/down), two 44 pt buttons for touch |
+| `BudgetMeter` | | Spent-of-budget bar on the navy hero card, drawn in `heroAccent` like the Route. Decorative; the text beside it carries the amounts and the over-budget state |
 | `Badge` | "Organizer" text | Small `accentTint` capsule with `caption` text ("Organizer", "Today") |
 | `Avatar`, `AvatarStack` | `MemberAvatar` | Initials circle; the stack overlaps three avatars and "+2" for the hero |
 | `Icon` | text glyphs | Ionicons wrapper: size follows the text style and font scale; decorative by default, labeled when standalone |
@@ -414,9 +422,19 @@ Native modal sheets with Cancel (leading) and the save action as a filled button
 
 Title "Trips", grouped `ListSection` of trips (name, place · dates, checkmark and `accentTint` for the current trip), then a pinned footer with "Create Trip" (filled) and "Join with Code" (tinted).
 
-### Budget and Checklist
+### Budget
 
-`EmptyState` with the Route motif. Budget: "Budget: $1,500" (from the trip) and "Splitting costs with your group is coming soon." Checklist: "Packing lists and to-dos for the group are coming soon." Neither shows a disabled button.
+Built after the redesign, from the same components. Top to bottom:
+
+1. **Summary** on the navy hero card (like Home's trip hero): "Spent so far", the amount in `largeTitle`, "of $1,200.00", the `BudgetMeter`, and a status line: "$376.50 left", "No budget set for this trip", or, with an `alert-circle` icon and heavier text, "Over budget by $123.50". The card is a single screen-reader element that reads all of it.
+2. **Settle Up**: one row per payment, "Max Chen pays Sam Patel · $220.87" ("You pay…" / "…pays you" when it's you), and a footer saying how many payments square everyone up and that it's the fewest possible. "Everyone's even" with a checkmark when nothing is owed.
+3. **Expenses · N**, newest first: category icon, "Tue, Oct 13 · Food" overline, description, "Paid by Alex Kim · split 4 ways", the amount. Rows you may edit (you paid, or you're the organizer) have a chevron and open the sheet; the others aren't buttons. A footer says who can edit.
+
+The + in the header opens the **Expense sheet**: Description, Amount, Category (`ChoiceChips`), Paid By (a pickable list for organizers; a fixed "You" row and an explanation for members), Split (`SegmentedControl`: Evenly / By Shares) with one row per member showing what they'd owe as you type. Evenly: tap people in or out (checkmark plus "Not included" in words). By Shares: a `Stepper` per person. A footnote confirms the split adds up to the exact amount, and a `warning` banner appears before an expense would take the trip over budget. Offline, saving says so straight away. With no expenses yet the list shows an inline `EmptyState` with an Add Expense button.
+
+### Checklist
+
+`EmptyState` with the Route motif: "Packing lists and to-dos for the group are coming soon." No disabled button.
 
 ### Settings
 

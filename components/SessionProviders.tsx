@@ -1,15 +1,19 @@
 import { ReactNode } from 'react';
+import { ExpenseProvider } from '../context/ExpenseContext';
 import { ItineraryProvider } from '../context/ItineraryContext';
 import { TripProvider } from '../context/TripContext';
 import { useAuth } from '../hooks/useAuth';
 import { useTrip } from '../hooks/useTrip';
 
-/** The itinerary belongs to the active trip; keying on it resets the list whenever the trip changes. */
-function ActiveTripItinerary({ children }: { children: ReactNode }) {
+/** The itinerary and expenses belong to the active trip; keying on it resets both whenever the trip changes. */
+function ActiveTripData({ children }: { children: ReactNode }) {
   const { activeTripId } = useTrip();
+  const key = activeTripId ?? 'no-trip';
   return (
-    <ItineraryProvider key={activeTripId ?? 'no-trip'} tripId={activeTripId}>
-      {children}
+    <ItineraryProvider key={key} tripId={activeTripId}>
+      <ExpenseProvider key={key} tripId={activeTripId}>
+        {children}
+      </ExpenseProvider>
     </ItineraryProvider>
   );
 }
@@ -23,7 +27,7 @@ export function SessionProviders({ children }: { children: ReactNode }) {
   const { userId } = useAuth();
   return (
     <TripProvider key={userId ?? 'signed-out'}>
-      <ActiveTripItinerary>{children}</ActiveTripItinerary>
+      <ActiveTripData>{children}</ActiveTripData>
     </TripProvider>
   );
 }
