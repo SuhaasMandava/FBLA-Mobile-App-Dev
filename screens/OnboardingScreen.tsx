@@ -112,6 +112,30 @@ export default function OnboardingScreen() {
   // New people are the common case on first launch; signing in is one tap away.
   const [mode, setMode] = useState<Mode>('signUp');
 
+// DEV BYPASS: signs in as a fixed test account (see services/DevBypass.ts). Remove with that file.
+function DevBypassButton() {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const run = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- DEV BYPASS: lazy so release bundles drop the module
+      const { devBypassSignIn } = require('../services/DevBypass') as typeof import('../services/DevBypass');
+      await devBypassSignIn();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Dev sign-in failed.');
+      setBusy(false);
+    }
+  };
+  return (
+    <>
+      {error ? <InlineBanner tone="error" message={`DEV BYPASS: ${error}`} /> : null}
+      <Button label="DEV: Skip login (test user)" onPress={run} loading={busy} />
+    </>
+  );
+}
+
   return (
     // This screen has no header, so the safe-area padding sits outside the scroll view: the strip behind the
     // clock and battery stays solid and the form scrolls away underneath it instead of overlapping them.
@@ -150,6 +174,9 @@ export default function OnboardingScreen() {
     </SafeAreaView>
   );
 }
+
+            {/* DEV BYPASS: development builds only; `__DEV__` is false in release so this and the require are stripped. */}
+            {__DEV__ ? <DevBypassButton /> : null}
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
