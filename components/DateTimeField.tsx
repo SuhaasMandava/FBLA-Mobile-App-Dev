@@ -1,8 +1,18 @@
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
-import { formatClockTime, formatDate, parseClockTime, parseISODate, toClockTime, toISODate, todayISO } from '../utils/dates';
+import {
+  formatClockTime,
+  formatDate,
+  parseClockTime,
+  parseDateInput,
+  parseISODate,
+  parseTimeInput,
+  toClockTime,
+  toISODate,
+  todayISO,
+} from '../utils/dates';
 import { AppText } from './AppText';
 import { Button } from './Button';
 import { FieldMessage } from './FieldMessage';
@@ -28,8 +38,9 @@ interface DateTimeFieldProps {
 }
 
 /**
- * A field that shows the chosen date or time and opens the platform picker:
- * a native dialog on Android, an inline picker under the field on iOS.
+ * A field you can type into or pick from. Typing is forgiving ("9/21/26", "sept 21", "tomorrow", "930pm")
+ * and is tidied into the standard format when you leave the field. The calendar or clock button opens the
+ * platform picker: a native dialog on Android, an inline picker under the field on iOS.
  */
 export function DateTimeField({
   label,
@@ -44,8 +55,11 @@ export function DateTimeField({
   initialDate,
   clearable = false,
 }: DateTimeFieldProps) {
-  const { colors, scheme, spacing, radii, layout, motion } = useTheme();
+  const { colors, type, scheme, spacing, radii, layout, motion } = useTheme();
   const [open, setOpen] = useState(false); // iOS: is the inline picker showing
+  const [text, setText] = useState<string | null>(null); // what's being typed; null when not typing
+  const [typedError, setTypedError] = useState<string | null>(null);
+  const [focused, setFocused] = useState(false);
   const isDate = mode === 'date';
 
   const startingDay = initialDate ?? minDate ?? todayISO();
@@ -60,9 +74,52 @@ export function DateTimeField({
   const maximumDate = isDate && maxDate ? parseISODate(maxDate) : undefined;
 
   const display = value ? (isDate ? formatDate(value) : formatClockTime(value)) : null;
-  const commit = (date: Date) => onChange(isDate ? toISODate(date) : toClockTime(date));
+  const commit = (date: Date) => {
+    setText(null);
+    setTypedError(null);
+    onChange(isDate ? toISODate(date) : toClockTime(date));
+  };
+
+  /** What a typed entry means, or why it can't be used. Empty text clears the field. */
+  const interpret = (raw: string): { value: string } | { problem: string } => {
+    if (!raw.trim()) return { value: '' };
+    if (!isDate) {
+      const time = parseTimeInput(raw);
+      return time ? { value: time } : { problem: "Couldn't read that time. Try 9:30 AM or 14:30." };
+    }
+    const date = parseDateInput(raw);
+    if (!date) return { problem: "Couldn't read that date. Try 09/21/2026, Sep 21, or tomorrow." };
+    if (minDate && date < minDate) return { problem: `Choose ${formatDate(minDate)} or later.` };
+    if (maxDate && date > maxDate) return { problem: `Choose ${formatDate(maxDate)} or earlier.` };
+    return { value: date };
+  };
+
+  // Each keystroke keeps the form's value in step with the text, so submitting while still typing
+  // can't send a stale date. A problem is only shown once the person leaves the field.
+  const onChangeText = (raw: string) => {
+    setText(raw);
+    setTypedError(null);
+    const result = interpret(raw);
+    onChange('value' in result ? result.value : '');
+  };
+
+  const finishTyping = () => {
+    if (text === null) return;
+    if (text === (display ?? '')) {
+      setText(null); // focused and left without editing
+      return;
+    }
+    const result = interpret(text);
+    if ('value' in result) {
+      onChange(result.value);
+      setText(null); // back to the tidy formatted date
+    } else {
+      setTypedError(result.problem);
+    }
+  };
 
   const openPicker = () => {
+    finishTyping();
     if (Platform.OS === 'android') {
       DateTimePickerAndroid.open({
         value: pickerValue,
@@ -78,7 +135,10 @@ export function DateTimeField({
     setOpen((o) => !o);
   };
 
-  const spokenHint = error ? `Error: ${error}` : (helper ?? `Opens the ${isDate ? 'date' : 'time'} picker`);
+  const shownError = typedError ?? error;
+  const spokenHint = shownError
+    ? `Error: ${shownError}`
+    : (helper ?? `Type ${isDate ? 'a date' : 'a time'}, or use the button to open the picker`);
 
   return (
     <View style={{ gap: spacing.xs - 2 }}>
@@ -91,31 +151,59 @@ export function DateTimeField({
         {label}
       </AppText>
       <View style={[styles.row, { gap: spacing.xs }]}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${label}, ${display ?? 'not set'}`}
-          accessibilityHint={spokenHint}
-          accessibilityState={{ expanded: Platform.OS === 'ios' ? open : undefined }}
-          onPress={openPicker}
-          style={({ pressed }) => [
+        <View
+          style={[
             styles.input,
             {
               minHeight: layout.controlHeight,
               borderRadius: radii.md,
-              paddingHorizontal: spacing.md,
-              gap: spacing.sm,
+              paddingLeft: spacing.xs,
+              paddingRight: spacing.md,
               backgroundColor: colors.surface,
-              borderColor: error ? colors.danger : colors.fieldBorder,
-              borderWidth: error ? 2 : 1,
+              borderColor: shownError ? colors.danger : focused ? colors.accent : colors.fieldBorder,
+              borderWidth: shownError || focused ? 2 : 1,
             },
-            pressed && { opacity: motion.pressedOpacity },
           ]}
         >
-          <Icon name={isDate ? 'calendar-outline' : 'time-outline'} size={20} color="labelSecondary" />
-          <AppText variant="body" color={display ? 'label' : 'labelSecondary'} tabular style={styles.value}>
-            {display ?? placeholder ?? (isDate ? 'Select date' : 'Select time')}
-          </AppText>
-        </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${isDate ? 'date' : 'time'} picker for ${label}`}
+            accessibilityState={{ expanded: Platform.OS === 'ios' ? open : undefined }}
+            onPress={openPicker}
+            hitSlop={4}
+            style={({ pressed }) => [
+              styles.pickerButton,
+              { minWidth: layout.minTarget, minHeight: layout.minTarget },
+              pressed && { opacity: motion.pressedOpacity },
+            ]}
+          >
+            <Icon name={isDate ? 'calendar-outline' : 'time-outline'} size={20} color="labelSecondary" />
+          </Pressable>
+          {/* The label is spoken with the current value, e.g. "Start date, Sep 21, 2026". */}
+          <TextInput
+            accessibilityLabel={`${label}${display ? `, ${display}` : ', not set'}`}
+            accessibilityHint={spokenHint}
+            value={text ?? display ?? ''}
+            placeholder={placeholder ?? (isDate ? 'Type or pick a date' : 'Type or pick a time')}
+            placeholderTextColor={colors.labelSecondary}
+            onFocus={() => {
+              setFocused(true);
+              setText(display ?? '');
+            }}
+            onChangeText={onChangeText}
+            onBlur={() => {
+              setFocused(false);
+              finishTyping();
+            }}
+            onSubmitEditing={finishTyping}
+            returnKeyType="done"
+            autoCapitalize="none"
+            autoCorrect={false}
+            spellCheck={false}
+            selectTextOnFocus
+            style={[type.body, styles.text, { color: colors.label }, webNoOutline]}
+          />
+        </View>
         {clearable && value ? (
           <Button
             variant="plain"
@@ -124,6 +212,8 @@ export function DateTimeField({
             hint={`Clears ${label}`}
             onPress={() => {
               setOpen(false);
+              setText(null);
+              setTypedError(null);
               onChange('');
             }}
           />
@@ -146,13 +236,17 @@ export function DateTimeField({
         </View>
       ) : null}
 
-      <FieldMessage error={error} helper={helper} />
+      <FieldMessage error={shownError} helper={helper} />
     </View>
   );
 }
 
+// The box draws the focus ring; keep the browser's own ring off the inner text box on web.
+const webNoOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null;
+
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   input: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  value: { flex: 1 },
+  pickerButton: { alignItems: 'center', justifyContent: 'center' },
+  text: { flex: 1, paddingVertical: 0 },
 });
