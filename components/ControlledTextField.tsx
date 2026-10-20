@@ -14,6 +14,8 @@ type ControlledTextFieldProps<T extends FieldValues, Data> = Omit<
   transform?: (text: string) => string;
   /** Other fields whose messages depend on this one, re-checked when it changes (after the first submit). */
   deps?: FieldPath<T>[];
+  /** Feedback while typing, before the form is checked on submit. A validation error replaces it. */
+  liveError?: string | null;
 };
 
 /** A TextField wired to react-hook-form: value, change, blur, error message, and focus-on-error. */
@@ -22,6 +24,7 @@ export function ControlledTextField<T extends FieldValues, Data>({
   name,
   transform,
   deps,
+  liveError,
   ...fieldProps
 }: ControlledTextFieldProps<T, Data>) {
   const { field, fieldState } = useController({ control, name, rules: deps ? { deps } : undefined });
@@ -32,7 +35,7 @@ export function ControlledTextField<T extends FieldValues, Data>({
       value={typeof field.value === 'string' ? field.value : ''}
       onChangeText={(text) => field.onChange(transform ? transform(text) : text)}
       onBlur={field.onBlur}
-      error={fieldState.error?.message}
+      error={fieldState.error?.message ?? liveError}
     />
   );
 }

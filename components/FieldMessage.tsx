@@ -3,9 +3,22 @@ import { useTheme } from '../hooks/useTheme';
 import { AppText } from './AppText';
 import { Icon } from './Icon';
 
-/** The line under a field: the error (with an icon, so it isn't red alone) or else the helper text. */
-export function FieldMessage({ error, helper }: { error?: string | null; helper?: string }) {
+/**
+ * The line under a field: the error, else a success message (each with an icon, so it
+ * isn't color alone), else the helper text.
+ */
+export function FieldMessage({ error, success, helper }: { error?: string | null; success?: string | null; helper?: string }) {
   const { spacing } = useTheme();
+  if (success && !error) {
+    return (
+      <View accessibilityLiveRegion="polite" style={[styles.row, { gap: spacing.xxs + 2 }]}>
+        <Icon name="checkmark-circle" size={16} color="success" />
+        <AppText variant="footnote" color="success" style={styles.text}>
+          {success}
+        </AppText>
+      </View>
+    );
+  }
   if (error) {
     return (
       <View

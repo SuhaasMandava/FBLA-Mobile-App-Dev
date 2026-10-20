@@ -9,6 +9,8 @@ interface TextFieldProps extends Omit<TextInputProps, 'style' | 'accessibilityLa
   label: string;
   /** Inline validation message. Replaces the helper text while it's shown. */
   error?: string | null;
+  /** Positive confirmation (e.g. "Passwords match."), shown in green with a checkmark. An error wins over it. */
+  success?: string | null;
   /** Visible guidance under the field (also spoken), e.g. the expected format. */
   helper?: string;
   inputRef?: Ref<TextInput>;
@@ -21,6 +23,7 @@ interface TextFieldProps extends Omit<TextInputProps, 'style' | 'accessibilityLa
 export function TextField({
   label,
   error,
+  success,
   helper,
   inputRef,
   secureTextEntry,
@@ -34,7 +37,8 @@ export function TextField({
   const isSecret = secureTextEntry === true;
   const showToggle = isSecret && revealable;
   // Screen readers hear the error again whenever they return to the field, not only when it first appears.
-  const spokenHint = error ? `Error: ${error}` : helper;
+  const spokenHint = error ? `Error: ${error}` : (success ?? helper);
+  const borderColor = error ? colors.danger : success ? colors.success : colors.fieldBorder;
 
   return (
     <View style={{ gap: spacing.xs - 2 }}>
@@ -54,8 +58,8 @@ export function TextField({
             minHeight: multiline ? 100 : layout.controlHeight,
             borderRadius: radii.md,
             backgroundColor: colors.surface,
-            borderColor: error ? colors.danger : colors.fieldBorder,
-            borderWidth: error ? 2 : 1,
+            borderColor,
+            borderWidth: error || success ? 2 : 1,
           },
         ]}
       >
@@ -91,7 +95,7 @@ export function TextField({
           </Pressable>
         ) : null}
       </View>
-      <FieldMessage error={error} helper={helper} />
+      <FieldMessage error={error} success={success} helper={helper} />
     </View>
   );
 }

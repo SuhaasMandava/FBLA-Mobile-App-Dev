@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useWatch } from 'react-hook-form';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../components/AppText';
@@ -10,6 +11,7 @@ import { SegmentedControl } from '../components/SegmentedControl';
 import { useSignInForm } from '../hooks/useSignInForm';
 import { useSignUpForm } from '../hooks/useSignUpForm';
 import { useTheme } from '../hooks/useTheme';
+import { passwordMatch, PASSWORDS_DONT_MATCH, PASSWORDS_MATCH } from '../models/AuthForm';
 
 type Mode = 'signUp' | 'signIn';
 
@@ -48,6 +50,8 @@ function SignInForm() {
 
 function SignUpForm() {
   const form = useSignUpForm();
+  const [password, confirmPassword] = useWatch({ control: form.control, name: ['password', 'confirmPassword'] });
+  const match = passwordMatch(password, confirmPassword);
   return (
     <>
       <ControlledTextField
@@ -92,6 +96,8 @@ function SignUpForm() {
         name="confirmPassword"
         label="Confirm password"
         helper="Type the same password again."
+        liveError={match === 'mismatch' ? PASSWORDS_DONT_MATCH : null}
+        success={match === 'match' ? PASSWORDS_MATCH : null}
         secureTextEntry
         revealable={false}
         autoCapitalize="none"
@@ -105,12 +111,6 @@ function SignUpForm() {
     </>
   );
 }
-
-export default function OnboardingScreen() {
-  const { colors, spacing, layout } = useTheme();
-  const insets = useSafeAreaInsets();
-  // New people are the common case on first launch; signing in is one tap away.
-  const [mode, setMode] = useState<Mode>('signUp');
 
 // DEV BYPASS: signs in as a fixed test account (see services/DevBypass.ts). Remove with that file.
 function DevBypassButton() {
@@ -135,6 +135,12 @@ function DevBypassButton() {
     </>
   );
 }
+
+export default function OnboardingScreen() {
+  const { colors, spacing, layout } = useTheme();
+  const insets = useSafeAreaInsets();
+  // New people are the common case on first launch; signing in is one tap away.
+  const [mode, setMode] = useState<Mode>('signUp');
 
   return (
     // This screen has no header, so the safe-area padding sits outside the scroll view: the strip behind the
@@ -168,15 +174,15 @@ function DevBypassButton() {
             />
 
             {mode === 'signIn' ? <SignInForm /> : <SignUpForm />}
+
+            {/* DEV BYPASS: development builds only; `__DEV__` is false in release so this and the require are stripped. */}
+            {__DEV__ ? <DevBypassButton /> : null}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-
-            {/* DEV BYPASS: development builds only; `__DEV__` is false in release so this and the require are stripped. */}
-            {__DEV__ ? <DevBypassButton /> : null}
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },

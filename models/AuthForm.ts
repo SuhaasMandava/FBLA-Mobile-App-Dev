@@ -20,6 +20,22 @@ export type SignUpData = Omit<SignUpValues, 'confirmPassword'>;
 export const EMPTY_SIGN_IN: SignInValues = { email: '', password: '' };
 export const EMPTY_SIGN_UP: SignUpValues = { displayName: '', email: '', password: '', confirmPassword: '' };
 
+export const PASSWORDS_DONT_MATCH = "Passwords don't match.";
+export const PASSWORDS_MATCH = 'Passwords match.';
+
+/**
+ * Live feedback on the confirm box while it's being typed. `typing` while what's
+ * there could still become the password (no red after the first keystroke);
+ * `mismatch` once it can't, or it's as long as the password but different.
+ */
+export type PasswordMatch = 'empty' | 'typing' | 'match' | 'mismatch';
+
+export function passwordMatch(password: string, confirmPassword: string): PasswordMatch {
+  if (confirmPassword === '') return 'empty';
+  if (confirmPassword === password) return 'match';
+  return password.startsWith(confirmPassword) ? 'typing' : 'mismatch';
+}
+
 const email = z.string().min(1, 'Email is required.').pipe(z.email('Enter a valid email address.'));
 
 const signInSchema = z.object({
@@ -45,7 +61,7 @@ const signUpSchema = z
   })
   // Compared exactly as typed, spaces included. Skipped while the box is empty so it shows "Re-enter" instead.
   .refine((v) => v.confirmPassword === '' || v.confirmPassword === v.password, {
-    message: "Passwords don't match.",
+    message: PASSWORDS_DONT_MATCH,
     path: ['confirmPassword'],
   });
 
