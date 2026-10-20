@@ -2,18 +2,25 @@ import { useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import appConfig from '../app.json';
 import { InlineBanner } from '../components/InlineBanner';
-import { Icon } from '../components/Icon';
+import { Icon, IconName } from '../components/Icon';
 import { ListRow } from '../components/ListRow';
 import { ListSection } from '../components/ListSection';
 import { Screen } from '../components/Screen';
+import { ThemePreference } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
 import { useTrip } from '../hooks/useTrip';
 import { getErrorMessage } from '../services/errors';
 import { confirmDestructive } from '../utils/confirm';
 
+const appearanceOptions: { value: ThemePreference; label: string; icon: IconName }[] = [
+  { value: 'system', label: 'Device Setting', icon: 'phone-portrait-outline' },
+  { value: 'light', label: 'Light', icon: 'sunny-outline' },
+  { value: 'dark', label: 'Dark', icon: 'moon-outline' },
+];
+
 export default function SettingsScreen() {
-  const { colors } = useTheme();
+  const { colors, preference, setPreference } = useTheme();
   const { email, userId, signOut } = useAuth();
   const { trips } = useTrip();
   const [signingOut, setSigningOut] = useState(false);
@@ -46,6 +53,19 @@ export default function SettingsScreen() {
       <ListSection header="Account">
         {name ? <ListRow leading={<Icon name="person-circle-outline" size={24} color="accent" />} title="Name" value={name} /> : null}
         <ListRow leading={<Icon name="mail-outline" size={24} color="accent" />} title="Email" subtitle={email ?? 'Unknown'} />
+      </ListSection>
+
+      <ListSection header="Appearance" footer="Device Setting follows your phone's light or dark mode.">
+        {appearanceOptions.map((o) => (
+          <ListRow
+            key={o.value}
+            leading={<Icon name={o.icon} size={24} color="accent" />}
+            title={o.label}
+            trailing={preference === o.value ? 'check' : undefined}
+            selected={preference === o.value}
+            onPress={() => setPreference(o.value)}
+          />
+        ))}
       </ListSection>
 
       <ListSection header="About" footer="Made for the FBLA Mobile Application Development event.">

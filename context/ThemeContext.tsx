@@ -1,8 +1,21 @@
-import { createContext, ReactNode, useEffect, useMemo, useState } from 'react';
-import { AccessibilityInfo, Platform, useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createContext, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { AccessibilityInfo, Appearance, Platform, useColorScheme } from 'react-native';
 import { createTheme, Theme } from '../theme/theme';
 
-export type ThemeContextValue = Theme;
+/** 'system' follows the device's appearance; the others override it for this app only. */
+export type ThemePreference = 'system' | 'light' | 'dark';
+
+export type ThemeContextValue = Theme & {
+  preference: ThemePreference;
+  setPreference: (preference: ThemePreference) => void;
+};
+
+const PREFERENCE_KEY = 'triphub.themePreference';
+
+function isPreference(value: string | null): value is ThemePreference {
+  return value === 'system' || value === 'light' || value === 'dark';
+}
 
 export const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
@@ -25,14 +38,35 @@ function useIncreasedContrast(): boolean {
   return enabled;
 }
 
-/**
- * Follows the system appearance. There's deliberately no in-app light/dark switch
- * (HIG, Dark Mode › Best practices): people set it once, for every app.
- */
+/** Follows the system appearance unless the person picked Light or Dark in Settings (saved on the device). */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme();
   const increasedContrast = useIncreasedContrast();
-  const scheme = systemScheme === 'dark' ? 'dark' : 'light';
-  const value = useMemo(() => createTheme(scheme, increasedContrast), [scheme, increasedContrast]);
+  const [preference, setPreferenceState] = useState<ThemePreference>('system');
+
+  useEffect(() => {
+    AsyncStorage.getItem(PREFERENCE_KEY)
+      .then((saved) => {
+        if (isPreference(saved)) setPreferenceState(saved);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Also tell the OS, so native chrome (alerts, pickers, keyboard) matches. Not available everywhere (e.g. web).
+  useEffect(() => {
+    Appearance.setColorScheme?.(preference === 'system' ? 'unspecified' : preference);
+  }, [preference]);
+
+  const setPreference = useCallback((next: ThemePreference) => {
+    setPreferenceState(next);
+    AsyncStorage.setItem(PREFERENCE_KEY, next).catch(() => {});
+  }, []);
+
+  const resolved = preference === 'system' ? systemScheme : preference;
+  const scheme = resolved === 'dark' ? 'dark' : 'light';
+  const value = useMemo(
+    () => ({ ...createTheme(scheme, increasedContrast), preference, setPreference }),
+    [scheme, increasedContrast, preference, setPreference],
+  );
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
