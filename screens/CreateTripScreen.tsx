@@ -1,6 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
 import { useWatch } from 'react-hook-form';
+import { Platform } from 'react-native';
 import { Button } from '../components/Button';
 import { ControlledDateTimeField } from '../components/ControlledDateTimeField';
 import { ControlledTextField } from '../components/ControlledTextField';
@@ -23,12 +24,24 @@ export default function CreateTripScreen() {
     <Sheet
       subtitle="You'll get an invite code to share with your group."
       footer={
-        <Button
-          label="Create Trip"
-          hint="Saves the trip and generates an invite code to share."
-          onPress={form.submit}
-          loading={form.submitting}
-        />
+        <>
+          <Button
+            label="Create Trip"
+            hint="Saves the trip and generates an invite code to share."
+            onPress={form.submit}
+            loading={form.submitting}
+          />
+          {/* iOS already has Cancel in the sheet's header. Closing asks first if anything was entered. */}
+          {Platform.OS !== 'ios' ? (
+            <Button
+              label="Cancel"
+              variant="tinted"
+              hint="Closes this form without creating a trip."
+              onPress={() => navigation.goBack()}
+              disabled={form.submitting}
+            />
+          ) : null}
+        </>
       }
     >
       <ControlledTextField
