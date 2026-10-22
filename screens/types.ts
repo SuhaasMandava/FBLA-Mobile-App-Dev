@@ -12,7 +12,11 @@ export type TabParamList = {
 };
 
 export type RootStackParamList = {
+  /** The first-run intro, before signing in (shown once per device). */
+  Welcome: undefined;
   Onboarding: undefined;
+  /** The same intro, reopened from Settings as a sheet. */
+  Intro: undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
   TripSwitcher: undefined;
   CreateTrip: undefined;

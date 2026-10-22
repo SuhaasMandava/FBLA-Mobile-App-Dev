@@ -13,6 +13,7 @@ import { HeaderButton } from '../components/HeaderButton';
 import { Icon, IconName } from '../components/Icon';
 import { LoadingScreen } from '../components/LoadingScreen';
 import { useAuth } from '../hooks/useAuth';
+import { useIntro } from '../hooks/useIntro';
 import { useInviteLink } from '../hooks/useInviteLink';
 import { useTheme } from '../hooks/useTheme';
 import { useTrip } from '../hooks/useTrip';
@@ -32,6 +33,7 @@ import OnboardingScreen from './OnboardingScreen';
 import SettingsScreen from './SettingsScreen';
 import TripSettingsScreen from './TripSettingsScreen';
 import TripSwitcherScreen from './TripSwitcherScreen';
+import WelcomeScreen from './WelcomeScreen';
 import { RootStackParamList, TabParamList, TabStackParamList } from './types';
 
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -146,10 +148,12 @@ export default function RootNavigator() {
   const headerOptions = useHeaderOptions();
   const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
   const [ready, setReady] = useState(false);
+  const { seen: introSeen } = useIntro();
   useOpenJoinLink(ready);
 
   // Restoring the saved session takes a moment at startup; don't flash the sign-in screen at someone already signed in.
-  if (status === 'loading') return <LoadingScreen />;
+  // (Likewise whether this phone has seen the intro yet.)
+  if (status === 'loading' || introSeen === null) return <LoadingScreen />;
 
   const formSheet: NativeStackNavigationOptions = {
     presentation: 'modal',
@@ -226,11 +230,15 @@ export default function RootNavigator() {
             />
             <Stack.Screen name="TripSettings" component={TripSettingsScreen} options={{ ...doneSheet, title: 'Trip Settings' }} />
             <Stack.Screen name="EditTrip" component={EditTripScreen} options={{ ...formSheet, title: 'Edit Trip' }} />
+            <Stack.Screen name="Intro" component={WelcomeScreen} options={{ ...doneSheet, title: 'How TripHub Works' }} />
             <Stack.Screen name="Announcements" component={AnnouncementsScreen} options={{ ...doneSheet, title: 'Announcements' }} />
             <Stack.Screen name="ActivityComments" component={ActivityCommentsScreen} options={{ ...doneSheet, title: 'Comments' }} />
           </>
         ) : (
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
+          <>
+            {introSeen ? null : <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />}
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

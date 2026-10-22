@@ -18,6 +18,8 @@ interface TextFieldProps extends Omit<TextInputProps, 'style' | 'accessibilityLa
   revealable?: boolean;
   /** Larger, spaced monospace text, for the invite code. */
   variant?: 'default' | 'code';
+  /** For multiline fields: start one line tall and grow with the text, instead of a 100 pt box. */
+  growing?: boolean;
 }
 
 export function TextField({
@@ -30,6 +32,7 @@ export function TextField({
   revealable = true,
   variant = 'default',
   multiline,
+  growing = false,
   ...inputProps
 }: TextFieldProps) {
   const { colors, type, spacing, radii, layout } = useTheme();
@@ -55,7 +58,7 @@ export function TextField({
         style={[
           styles.box,
           {
-            minHeight: multiline ? 100 : layout.controlHeight,
+            minHeight: multiline && !growing ? 100 : layout.controlHeight,
             borderRadius: radii.md,
             backgroundColor: colors.surface,
             borderColor,
@@ -71,7 +74,7 @@ export function TextField({
           secureTextEntry={isSecret && !revealed}
           clearButtonMode={isSecret || multiline ? 'never' : 'while-editing'}
           multiline={multiline}
-          textAlignVertical={multiline ? 'top' : 'center'}
+          textAlignVertical={multiline && !growing ? 'top' : 'center'}
           style={[
             variant === 'code' ? type.code : type.body,
             styles.input,

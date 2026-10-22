@@ -9,6 +9,7 @@ import { HeaderButton } from '../components/HeaderButton';
 import { InlineBanner } from '../components/InlineBanner';
 import { ListSection } from '../components/ListSection';
 import { OfflineBanner } from '../components/OfflineBanner';
+import { QuickAddField } from '../components/QuickAddField';
 import { Screen } from '../components/Screen';
 import { SkeletonList } from '../components/Skeleton';
 import { useAuth } from '../hooks/useAuth';
@@ -75,6 +76,8 @@ export default function ChecklistScreen() {
       {actionError ? <InlineBanner tone="error" message={actionError} /> : null}
 
       <ChecklistProgress progress={progress} />
+
+      <QuickAddField />
 
       {groups.length === 0 ? (
         <ListSection header="Checklist">

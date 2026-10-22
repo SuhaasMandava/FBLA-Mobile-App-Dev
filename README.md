@@ -66,7 +66,12 @@ The Checklist tab is one shared list per trip, in three groups: **Packing**, **T
 - **Who did it.** A finished item says "Done by Alex". The database records who ticked it and when (from the caller's own id, in a trigger), so nobody can tick an item on someone else's behalf.
 - **Who can delete.** The member who added an item, or a trip organizer, like the itinerary. The app only offers Delete to them.
 - **Ticking is instant.** The check appears straight away and is put back, with a message, if it can't be saved.
+- **Quick add.** The box under the progress card adds items fast: pick Packing, To-Do or Bookings once, then type an item and press return, again and again (the keyboard stays up). Pasting a list adds one item per line, with bullets, numbers and checkboxes stripped and repeats skipped, up to 25 at a time. If one can't be saved, what wasn't added stays in the box.
 - **Validation.** Syntactic: a name is required and at most 100 characters, and the group is one of the three. Semantic: the assignee must be a member of the trip (an item assigned to someone who later leaves shows as assigned to "a former member" and can still be ticked or reassigned). The database checks the same rules with constraints and a trigger.
+
+## First run
+
+A three-step intro (`screens/WelcomeScreen.tsx`) opens the first time the app is launched on a phone, before signing in: plan the trip together, invite with a code, and how friends join (typing the code or opening the link). **Skip** or **Get Started** goes to sign-in, and it isn't shown again on that phone. **Settings → How TripHub Works** replays it.
 
 ## Organizer tools
 

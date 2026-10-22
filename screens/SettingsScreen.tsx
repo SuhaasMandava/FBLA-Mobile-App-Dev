@@ -149,6 +149,13 @@ export default function SettingsScreen() {
 
       <ListSection header="About" footer="Made for the FBLA Mobile Application Development event.">
         <ListRow
+          leading={<Icon name="help-circle-outline" size={24} color="accent" />}
+          title="How TripHub Works"
+          subtitle="Trips, invite codes and joining, in three steps"
+          trailing="chevron"
+          onPress={() => navigation.navigate('Intro')}
+        />
+        <ListRow
           leading={<Icon name="information-circle-outline" size={24} color="accent" />}
           title="TripHub"
           value={`Version ${appConfig.expo.version}`}

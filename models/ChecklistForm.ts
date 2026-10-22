@@ -45,6 +45,33 @@ function checklistSchema({ memberIds }: ChecklistFormContext) {
   });
 }
 
+/** Most items one quick-add can create (a pasted list), so a stray paste can't flood the list. */
+export const QUICK_ADD_MAX_ITEMS = 25;
+
+/**
+ * Quick add: one item per line (so a pasted packing list becomes one item per line),
+ * each with the same rules as the full form, all in `category` and unassigned. Bullets and
+ * checkboxes people paste ("- ", "• ", "[ ] ") are dropped, and so are blank lines and repeats.
+ */
+export function validateQuickAdd(text: string, category: ChecklistCategory): Validation<{ text: string }, NewChecklistItem[]> {
+  const titles = text
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*(?:[-*•]|\d+[.)]|\[[ xX]?\])\s+/, '').trim())
+    .filter((line, index, all) => line.length > 0 && all.findIndex((l) => l.toLowerCase() === line.toLowerCase()) === index);
+  if (titles.length === 0) return { ok: false, errors: { text: 'Type an item to add.' } };
+  if (titles.length > QUICK_ADD_MAX_ITEMS) {
+    return { ok: false, errors: { text: `Add up to ${QUICK_ADD_MAX_ITEMS} items at a time.` } };
+  }
+  const tooLong = titles.find((t) => t.length > CHECKLIST_TITLE_MAX);
+  if (tooLong) {
+    return {
+      ok: false,
+      errors: { text: `Keep each item under ${CHECKLIST_TITLE_MAX} characters ("${tooLong.slice(0, 20)}…" is too long).` },
+    };
+  }
+  return { ok: true, data: titles.map((title) => ({ title, category, assignedTo: null })) };
+}
+
 /** Validate the form against the trip's members and, if it passes, return the item to save. */
 export function validateChecklistForm(
   values: ChecklistFormValues,

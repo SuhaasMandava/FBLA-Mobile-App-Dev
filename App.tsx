@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SessionProviders } from './components/SessionProviders';
 import { AuthProvider } from './context/AuthContext';
+import { IntroProvider } from './context/IntroContext';
 import { InviteLinkProvider } from './context/InviteLinkContext';
 import { NetworkProvider } from './context/NetworkContext';
 import { NotificationSettingsProvider } from './context/NotificationSettingsContext';
@@ -27,12 +28,14 @@ export default function App() {
         <NetworkProvider>
           <InviteLinkProvider>
             <NotificationSettingsProvider>
-              <AuthProvider>
-                <SessionProviders>
-                  <RootNavigator />
-                  <ThemedStatusBar />
-                </SessionProviders>
-              </AuthProvider>
+              <IntroProvider>
+                <AuthProvider>
+                  <SessionProviders>
+                    <RootNavigator />
+                    <ThemedStatusBar />
+                  </SessionProviders>
+                </AuthProvider>
+              </IntroProvider>
             </NotificationSettingsProvider>
           </InviteLinkProvider>
         </NetworkProvider>
