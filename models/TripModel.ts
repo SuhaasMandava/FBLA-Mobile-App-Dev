@@ -1,3 +1,5 @@
+import { buildJoinLink } from '../utils/inviteLink';
+
 /**
  * Domain shape of a trip plus the mapping to/from the Supabase `trips` row.
  * Pure data: no React, no network.
@@ -77,10 +79,25 @@ export const TripModel = {
     return member.displayName ?? 'Trip member';
   },
 
-  /** The text people send to invite someone; null if the trip has no invite code. */
+  /**
+   * The text people send to invite someone; null if the trip has no invite code. The link
+   * opens the Join screen with the code filled in; the code itself works for anyone whose
+   * messaging app doesn't make the link tappable.
+   */
   inviteMessage(trip: Trip): string | null {
     if (!trip.inviteCode) return null;
-    return `Join my trip "${trip.name}"! In the app, tap Join with a Code and enter ${trip.inviteCode}.`;
+    return (
+      `Join my trip "${trip.name}" on TripHub! Open ${buildJoinLink(trip.inviteCode)} ` +
+      `or tap Join with Code in the app and enter ${trip.inviteCode}.`
+    );
+  },
+
+  /**
+   * A public post about the trip, for social media. Deliberately leaves out the invite
+   * code: anyone who saw it could join the trip.
+   */
+  socialPost(trip: Trip): string {
+    return `Planning ${trip.name} in ${trip.destination} with my crew on TripHub. #TogetherWeGo`;
   },
 
   isOrganizer(trip: Trip, userId: string | null): boolean {

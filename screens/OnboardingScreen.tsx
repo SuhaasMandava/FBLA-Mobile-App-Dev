@@ -4,10 +4,12 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 're
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
+import { Card } from '../components/Card';
 import { ControlledTextField } from '../components/ControlledTextField';
 import { InlineBanner } from '../components/InlineBanner';
 import { AppMark } from '../components/Route';
 import { SegmentedControl } from '../components/SegmentedControl';
+import { useInviteLink } from '../hooks/useInviteLink';
 import { useSignInForm } from '../hooks/useSignInForm';
 import { useSignUpForm } from '../hooks/useSignUpForm';
 import { useTheme } from '../hooks/useTheme';
@@ -112,6 +114,23 @@ function SignUpForm() {
   );
 }
 
+/** Shown when a join link opened the app before anyone signed in: the link is kept for afterwards. */
+function InviteNotice() {
+  const { pendingCode } = useInviteLink();
+  const { spacing } = useTheme();
+  if (!pendingCode) return null;
+  return (
+    <Card accessible accessibilityLabel={`You're invited to a trip. After you sign in, TripHub opens the invite with code ${pendingCode.split('').join(' ')}.`}>
+      <View style={{ gap: spacing.xxs }}>
+        <AppText variant="headline">{"You're invited to a trip"}</AppText>
+        <AppText variant="subhead" color="labelSecondary">
+          {`Create an account or sign in, and TripHub will open the invite (code ${pendingCode}) so you can join.`}
+        </AppText>
+      </View>
+    </Card>
+  );
+}
+
 // DEV BYPASS: signs in as a fixed test account (see services/DevBypass.ts). Remove with that file.
 function DevBypassButton() {
   const [busy, setBusy] = useState(false);
@@ -163,6 +182,8 @@ export default function OnboardingScreen() {
                 Plan the trip together, from first idea to last stop.
               </AppText>
             </View>
+
+            <InviteNotice />
 
             <SegmentedControl
               options={[

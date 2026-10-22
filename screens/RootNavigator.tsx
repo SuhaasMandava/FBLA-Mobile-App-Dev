@@ -1,13 +1,21 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { DarkTheme, DefaultTheme, NavigationContainer, useNavigation } from '@react-navigation/native';
+import {
+  createNavigationContainerRef,
+  DarkTheme,
+  DefaultTheme,
+  NavigationContainer,
+  useNavigation,
+} from '@react-navigation/native';
 import { createNativeStackNavigator, NativeStackNavigationOptions } from '@react-navigation/native-stack';
-import { ComponentType } from 'react';
+import { ComponentType, useEffect, useState } from 'react';
 import { Platform, Text } from 'react-native';
 import { HeaderButton } from '../components/HeaderButton';
 import { Icon, IconName } from '../components/Icon';
 import { LoadingScreen } from '../components/LoadingScreen';
 import { useAuth } from '../hooks/useAuth';
+import { useInviteLink } from '../hooks/useInviteLink';
 import { useTheme } from '../hooks/useTheme';
+import { useTrip } from '../hooks/useTrip';
 import ActivityCommentsScreen from './ActivityCommentsScreen';
 import AnnouncementsScreen from './AnnouncementsScreen';
 import BudgetScreen from './BudgetScreen';
@@ -23,6 +31,8 @@ import OnboardingScreen from './OnboardingScreen';
 import SettingsScreen from './SettingsScreen';
 import TripSwitcherScreen from './TripSwitcherScreen';
 import { RootStackParamList, TabParamList, TabStackParamList } from './types';
+
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -112,11 +122,29 @@ function DoneButton() {
   return <HeaderButton label="Done" prominent onPress={() => navigation.goBack()} />;
 }
 
+/**
+ * Opens the Join screen for a join link (triphub://join/CODE) once someone is signed in.
+ * Waits for their trips to load first: picking the first trip remounts the navigator
+ * (see SessionProviders), which would close a Join screen opened any earlier.
+ */
+function useOpenJoinLink(ready: boolean) {
+  const { status } = useAuth();
+  const { loading: tripsLoading } = useTrip();
+  const { pendingCode, clearPendingCode } = useInviteLink();
+  useEffect(() => {
+    if (!ready || status !== 'signedIn' || tripsLoading || !pendingCode || !navigationRef.isReady()) return;
+    navigationRef.navigate('JoinTrip', { code: pendingCode });
+    clearPendingCode();
+  }, [ready, status, tripsLoading, pendingCode, clearPendingCode]);
+}
+
 export default function RootNavigator() {
   const { scheme, colors } = useTheme();
   const { status } = useAuth();
   const headerOptions = useHeaderOptions();
   const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  const [ready, setReady] = useState(false);
+  useOpenJoinLink(ready);
 
   // Restoring the saved session takes a moment at startup; don't flash the sign-in screen at someone already signed in.
   if (status === 'loading') return <LoadingScreen />;
@@ -135,6 +163,8 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer
+      ref={navigationRef}
+      onReady={() => setReady(true)}
       theme={{
         ...base,
         colors: {

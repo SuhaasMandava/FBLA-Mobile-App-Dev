@@ -7,12 +7,15 @@ import { TripService } from '../services/TripService';
 import { createResolver } from '../utils/formResolver';
 import { useTrip } from './useTrip';
 
-/** Form state and submit logic for the Join Trip screen. `onJoined` runs once the user is on the trip. */
-export function useJoinTripForm(onJoined: (trip: Trip) => void) {
+/**
+ * Form state and submit logic for the Join Trip screen. `onJoined` runs once the user is on the trip.
+ * `initialCode` prefills the box (from a join link); joining still waits for the user to tap Join.
+ */
+export function useJoinTripForm(onJoined: (trip: Trip) => void, initialCode?: string) {
   const { upsertTrip } = useTrip();
   // `data` handed to submit is the normalized code ("abc-234" → "ABC234").
   const form = useForm<JoinTripFormValues, unknown, string>({
-    defaultValues: EMPTY_JOIN_TRIP_FORM,
+    defaultValues: initialCode ? { code: initialCode } : EMPTY_JOIN_TRIP_FORM,
     resolver: createResolver(validateJoinTripForm),
     reValidateMode: 'onChange',
   });

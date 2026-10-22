@@ -16,7 +16,8 @@ export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabParamList>;
   TripSwitcher: undefined;
   CreateTrip: undefined;
-  JoinTrip: undefined;
+  /** Join a trip; `code` comes prefilled from a join link (triphub://join/CODE). */
+  JoinTrip: { code?: string } | undefined;
   /** Add an activity (optionally starting on `day`), or edit the one with `itemId`. */
   ItineraryItem: { itemId?: string; day?: string } | undefined;
   /** Log a new expense, or edit the one with `expenseId`. */

@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import { useLayoutEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { AppText } from '../components/AppText';
 import { AvatarStack, Avatar } from '../components/Avatar';
 import { Badge } from '../components/Badge';
@@ -31,6 +31,7 @@ import { getErrorMessage } from '../services/errors';
 import { ShareService } from '../services/ShareService';
 import { formatClockTime, formatDateRange, formatDayHeading, formatRelativeTime, todayISO } from '../utils/dates';
 import { formatCents } from '../utils/money';
+import { ShareTarget } from '../utils/shareTargets';
 import { tripProgress } from '../utils/tripProgress';
 import { TabScreenNavigation } from './types';
 
@@ -81,7 +82,17 @@ function TripHero({ trip }: { trip: Trip }) {
   );
 }
 
-function InviteSection({ trip, onShare, sharing }: { trip: Trip; onShare: () => void; sharing: boolean }) {
+/** Which share action is running, so only its button shows a spinner. */
+type Sharing = 'sheet' | ShareTarget | null;
+
+interface InviteSectionProps {
+  trip: Trip;
+  sharing: Sharing;
+  onShare: () => void;
+  onSend: (target: 'whatsapp' | 'sms') => void;
+}
+
+function InviteSection({ trip, sharing, onShare, onSend }: InviteSectionProps) {
   const { spacing } = useTheme();
   if (!trip.inviteCode) return null;
   const alone = trip.members.length === 1;
@@ -111,8 +122,31 @@ function InviteSection({ trip, onShare, sharing }: { trip: Trip; onShare: () => 
           variant={alone ? 'filled' : 'tinted'}
           hint="Opens the share sheet to send the code to friends."
           onPress={onShare}
-          loading={sharing}
+          loading={sharing === 'sheet'}
         />
+        {/* Straight to the apps groups plan in. Side by side, wrapping under each other at large text sizes. */}
+        <View style={[styles.shareRow, { gap: spacing.sm }]}>
+          <View style={styles.shareButton}>
+            <Button
+              label="WhatsApp"
+              icon="logo-whatsapp"
+              variant="tinted"
+              hint="Opens WhatsApp with the invite link and code ready to send."
+              onPress={() => onSend('whatsapp')}
+              loading={sharing === 'whatsapp'}
+            />
+          </View>
+          <View style={styles.shareButton}>
+            <Button
+              label="Text"
+              icon="chatbubble-ellipses-outline"
+              variant="tinted"
+              hint="Opens Messages with the invite link and code ready to send."
+              onPress={() => onSend('sms')}
+              loading={sharing === 'sms'}
+            />
+          </View>
+        </View>
       </Card>
     </View>
   );
@@ -159,12 +193,13 @@ function AnnouncementsSection({ trip, onOpen }: { trip: Trip; onOpen: () => void
 }
 
 export default function HomeScreen() {
+  const { colors } = useTheme();
   const navigation = useNavigation<TabScreenNavigation>();
   const { activeTrip, trips, loading, error, refresh } = useTrip();
   const { items } = useItinerary();
   const { expenses } = useExpenses();
   const spentCents = expenses.reduce((sum, e) => sum + e.amountCents, 0);
-  const [sharing, setSharing] = useState(false);
+  const [sharing, setSharing] = useState<Sharing>(null);
   const [shareError, setShareError] = useState<string | null>(null);
 
   // The trip's name is the large title; "Trips" opens the switcher.
@@ -214,25 +249,32 @@ export default function HomeScreen() {
   const upcoming = ItineraryModel.upcoming(items, todayISO(), UPCOMING_COUNT);
   const alone = activeTrip.members.length === 1;
 
-  const share = async () => {
-    setSharing(true);
+  const runShare = async (which: Exclude<Sharing, null>, action: () => Promise<void>) => {
+    setSharing(which);
     setShareError(null);
     try {
-      await ShareService.shareInvite(activeTrip);
+      await action();
     } catch (e) {
       setShareError(getErrorMessage(e));
     } finally {
-      setSharing(false);
+      setSharing(null);
     }
   };
 
-  const invite = <InviteSection trip={activeTrip} onShare={share} sharing={sharing} />;
+  const invite = (
+    <InviteSection
+      trip={activeTrip}
+      sharing={sharing}
+      onShare={() => runShare('sheet', () => ShareService.shareInvite(activeTrip))}
+      onSend={(target) => runShare(target, () => ShareService.sendInvite(activeTrip, target))}
+    />
+  );
 
   return (
     <Screen refreshing={loading} onRefresh={refresh}>
       <OfflineBanner />
       {error ? <InlineBanner tone="error" message={error} action={{ label: 'Try Again', onPress: refresh }} /> : null}
-      {shareError ? <InlineBanner tone="error" message={`Couldn't share the code. ${shareError}`} /> : null}
+      {shareError ? <InlineBanner tone="error" message={shareError} /> : null}
 
       <TripHero trip={activeTrip} />
 
@@ -287,6 +329,17 @@ export default function HomeScreen() {
         />
       </ListSection>
 
+      <ListSection header="Share the Trip" footer="Posts never include your invite code, so only people you invite can join.">
+        <ListRow
+          leading={<Icon name="logo-x" size={22} color="accent" />}
+          title="Post on X"
+          subtitle="Tell your followers where you're headed."
+          trailing={sharing === 'x' ? <ActivityIndicator color={colors.accent} accessibilityLabel="Opening X" /> : 'chevron'}
+          accessibilityHint="Opens X with a post about the trip ready to edit"
+          onPress={sharing ? undefined : () => runShare('x', () => ShareService.postToX(activeTrip))}
+        />
+      </ListSection>
+
       <ListSection header={`Crew · ${activeTrip.members.length}`}>
         {activeTrip.members.map((member) => (
           <ListRow
@@ -307,4 +360,6 @@ const styles = StyleSheet.create({
   shrink: { flexShrink: 1 },
   heroFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' },
   stacked: { flexDirection: 'column', alignItems: 'flex-start' },
+  shareRow: { flexDirection: 'row', flexWrap: 'wrap' },
+  shareButton: { flexGrow: 1, flexBasis: 140 },
 });

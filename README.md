@@ -38,7 +38,7 @@ The anon key in `.env` is public by design (it ships inside the app). Row Level 
 | Folder | What lives there |
 | --- | --- |
 | `models/` | Plain data types, row mapping, and rules. Validation lives here as zod schemas (`TripForm`, `ItineraryForm`, `ExpenseForm`, `ChecklistForm`, `MessageForm`, `AuthForm`); the money math (splits, budget summary, settle-up) is `BudgetCalculator`. No React, no network. Unit tests sit next to them in `models/__tests__/`. |
-| `services/` | Everything that talks to Supabase or the device: `TripService`, `ExpenseService`, `ChecklistService`, `CommunicationService`, `AuthService`, `CacheService`, `NetworkService`, `ShareService`. They throw typed errors with user-safe messages. |
+| `services/` | Everything that talks to Supabase or the device: `TripService`, `ExpenseService`, `ChecklistService`, `CommunicationService`, `AuthService`, `CacheService`, `NetworkService`, `ShareService` (system share sheet, WhatsApp, Messages and X links). They throw typed errors with user-safe messages. |
 | `context/`, `hooks/` | App state (auth, trips, itinerary, expenses, checklist, messages, network, theme) and the form hooks that tie react-hook-form to the models and services. |
 | `theme/` | Design tokens (`theme.ts`): colors for light and dark, type roles, spacing, radii, motion. Read through `useTheme()`. |
 | `screens/`, `components/` | Presentation only. Navigation is React Navigation (`App.tsx` → `screens/RootNavigator.tsx`). Screens are built from the shared components; none defines its own button, row, or field styles. |
@@ -76,6 +76,19 @@ Two lightweight ways for the group to talk, both stored per trip in the database
 - **Who can delete.** An announcement: any organizer. A comment: whoever wrote it, or an organizer. Nothing is ever edited: post a correction instead. The app only shows Delete to people allowed to use it, and the database enforces the same rules (see `trip_announcements` and `activity_comments` below).
 - **Validation.** Syntactic: some text, at most 500 characters (line endings tidied and runs of blank lines collapsed first). Semantic: only an organizer can post an announcement, and a comment's activity must still exist. The database checks the length again and works out a comment's trip from its activity, so a comment can't be attached to a trip you aren't on.
 - **Offline.** Messages are saved on the phone with everything else and readable offline; posting needs a connection and says so up front.
+
+## Sharing and invite links
+
+- **Invite by link.** Every invite carries a link, `triphub://join/CODE`, along with the code itself. Opening the link opens TripHub's **Join Trip** sheet with the code filled in; the person still taps **Join Trip** to join. If nobody is signed in yet, the sign-in screen says there's an invite waiting and the Join sheet opens right after signing in or creating an account. A link for a trip you're already on offers **Open Trip** instead. Malformed links are ignored (`utils/inviteLink.ts`).
+- **Straight to the app.** Home's Invite Friends card has **Share Invite Code** (the system share sheet) plus **WhatsApp** and **Text** buttons that open those apps with the invite ready to send. **Post on X** under *Share the Trip* starts a public post about the trip; it never includes the invite code, so strangers can't join from it.
+- **When the app isn't there.** TripHub tries the app first and then a web link that opens the app or its website (`wa.me`, `twitter.com/intent/tweet`), so a missing WhatsApp or X never dead-ends. A device that can't send texts (an iPad, a simulator) gets a message pointing to the share sheet instead. No URL schemes need declaring, because the app never asks `canOpenURL`.
+- **Trying a link while developing.** `triphub://` links need a development or preview build (the scheme is set in `app.json`). In Expo Go, use the Expo form of the link instead, replacing the address with the one `npx expo start` prints:
+
+  ```bash
+  npx uri-scheme open "exp://192.168.1.5:8081/--/join/K7M9PQ" --android
+  ```
+
+  With a build installed, `npx uri-scheme open "triphub://join/K7M9PQ" --ios` (or `--android`) opens it directly.
 
 ## Design system & accessibility
 
