@@ -1,6 +1,6 @@
 # TripHub
 
-TripHub is a group trip planner built with Expo and React Native. People sign up, create or join a trip with an invite code, plan its itinerary together, and track what the group spends, with a settle-up that works out who owes whom in the fewest payments. Data lives in Supabase.
+TripHub is a group trip planner built with Expo and React Native. People sign up, create or join a trip with an invite code, plan its itinerary together, share a packing list and to-do checklist, and track what the group spends, with a settle-up that works out who owes whom in the fewest payments. Data lives in Supabase.
 
 ## Getting started
 
@@ -21,7 +21,7 @@ Restart the dev server after changing it. Checks to run before committing:
 ```bash
 npx tsc --noEmit   # types
 npx expo lint .    # lint (the bare `expo lint` only checks components/)
-npm test           # unit tests (Jest): budget math and expense validation
+npm test           # unit tests (Jest): budget math, expense and checklist validation
 npm run check:contrast  # WCAG contrast of the color tokens
 ```
 
@@ -37,9 +37,9 @@ The anon key in `.env` is public by design (it ships inside the app). Row Level 
 
 | Folder | What lives there |
 | --- | --- |
-| `models/` | Plain data types, row mapping, and rules. Validation lives here as zod schemas (`TripForm`, `ItineraryForm`, `ExpenseForm`, `AuthForm`); the money math (splits, budget summary, settle-up) is `BudgetCalculator`. No React, no network. Unit tests sit next to them in `models/__tests__/`. |
-| `services/` | Everything that talks to Supabase or the device: `TripService`, `ExpenseService`, `AuthService`, `CacheService`, `NetworkService`, `ShareService`. They throw typed errors with user-safe messages. |
-| `context/`, `hooks/` | App state (auth, trips, itinerary, expenses, network, theme) and the form hooks that tie react-hook-form to the models and services. |
+| `models/` | Plain data types, row mapping, and rules. Validation lives here as zod schemas (`TripForm`, `ItineraryForm`, `ExpenseForm`, `ChecklistForm`, `AuthForm`); the money math (splits, budget summary, settle-up) is `BudgetCalculator`. No React, no network. Unit tests sit next to them in `models/__tests__/`. |
+| `services/` | Everything that talks to Supabase or the device: `TripService`, `ExpenseService`, `ChecklistService`, `AuthService`, `CacheService`, `NetworkService`, `ShareService`. They throw typed errors with user-safe messages. |
+| `context/`, `hooks/` | App state (auth, trips, itinerary, expenses, checklist, network, theme) and the form hooks that tie react-hook-form to the models and services. |
 | `theme/` | Design tokens (`theme.ts`): colors for light and dark, type roles, spacing, radii, motion. Read through `useTheme()`. |
 | `screens/`, `components/` | Presentation only. Navigation is React Navigation (`App.tsx` → `screens/RootNavigator.tsx`). Screens are built from the shared components; none defines its own button, row, or field styles. |
 | `scripts/` | `check-contrast.js` (WCAG check of the color tokens) and `make-icons.py` (builds the app icon, Android icon layers, splash, and favicon from `assets/TripHub Icon.jpg`). |
@@ -57,13 +57,23 @@ The Budget tab shows what the active trip has spent against its budget (with how
 - **Who can change what.** You log what you paid; an organizer can log an expense for anyone. Only whoever paid, or an organizer, can edit or delete it. The app hides editing from everyone else, and the database enforces the same rule (see `expenses` below).
 - **Validation.** Syntactic: description required and under 80 characters, an amount like `42.50`, whole-number shares from 0 to 99. Semantic: more than $0 and at most $1,000,000, the payer and everyone in the split are on the trip, and at least one person shares the cost. The database checks the split again with a trigger.
 
+## Checklist
+
+The Checklist tab is one shared list per trip, in three groups: **Packing**, **To-Do** and **Bookings**. A header card shows progress ("5 of 12 done"), and each group shows its own count.
+
+- **Everyone sees the same list.** Items live in the database, so any member can add an item, tick it off, rename it, move it to another group, assign it to a member, or reopen it. Pull down to refresh; it also reloads when the connection returns. Open items sit above finished ones.
+- **Who did it.** A finished item says "Done by Alex". The database records who ticked it and when (from the caller's own id, in a trigger), so nobody can tick an item on someone else's behalf.
+- **Who can delete.** The member who added an item, or a trip organizer, like the itinerary. The app only offers Delete to them.
+- **Ticking is instant.** The check appears straight away and is put back, with a message, if it can't be saved.
+- **Validation.** Syntactic: a name is required and at most 100 characters, and the group is one of the three. Semantic: the assignee must be a member of the trip (an item assigned to someone who later leaves shows as assigned to "a former member" and can still be ticked or reassigned). The database checks the same rules with constraints and a trigger.
+
 ## Design system & accessibility
 
 The full design plan, UX audit, user journey, and rationale are in [docs/design-system.md](docs/design-system.md). In short:
 
 - **Look and feel.** Familiar iOS patterns that also work on Android: a bottom tab bar with icons, native large-title headers on iOS (a standard top bar on Android), grouped lists, native sheets for forms and the trip switcher, and system confirmations (action sheets on iOS, dialogs on Android) for destructive actions. Midnight & Sunset palette: navy carries the identity (icon, trip hero card) and sunset orange is used only for things you can tap, selection, and the Route.
 - **Signature element: the Route.** A dotted sunset-orange line with round stops. It links each day's activities on the Itinerary, shows trip progress on Home, and appears as the trail of dots leading to the pin in the app icon, splash screen, and empty states.
-- **Tokens.** Everything visual comes from `theme/theme.ts`. Colors follow the system light or dark setting; there's deliberately no in-app switch. When the system asks for more contrast (Increase Contrast on iOS, High contrast text on Android), secondary text and separators get stronger.
+- **Tokens.** Everything visual comes from `theme/theme.ts`. Colors follow the system light or dark setting by default; Settings → Appearance can pin the app to Light or Dark instead. When the system asks for more contrast (Increase Contrast on iOS, High contrast text on Android), secondary text and separators get stronger.
 - **Icons.** Ionicons from `@expo/vector-icons`, through `components/Icon.tsx`. No Apple logos, trademarks, or SF Symbols artwork. The app icon is the team's own artwork (`assets/TripHub Icon.jpg`); rebuild every icon size from it with `python scripts/make-icons.py`.
 
 Accessibility commitments, checked before each release:
@@ -79,7 +89,7 @@ Accessibility commitments, checked before each release:
 
 ## Offline behavior
 
-Trips (and which one is open) and each trip's itinerary and expenses are saved on the device per user and shown immediately at launch, then replaced with fresh data. The budget summary and settle-up are worked out on the phone, so they're readable offline too. A banner shows while the device has no connection, and data reloads when it returns. Edits made offline are rejected with a clear message rather than queued (expense changes say so straight away, without waiting for the request to fail). Signing out erases the saved data.
+Trips (and which one is open) and each trip's itinerary, expenses and checklist are saved on the device per user and shown immediately at launch, then replaced with fresh data. The budget summary and settle-up are worked out on the phone, so they're readable offline too. A banner shows while the device has no connection, and data reloads when it returns. Edits made offline are rejected with a clear message rather than queued (expense and checklist changes say so straight away, without waiting for the request to fail). Signing out erases the saved data.
 
 ## Database schema
 
@@ -146,6 +156,21 @@ One thing the group paid for. Tightened in `005_expenses.sql`.
 | `shares` | JSON object of weights 0–99 when split by shares; `NULL` when split evenly |
 | `created_at` | |
 
+### `checklist_items`
+One item on a trip's shared checklist. Added in `006_checklist.sql`.
+
+| Column | Notes |
+| --- | --- |
+| `id` | Primary key |
+| `trip_id` | References `trips`; deleted with the trip |
+| `title` | 1–100 characters |
+| `category` | `packing`, `todo` or `booking` |
+| `assigned_to` | Optional; references `profiles`. Must be a member of the trip when set or changed (trigger); cleared if that account is deleted |
+| `done` | Whether it has been ticked off |
+| `completed_by`, `completed_at` | Who ticked it and when. Set by the trigger from the caller's id; the app cannot write them |
+| `created_by` | Defaults to the signed-in user; references `auth.users` |
+| `created_at` | |
+
 ### Functions
 
 | Function | What it does |
@@ -154,15 +179,16 @@ One thing the group paid for. Tightened in `005_expenses.sql`.
 | `join_trip_by_code(code)` | Finds the trip by invite code and adds the caller as a `member`. Raises `invite_not_found` or `already_member`. |
 | `reorder_itinerary_items(trip, day, ids[])` | Saves one day's order atomically. Runs as the caller, so the itinerary policies still apply. |
 | `check_expense_splits()` | Trigger on `expenses`: the payer and everyone in the split are on the trip, and the split adds up to the amount. Raises `payer_not_member`, `split_member_not_on_trip`, `splits_total_mismatch` or `invalid_splits`. |
+| `check_checklist_item()` | Trigger on `checklist_items`: an assignee must be on the trip (checked when set or changed), and `completed_by` / `completed_at` follow `done` and the caller. Raises `assignee_not_member`. |
 | `is_trip_member(trip)`, `is_trip_organizer(trip)`, `shares_trip_with(user)` | Helpers used by the policies. They are `SECURITY DEFINER` because a policy that queries `trip_members` directly would recurse forever. |
 
 Signed-out visitors cannot call any of these.
 
 ## Row Level Security
 
-Rule of thumb: **you can only see and change trips you are a member of; only an organizer can edit or delete a trip; any member can plan the itinerary; only whoever paid, or an organizer, can change an expense.** RLS is enabled on every table, and the `anon` role (not signed in) has no access to any of them.
+Rule of thumb: **you can only see and change trips you are a member of; only an organizer can edit or delete a trip; any member can plan the itinerary and share the checklist; only whoever paid, or an organizer, can change an expense.** RLS is enabled on every table, and the `anon` role (not signed in) has no access to any of them.
 
-Policies are defined, with comments, in `supabase/migrations/004_access_control.sql` and, for expenses, `005_expenses.sql`.
+Policies are defined, with comments, in `supabase/migrations/004_access_control.sql` for expenses, `005_expenses.sql`, and for the checklist, `006_checklist.sql`.
 
 ### `profiles`
 
@@ -206,6 +232,15 @@ Policies are defined, with comments, in `supabase/migrations/004_access_control.
 | Insert | Members, for an expense they paid; organizers, for anyone | Members log what they paid; organizers log for anyone |
 | Update | Whoever paid, or an organizer; only `paid_by`, `description`, `amount_cents`, `category`, `splits`, `shares` (an expense can't move to another trip). A member can't hand an expense to someone else. | Payers and organizers can edit expenses |
 | Delete | Whoever paid, or an organizer | Payers and organizers can delete expenses |
+
+### `checklist_items`
+
+| Operation | Who | Policy |
+| --- | --- | --- |
+| Read | Members | Members can read their trip's checklist |
+| Insert | Members, as themselves (`created_by` must be you) | Members can add checklist items as themselves |
+| Update | Any member; only `title`, `category`, `assigned_to`, `done` (an item can't move to another trip, and the completion stamp is the database's) | Members can edit checklist items |
+| Delete | The member who added it, or an organizer | Authors and organizers can delete checklist items |
 
 ### Why invites go through a function
 

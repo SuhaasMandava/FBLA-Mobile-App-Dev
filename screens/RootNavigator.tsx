@@ -9,6 +9,7 @@ import { LoadingScreen } from '../components/LoadingScreen';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
 import BudgetScreen from './BudgetScreen';
+import ChecklistItemScreen from './ChecklistItemScreen';
 import ChecklistScreen from './ChecklistScreen';
 import CreateTripScreen from './CreateTripScreen';
 import ExpenseScreen from './ExpenseScreen';
@@ -168,6 +169,14 @@ export default function RootNavigator() {
               options={({ route }) => ({
                 ...formSheet,
                 title: route.params?.expenseId ? 'Edit Expense' : 'New Expense',
+              })}
+            />
+            <Stack.Screen
+              name="ChecklistItem"
+              component={ChecklistItemScreen}
+              options={({ route }) => ({
+                ...formSheet,
+                title: route.params?.itemId ? 'Edit Item' : 'New Item',
               })}
             />
           </>
