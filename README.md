@@ -121,6 +121,15 @@ Accessibility commitments, checked before each release:
 | Color alone | Errors, offline, today, and the current trip always have an icon, a badge, or words as well as color. |
 | Motion | Only the Route fill-in on Home and the loading-skeleton pulse animate. Both stop when Reduce Motion is on. |
 
+## Live updates
+
+The itinerary, expenses, checklist, announcements and comments of the open trip update by themselves when someone else changes them, using Supabase Realtime (`hooks/useLiveSync.ts`, `services/RealtimeService.ts`). Nobody has to pull to refresh.
+
+- **Only your trips.** Each list listens to its own trip only, and Supabase checks the same read policies before sending a row, so no one receives another trip's data. Deleted rows arrive as just an id, and the app removes an id only if it's showing it.
+- **Your own changes** are shown as soon as the server confirms them; when their echo arrives it just replaces the same row. A checklist tick still being saved isn't overwritten by an older echo.
+- **Falling back.** Offline, the app stops listening and shows what's saved (see below). When the connection comes back, every list reloads and live updates resume. A reload also runs when live updates recover after an outage and when the app comes back to the foreground, since a phone pauses connections in the background. If Realtime can't be used at all (switched off for the project, or `009_live_sync.sql` not run), the app behaves exactly as before: pull to refresh, and reload on reconnect.
+- **Setup.** Running `009_live_sync.sql` adds the five tables to the `supabase_realtime` publication. Nothing else is needed.
+
 ## Offline behavior
 
 Trips (and which one is open) and each trip's itinerary, expenses, checklist, announcements and comments are saved on the device per user and shown immediately at launch, then replaced with fresh data. The budget summary and settle-up are worked out on the phone, so they're readable offline too. A banner shows while the device has no connection, and data reloads when it returns. Edits made offline are rejected with a clear message rather than queued (expense, checklist and message changes say so straight away, without waiting for the request to fail). Signing out erases the saved data.

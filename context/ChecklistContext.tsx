@@ -1,7 +1,9 @@
 import { createContext, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useLiveSync } from '../hooks/useLiveSync';
 import { useNetwork } from '../hooks/useNetwork';
-import { ChecklistItem, ChecklistModel, NewChecklistItem } from '../models/ChecklistModel';
+import { ChecklistItem, ChecklistItemRow, ChecklistModel, NewChecklistItem } from '../models/ChecklistModel';
+import { applyLiveChange, LiveChange } from '../models/LiveChange';
 import { CacheService } from '../services/CacheService';
 import { ChecklistService } from '../services/ChecklistService';
 import { getErrorMessage } from '../services/errors';
@@ -102,6 +104,21 @@ export function ChecklistProvider({ tripId, children }: { tripId: string | null;
 
   // Catch up automatically when the connection comes back.
   useEffect(() => onReconnect(() => void refresh()), [onReconnect, refresh]);
+
+  // Changes from other phones arrive live; a quiet reload covers anything missed. An item
+  // with a tick still being saved keeps its local state until the server answers.
+  const resync = useCallback(async () => {
+    if (tripId) applyLoadResult(await fetchItems(tripId));
+  }, [tripId, applyLoadResult]);
+  const applyChange = useCallback((change: LiveChange<ChecklistItemRow>) => {
+    if (change.type === 'upsert' && inFlight.current.has(change.row.id)) return;
+    setItems((current) => applyLiveChange(current, change, ChecklistModel.fromRow, ChecklistModel.sort));
+  }, []);
+  useLiveSync({
+    tripId,
+    tables: [{ table: 'checklist_items', onChange: applyChange }],
+    onResync: () => void resync(),
+  });
 
   const addItem = useCallback(
     async (input: NewChecklistItem): Promise<MutationResult> => {

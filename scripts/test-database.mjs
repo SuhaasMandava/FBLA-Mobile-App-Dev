@@ -153,6 +153,14 @@ check("deleting the account of a trip's only organizer still works", accountErro
 const [{ n: soloMembers }] = (await db.query(`select count(*)::int as n from public.trip_members where trip_id = $1`, [solo.id])).rows;
 check('their membership goes with the account', soloMembers === 0);
 
+console.log('\nLive updates (009)');
+const published = (await db.query(`select tablename from pg_publication_tables where pubname = 'supabase_realtime'`)).rows.map(
+  (r) => r.tablename,
+);
+for (const table of ['itinerary_items', 'expenses', 'checklist_items', 'trip_announcements', 'activity_comments']) {
+  check(`${table} is in the realtime publication`, published.includes(table), published.join(', '));
+}
+
 console.log('\nSigned-out visitors');
 for (const table of ['trips', 'trip_members', 'itinerary_items', 'expenses', 'checklist_items', 'trip_announcements', 'activity_comments']) {
   await db.exec('set role anon;');

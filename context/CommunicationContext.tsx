@@ -1,7 +1,15 @@
 import { createContext, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useLiveSync } from '../hooks/useLiveSync';
 import { useNetwork } from '../hooks/useNetwork';
-import { ActivityComment, Announcement, CommunicationModel } from '../models/CommunicationModel';
+import {
+  ActivityComment,
+  ActivityCommentRow,
+  Announcement,
+  AnnouncementRow,
+  CommunicationModel,
+} from '../models/CommunicationModel';
+import { applyLiveChange, LiveChange } from '../models/LiveChange';
 import { CacheService } from '../services/CacheService';
 import { CommunicationService } from '../services/CommunicationService';
 import { getErrorMessage } from '../services/errors';
@@ -120,6 +128,31 @@ export function CommunicationProvider({ tripId, children }: { tripId: string | n
 
   // Catch up automatically when the connection comes back.
   useEffect(() => onReconnect(() => void refresh()), [onReconnect, refresh]);
+
+  // New announcements and comments from other phones arrive live; a quiet reload covers anything missed.
+  const resync = useCallback(async () => {
+    if (tripId) applyLoadResult(await fetchMessages(tripId));
+  }, [tripId, applyLoadResult]);
+  useLiveSync({
+    tripId,
+    tables: [
+      {
+        table: 'trip_announcements',
+        onChange: (change: LiveChange<AnnouncementRow>) =>
+          setAnnouncements((current) =>
+            applyLiveChange(current, change, CommunicationModel.announcementFromRow, CommunicationModel.sortAnnouncements),
+          ),
+      },
+      {
+        table: 'activity_comments',
+        onChange: (change: LiveChange<ActivityCommentRow>) =>
+          setComments((current) =>
+            applyLiveChange(current, change, CommunicationModel.commentFromRow, CommunicationModel.sortComments),
+          ),
+      },
+    ],
+    onResync: () => void resync(),
+  });
 
   const postAnnouncement = useCallback(
     async (body: string): Promise<MutationResult> => {

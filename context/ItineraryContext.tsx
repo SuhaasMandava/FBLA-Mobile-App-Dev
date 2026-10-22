@@ -1,7 +1,9 @@
 import { createContext, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useLiveSync } from '../hooks/useLiveSync';
 import { useNetwork } from '../hooks/useNetwork';
-import { ItineraryItem, ItineraryModel, NewItineraryItem } from '../models/ItineraryModel';
+import { ItineraryItem, ItineraryItemRow, ItineraryModel, NewItineraryItem } from '../models/ItineraryModel';
+import { applyLiveChange, LiveChange } from '../models/LiveChange';
 import { CacheService } from '../services/CacheService';
 import { getErrorMessage } from '../services/errors';
 import { TripService } from '../services/TripService';
@@ -100,6 +102,22 @@ export function ItineraryProvider({ tripId, children }: { tripId: string | null;
 
   // Catch up automatically when the connection comes back.
   useEffect(() => onReconnect(() => void refresh()), [onReconnect, refresh]);
+
+  // Changes from other phones arrive live; a quiet reload covers anything missed.
+  const resync = useCallback(async () => {
+    if (tripId) applyLoadResult(await fetchItems(tripId));
+  }, [tripId, applyLoadResult]);
+  useLiveSync({
+    tripId,
+    tables: [
+      {
+        table: 'itinerary_items',
+        onChange: (change: LiveChange<ItineraryItemRow>) =>
+          setItems((current) => applyLiveChange(current, change, ItineraryModel.fromRow, ItineraryModel.sort)),
+      },
+    ],
+    onResync: () => void resync(),
+  });
 
   const addItem = useCallback(
     async (input: NewItineraryItem): Promise<MutationResult> => {

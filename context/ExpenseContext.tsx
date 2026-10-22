@@ -1,7 +1,9 @@
 import { createContext, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useLiveSync } from '../hooks/useLiveSync';
 import { useNetwork } from '../hooks/useNetwork';
-import { Expense, ExpenseModel, NewExpense } from '../models/ExpenseModel';
+import { Expense, ExpenseModel, ExpenseRow, NewExpense } from '../models/ExpenseModel';
+import { applyLiveChange, LiveChange } from '../models/LiveChange';
 import { CacheService } from '../services/CacheService';
 import { getErrorMessage } from '../services/errors';
 import { ExpenseService } from '../services/ExpenseService';
@@ -99,6 +101,22 @@ export function ExpenseProvider({ tripId, children }: { tripId: string | null; c
 
   // Catch up automatically when the connection comes back.
   useEffect(() => onReconnect(() => void refresh()), [onReconnect, refresh]);
+
+  // Changes from other phones arrive live; a quiet reload covers anything missed.
+  const resync = useCallback(async () => {
+    if (tripId) applyLoadResult(await fetchExpenses(tripId));
+  }, [tripId, applyLoadResult]);
+  useLiveSync({
+    tripId,
+    tables: [
+      {
+        table: 'expenses',
+        onChange: (change: LiveChange<ExpenseRow>) =>
+          setExpenses((current) => applyLiveChange(current, change, ExpenseModel.fromRow, ExpenseModel.sort)),
+      },
+    ],
+    onResync: () => void resync(),
+  });
 
   const addExpense = useCallback(
     async (input: NewExpense): Promise<MutationResult> => {
