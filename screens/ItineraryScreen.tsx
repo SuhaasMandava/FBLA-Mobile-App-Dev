@@ -12,10 +12,12 @@ import { OfflineBanner } from '../components/OfflineBanner';
 import { DottedLine, RouteStop } from '../components/Route';
 import { Screen } from '../components/Screen';
 import { SkeletonList } from '../components/Skeleton';
+import { useCommunication } from '../hooks/useCommunication';
 import { useItinerary } from '../hooks/useItinerary';
 import { useLargeText } from '../hooks/useLargeText';
 import { useTheme } from '../hooks/useTheme';
 import { useTrip } from '../hooks/useTrip';
+import { CommunicationModel } from '../models/CommunicationModel';
 import { ItineraryItem, ItineraryModel } from '../models/ItineraryModel';
 import { daysBetween, formatClockTime, formatDayHeading, todayISO } from '../utils/dates';
 import { TabScreenNavigation } from './types';
@@ -28,12 +30,17 @@ interface StopRowProps {
   first: boolean;
   last: boolean;
   editing: boolean;
+  commentCount: number;
   onOpen: () => void;
   onMove: (direction: -1 | 1) => void;
+  onComments: () => void;
 }
 
-/** One activity, hung on the Route. Reorder arrows show in edit mode; screen readers always get Move actions. */
-function StopRow({ item, state, first, last, editing, onOpen, onMove }: StopRowProps) {
+/**
+ * One activity, hung on the Route. Reorder arrows show in edit mode; screen readers always get Move actions.
+ * Otherwise a separate comments button (with the count) opens the activity's thread.
+ */
+function StopRow({ item, state, first, last, editing, commentCount, onOpen, onMove, onComments }: StopRowProps) {
   const { colors, spacing, radii, layout, motion } = useTheme();
   const largeText = useLargeText();
   const spoken = [item.time ? formatClockTime(item.time) : null, item.title, item.location].filter(Boolean).join(', ');
@@ -109,7 +116,27 @@ function StopRow({ item, state, first, last, editing, onOpen, onMove }: StopRowP
               );
             })}
           </View>
-        ) : null}
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Comments on ${item.title}, ${
+              commentCount === 0 ? 'none yet' : commentCount === 1 ? '1 comment' : `${commentCount} comments`
+            }`}
+            onPress={onComments}
+            style={({ pressed }) => [
+              styles.comments,
+              { minWidth: layout.minTarget, minHeight: layout.minTarget, paddingHorizontal: spacing.xs, gap: 2 },
+              pressed && { opacity: motion.pressedOpacity },
+            ]}
+          >
+            <Icon name={commentCount > 0 ? 'chatbubble-ellipses' : 'chatbubble-outline'} size={20} color="accent" />
+            {commentCount > 0 ? (
+              <AppText variant="caption" color="accent" tabular>
+                {commentCount}
+              </AppText>
+            ) : null}
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -120,6 +147,8 @@ export default function ItineraryScreen() {
   const navigation = useNavigation<TabScreenNavigation>();
   const { activeTrip } = useTrip();
   const { items, loading, error, refresh, moveItem } = useItinerary();
+  const { comments } = useCommunication();
+  const commentCounts = CommunicationModel.commentCounts(comments);
   const [moveError, setMoveError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
 
@@ -248,8 +277,10 @@ export default function ItineraryScreen() {
           first={index === 0}
           last={index === section.data.length - 1}
           editing={editing}
+          commentCount={commentCounts[item.id] ?? 0}
           onOpen={() => navigation.navigate('ItineraryItem', { itemId: item.id })}
           onMove={(direction) => move(item, direction)}
+          onComments={() => navigation.navigate('ActivityComments', { itemId: item.id })}
         />
       )}
     />
@@ -272,4 +303,5 @@ const styles = StyleSheet.create({
   reorderStacked: { flexDirection: 'column' },
   arrow: { alignItems: 'center', justifyContent: 'center' },
   arrowDisabled: { opacity: 0.3 },
+  comments: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch' },
 });

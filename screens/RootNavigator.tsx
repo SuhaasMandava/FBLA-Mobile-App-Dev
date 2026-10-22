@@ -8,6 +8,8 @@ import { Icon, IconName } from '../components/Icon';
 import { LoadingScreen } from '../components/LoadingScreen';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
+import ActivityCommentsScreen from './ActivityCommentsScreen';
+import AnnouncementsScreen from './AnnouncementsScreen';
 import BudgetScreen from './BudgetScreen';
 import ChecklistItemScreen from './ChecklistItemScreen';
 import ChecklistScreen from './ChecklistScreen';
@@ -104,6 +106,12 @@ function CancelButton() {
   return <HeaderButton label="Cancel" onPress={() => navigation.goBack()} />;
 }
 
+/** Trailing Done for message sheets on iOS: they're for reading, so closing isn't "cancelling". */
+function DoneButton() {
+  const navigation = useNavigation();
+  return <HeaderButton label="Done" prominent onPress={() => navigation.goBack()} />;
+}
+
 export default function RootNavigator() {
   const { scheme, colors } = useTheme();
   const { status } = useAuth();
@@ -118,6 +126,11 @@ export default function RootNavigator() {
     headerLeft: Platform.OS === 'ios' ? () => <CancelButton /> : undefined,
     // Dark mode shows modals on a raised surface, the way the system does.
     headerStyle: { backgroundColor: scheme === 'dark' ? colors.surfaceRaised : colors.background },
+  };
+  const messageSheet: NativeStackNavigationOptions = {
+    ...formSheet,
+    headerLeft: undefined,
+    headerRight: Platform.OS === 'ios' ? () => <DoneButton /> : undefined,
   };
 
   return (
@@ -179,6 +192,8 @@ export default function RootNavigator() {
                 title: route.params?.itemId ? 'Edit Item' : 'New Item',
               })}
             />
+            <Stack.Screen name="Announcements" component={AnnouncementsScreen} options={{ ...messageSheet, title: 'Announcements' }} />
+            <Stack.Screen name="ActivityComments" component={ActivityCommentsScreen} options={{ ...messageSheet, title: 'Comments' }} />
           </>
         ) : (
           <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />

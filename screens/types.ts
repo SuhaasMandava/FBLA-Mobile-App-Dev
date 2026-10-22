@@ -23,6 +23,10 @@ export type RootStackParamList = {
   Expense: { expenseId?: string } | undefined;
   /** Add a checklist item (optionally starting in `category`), or edit the one with `itemId`. */
   ChecklistItem: { itemId?: string; category?: ChecklistCategory } | undefined;
+  /** Every announcement on the active trip; organizers post from here. */
+  Announcements: undefined;
+  /** The comment thread on the activity with `itemId`. */
+  ActivityComments: { itemId: string };
 };
 
 /** Each tab is a one-screen native stack, which gives it a native (large-title on iOS) header. */

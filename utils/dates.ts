@@ -81,6 +81,23 @@ export function formatDateRange(startISO: string, endISO: string): string {
   return `${start} – ${end}`;
 }
 
+/**
+ * When something was posted, the way a message thread says it: "Just now", "5 min ago",
+ * "3 hr ago", "Yesterday", then the date ("Oct 12", with the year once it's a different one).
+ */
+export function formatRelativeTime(isoTimestamp: string, now: Date = new Date()): string {
+  const then = new Date(isoTimestamp);
+  const minutes = Math.floor((now.getTime() - then.getTime()) / 60_000);
+  if (Number.isNaN(minutes)) return '';
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes} min ago`;
+  if (minutes < 24 * 60 && todayISO(then) === todayISO(now)) return `${Math.floor(minutes / 60)} hr ago`;
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (todayISO(then) === todayISO(yesterday)) return 'Yesterday';
+  return formatShortDate(todayISO(then), then.getFullYear() !== now.getFullYear());
+}
+
 /** Every day from start to end inclusive, as YYYY-MM-DD. Capped so a bad range can't produce a huge list. */
 export function daysBetween(startISO: string, endISO: string, maxDays = 366): string[] {
   const days: string[] = [];

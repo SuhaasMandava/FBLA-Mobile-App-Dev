@@ -37,9 +37,9 @@ The anon key in `.env` is public by design (it ships inside the app). Row Level 
 
 | Folder | What lives there |
 | --- | --- |
-| `models/` | Plain data types, row mapping, and rules. Validation lives here as zod schemas (`TripForm`, `ItineraryForm`, `ExpenseForm`, `ChecklistForm`, `AuthForm`); the money math (splits, budget summary, settle-up) is `BudgetCalculator`. No React, no network. Unit tests sit next to them in `models/__tests__/`. |
-| `services/` | Everything that talks to Supabase or the device: `TripService`, `ExpenseService`, `ChecklistService`, `AuthService`, `CacheService`, `NetworkService`, `ShareService`. They throw typed errors with user-safe messages. |
-| `context/`, `hooks/` | App state (auth, trips, itinerary, expenses, checklist, network, theme) and the form hooks that tie react-hook-form to the models and services. |
+| `models/` | Plain data types, row mapping, and rules. Validation lives here as zod schemas (`TripForm`, `ItineraryForm`, `ExpenseForm`, `ChecklistForm`, `MessageForm`, `AuthForm`); the money math (splits, budget summary, settle-up) is `BudgetCalculator`. No React, no network. Unit tests sit next to them in `models/__tests__/`. |
+| `services/` | Everything that talks to Supabase or the device: `TripService`, `ExpenseService`, `ChecklistService`, `CommunicationService`, `AuthService`, `CacheService`, `NetworkService`, `ShareService`. They throw typed errors with user-safe messages. |
+| `context/`, `hooks/` | App state (auth, trips, itinerary, expenses, checklist, messages, network, theme) and the form hooks that tie react-hook-form to the models and services. |
 | `theme/` | Design tokens (`theme.ts`): colors for light and dark, type roles, spacing, radii, motion. Read through `useTheme()`. |
 | `screens/`, `components/` | Presentation only. Navigation is React Navigation (`App.tsx` → `screens/RootNavigator.tsx`). Screens are built from the shared components; none defines its own button, row, or field styles. |
 | `scripts/` | `check-contrast.js` (WCAG check of the color tokens) and `make-icons.py` (builds the app icon, Android icon layers, splash, and favicon from `assets/TripHub Icon.jpg`). |
@@ -67,6 +67,16 @@ The Checklist tab is one shared list per trip, in three groups: **Packing**, **T
 - **Ticking is instant.** The check appears straight away and is put back, with a message, if it can't be saved.
 - **Validation.** Syntactic: a name is required and at most 100 characters, and the group is one of the three. Semantic: the assignee must be a member of the trip (an item assigned to someone who later leaves shows as assigned to "a former member" and can still be ticked or reassigned). The database checks the same rules with constraints and a trigger.
 
+## Announcements and comments
+
+Two lightweight ways for the group to talk, both stored per trip in the database.
+
+- **Announcements.** Organizers post updates for everyone (meeting times, changes, reminders). Home shows the latest one; **Announcements** lists them all, newest first, with the composer at the bottom for organizers. Members read them.
+- **Comments on activities.** Every itinerary activity has a comment thread. The bubble button on each activity on the Itinerary shows how many comments it has and opens the thread; any member can comment.
+- **Who can delete.** An announcement: any organizer. A comment: whoever wrote it, or an organizer. Nothing is ever edited: post a correction instead. The app only shows Delete to people allowed to use it, and the database enforces the same rules (see `trip_announcements` and `activity_comments` below).
+- **Validation.** Syntactic: some text, at most 500 characters (line endings tidied and runs of blank lines collapsed first). Semantic: only an organizer can post an announcement, and a comment's activity must still exist. The database checks the length again and works out a comment's trip from its activity, so a comment can't be attached to a trip you aren't on.
+- **Offline.** Messages are saved on the phone with everything else and readable offline; posting needs a connection and says so up front.
+
 ## Design system & accessibility
 
 The full design plan, UX audit, user journey, and rationale are in [docs/design-system.md](docs/design-system.md). In short:
@@ -89,7 +99,7 @@ Accessibility commitments, checked before each release:
 
 ## Offline behavior
 
-Trips (and which one is open) and each trip's itinerary, expenses and checklist are saved on the device per user and shown immediately at launch, then replaced with fresh data. The budget summary and settle-up are worked out on the phone, so they're readable offline too. A banner shows while the device has no connection, and data reloads when it returns. Edits made offline are rejected with a clear message rather than queued (expense and checklist changes say so straight away, without waiting for the request to fail). Signing out erases the saved data.
+Trips (and which one is open) and each trip's itinerary, expenses, checklist, announcements and comments are saved on the device per user and shown immediately at launch, then replaced with fresh data. The budget summary and settle-up are worked out on the phone, so they're readable offline too. A banner shows while the device has no connection, and data reloads when it returns. Edits made offline are rejected with a clear message rather than queued (expense, checklist and message changes say so straight away, without waiting for the request to fail). Signing out erases the saved data.
 
 ## Database schema
 
@@ -171,6 +181,29 @@ One item on a trip's shared checklist. Added in `006_checklist.sql`.
 | `created_by` | Defaults to the signed-in user; references `auth.users` |
 | `created_at` | |
 
+### `trip_announcements`
+An update an organizer posted to the whole trip. Added in `007_communication.sql`.
+
+| Column | Notes |
+| --- | --- |
+| `id` | Primary key |
+| `trip_id` | References `trips`; deleted with the trip |
+| `body` | 1–500 characters |
+| `created_by` | Defaults to the signed-in user (the app can't set it); references `auth.users` |
+| `created_at` | Set by the database |
+
+### `activity_comments`
+A comment on an itinerary activity. Added in `007_communication.sql`.
+
+| Column | Notes |
+| --- | --- |
+| `id` | Primary key |
+| `item_id` | References `itinerary_items`; deleted with the activity |
+| `trip_id` | Copied from the activity by a trigger (the app can't set it), so policies can filter by trip |
+| `body` | 1–500 characters |
+| `created_by` | Defaults to the signed-in user (the app can't set it); references `auth.users` |
+| `created_at` | Set by the database |
+
 ### Functions
 
 | Function | What it does |
@@ -180,15 +213,16 @@ One item on a trip's shared checklist. Added in `006_checklist.sql`.
 | `reorder_itinerary_items(trip, day, ids[])` | Saves one day's order atomically. Runs as the caller, so the itinerary policies still apply. |
 | `check_expense_splits()` | Trigger on `expenses`: the payer and everyone in the split are on the trip, and the split adds up to the amount. Raises `payer_not_member`, `split_member_not_on_trip`, `splits_total_mismatch` or `invalid_splits`. |
 | `check_checklist_item()` | Trigger on `checklist_items`: an assignee must be on the trip (checked when set or changed), and `completed_by` / `completed_at` follow `done` and the caller. Raises `assignee_not_member`. |
+| `set_activity_comment_trip()` | Trigger on `activity_comments`: fills in the comment's trip from its activity. Raises `activity_not_found` if the activity is gone or not on one of your trips. |
 | `is_trip_member(trip)`, `is_trip_organizer(trip)`, `shares_trip_with(user)` | Helpers used by the policies. They are `SECURITY DEFINER` because a policy that queries `trip_members` directly would recurse forever. |
 
 Signed-out visitors cannot call any of these.
 
 ## Row Level Security
 
-Rule of thumb: **you can only see and change trips you are a member of; only an organizer can edit or delete a trip; any member can plan the itinerary and share the checklist; only whoever paid, or an organizer, can change an expense.** RLS is enabled on every table, and the `anon` role (not signed in) has no access to any of them.
+Rule of thumb: **you can only see and change trips you are a member of; only an organizer can edit or delete a trip; any member can plan the itinerary, share the checklist and comment on activities; only organizers post announcements; only whoever paid, or an organizer, can change an expense.** RLS is enabled on every table, and the `anon` role (not signed in) has no access to any of them.
 
-Policies are defined, with comments, in `supabase/migrations/004_access_control.sql` for expenses, `005_expenses.sql`, and for the checklist, `006_checklist.sql`.
+Policies are defined, with comments, in `supabase/migrations/004_access_control.sql`, and for later features in `005_expenses.sql` (expenses), `006_checklist.sql` (checklist) and `007_communication.sql` (announcements and comments).
 
 ### `profiles`
 
@@ -241,6 +275,24 @@ Policies are defined, with comments, in `supabase/migrations/004_access_control.
 | Insert | Members, as themselves (`created_by` must be you) | Members can add checklist items as themselves |
 | Update | Any member; only `title`, `category`, `assigned_to`, `done` (an item can't move to another trip, and the completion stamp is the database's) | Members can edit checklist items |
 | Delete | The member who added it, or an organizer | Authors and organizers can delete checklist items |
+
+### `trip_announcements`
+
+| Operation | Who | Policy |
+| --- | --- | --- |
+| Read | Members | Members can read their trip's announcements |
+| Insert | Organizers, as themselves; only `trip_id` and `body` can be sent | Organizers can post announcements as themselves |
+| Update | Nobody | — |
+| Delete | Organizers | Organizers can delete announcements |
+
+### `activity_comments`
+
+| Operation | Who | Policy |
+| --- | --- | --- |
+| Read | Members | Members can read their trip's comments |
+| Insert | Members, as themselves; only `item_id` and `body` can be sent | Members can comment as themselves |
+| Update | Nobody | — |
+| Delete | Whoever wrote it, or an organizer | Authors and organizers can delete comments |
 
 ### Why invites go through a function
 

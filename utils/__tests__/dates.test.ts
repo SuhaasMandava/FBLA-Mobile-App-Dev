@@ -1,4 +1,4 @@
-import { parseDateInput, parseTimeInput } from '../dates';
+import { formatRelativeTime, parseDateInput, parseTimeInput } from '../dates';
 
 // Tuesday, Oct 20, 2026
 const NOW = new Date(2026, 9, 20, 10, 0, 0);
@@ -74,5 +74,41 @@ describe('parseTimeInput', () => {
 
   it.each(['', 'abc', '25:00', '9:75', '13pm', '0pm'])('rejects %p', (input) => {
     expect(parseTimeInput(input)).toBeNull();
+  });
+});
+
+describe('formatRelativeTime', () => {
+  // Built from local times, so the expectations hold in any time zone.
+  const at = (month: number, day: number, hours: number, minutes = 0, year = 2026) =>
+    new Date(year, month - 1, day, hours, minutes).toISOString();
+
+  it('says Just now for under a minute (and for clocks slightly ahead)', () => {
+    expect(formatRelativeTime(new Date(2026, 9, 20, 9, 59, 30).toISOString(), NOW)).toBe('Just now');
+    expect(formatRelativeTime(at(10, 20, 10, 0), NOW)).toBe('Just now');
+    expect(formatRelativeTime(at(10, 20, 10, 2), NOW)).toBe('Just now');
+  });
+
+  it('counts minutes, then hours, within today', () => {
+    expect(formatRelativeTime(at(10, 20, 9, 59), NOW)).toBe('1 min ago');
+    expect(formatRelativeTime(at(10, 20, 9, 55), NOW)).toBe('5 min ago');
+    expect(formatRelativeTime(at(10, 20, 7, 30), NOW)).toBe('2 hr ago');
+  });
+
+  it('says Yesterday for the previous calendar day, even if under 24 hours ago', () => {
+    expect(formatRelativeTime(at(10, 19, 23, 0), NOW)).toBe('Yesterday');
+    expect(formatRelativeTime(at(10, 19, 8, 0), NOW)).toBe('Yesterday');
+  });
+
+  it('shows the date for anything older, with the year only when it differs', () => {
+    expect(formatRelativeTime(at(10, 12, 9), NOW)).toBe(
+      new Date(2026, 9, 12, 12).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+    );
+    expect(formatRelativeTime(at(12, 30, 9, 0, 2025), NOW)).toBe(
+      new Date(2025, 11, 30, 12).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+    );
+  });
+
+  it('returns nothing for a timestamp it cannot read', () => {
+    expect(formatRelativeTime('not a date', NOW)).toBe('');
   });
 });

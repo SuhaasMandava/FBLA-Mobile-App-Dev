@@ -16,16 +16,20 @@ import { OfflineBanner } from '../components/OfflineBanner';
 import { RouteProgress } from '../components/Route';
 import { Screen } from '../components/Screen';
 import { SkeletonList } from '../components/Skeleton';
+import { MessageRow } from '../components/MessageRow';
+import { useAuth } from '../hooks/useAuth';
+import { useCommunication } from '../hooks/useCommunication';
 import { useExpenses } from '../hooks/useExpenses';
 import { useItinerary } from '../hooks/useItinerary';
 import { useLargeText } from '../hooks/useLargeText';
 import { useTheme } from '../hooks/useTheme';
 import { useTrip } from '../hooks/useTrip';
+import { CommunicationModel } from '../models/CommunicationModel';
 import { ItineraryModel } from '../models/ItineraryModel';
 import { Trip, TripModel } from '../models/TripModel';
 import { getErrorMessage } from '../services/errors';
 import { ShareService } from '../services/ShareService';
-import { formatClockTime, formatDateRange, formatDayHeading, todayISO } from '../utils/dates';
+import { formatClockTime, formatDateRange, formatDayHeading, formatRelativeTime, todayISO } from '../utils/dates';
 import { formatCents } from '../utils/money';
 import { tripProgress } from '../utils/tripProgress';
 import { TabScreenNavigation } from './types';
@@ -114,6 +118,46 @@ function InviteSection({ trip, onShare, sharing }: { trip: Trip; onShare: () => 
   );
 }
 
+/** The latest announcement, with the way to all of them (and, for organizers, to posting one). */
+function AnnouncementsSection({ trip, onOpen }: { trip: Trip; onOpen: () => void }) {
+  const { userId } = useAuth();
+  const { announcements } = useCommunication();
+  const latest = announcements[0];
+  const canPost = CommunicationModel.canPostAnnouncement(trip, userId);
+
+  if (!latest) {
+    return (
+      <ListSection header="Announcements">
+        <ListRow
+          leading={<Icon name="megaphone-outline" size={22} color="accent" />}
+          title={canPost ? 'Post an announcement' : 'No announcements yet'}
+          subtitle={canPost ? 'Share meeting times and changes with everyone.' : 'Updates from the organizer show up here.'}
+          trailing="chevron"
+          accessibilityHint={canPost ? 'Opens announcements to write one' : 'Opens announcements'}
+          onPress={onOpen}
+        />
+      </ListSection>
+    );
+  }
+  return (
+    <ListSection
+      header="Announcements"
+      headerAction={canPost ? { label: 'Post', hint: 'Opens announcements to write a new one', onPress: onOpen } : undefined}
+    >
+      <MessageRow
+        kind="announcement"
+        author={CommunicationModel.authorName(trip, latest.createdBy, userId)}
+        avatarName={CommunicationModel.authorDisplayName(trip, latest.createdBy)}
+        body={latest.body}
+        time={formatRelativeTime(latest.createdAt)}
+      />
+      {announcements.length > 1 ? (
+        <ListRow title={`See all ${announcements.length} announcements`} trailing="chevron" onPress={onOpen} />
+      ) : null}
+    </ListSection>
+  );
+}
+
 export default function HomeScreen() {
   const navigation = useNavigation<TabScreenNavigation>();
   const { activeTrip, trips, loading, error, refresh } = useTrip();
@@ -194,6 +238,8 @@ export default function HomeScreen() {
 
       {/* Getting people in comes first while you're the only member. */}
       {alone ? invite : null}
+
+      <AnnouncementsSection trip={activeTrip} onOpen={() => navigation.navigate('Announcements')} />
 
       {upcoming.length === 0 ? (
         <ListSection header="Coming Up">
