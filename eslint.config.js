@@ -9,7 +9,7 @@ module.exports = defineConfig([
   },
   {
     // Plain Node scripts run outside the app.
-    files: ["scripts/**/*.js"],
-    languageOptions: { globals: { __dirname: "readonly" } },
+    files: ["scripts/**/*.js", "scripts/**/*.mjs"],
+    languageOptions: { globals: { __dirname: "readonly", process: "readonly", console: "readonly" } },
   },
 ]);

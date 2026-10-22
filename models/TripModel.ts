@@ -103,4 +103,39 @@ export const TripModel = {
   isOrganizer(trip: Trip, userId: string | null): boolean {
     return userId !== null && trip.members.some((m) => m.userId === userId && m.role === 'organizer');
   },
+
+  /**
+   * Why this person can't leave the trip, or null if they can. The same rule the database
+   * enforces: every trip keeps at least one organizer.
+   */
+  leaveBlockedReason(trip: Trip, userId: string | null): string | null {
+    if (!TripModel.isOrganizer(trip, userId)) return null;
+    if (trip.members.some((m) => m.role === 'organizer' && m.userId !== userId)) return null;
+    return trip.members.length === 1
+      ? "You're the only one on this trip. Delete the trip instead if you no longer need it."
+      : "You're the only organizer. Make someone else an organizer first, or delete the trip.";
+  },
+
+  /** An organizer can remove anyone else. (Removing yourself is leaving.) */
+  canRemoveMember(trip: Trip, actorId: string | null, memberId: string): boolean {
+    return TripModel.isOrganizer(trip, actorId) && memberId !== actorId && trip.members.some((m) => m.userId === memberId);
+  },
+
+  /** An organizer can make any other member an organizer too. */
+  canMakeOrganizer(trip: Trip, actorId: string | null, memberId: string): boolean {
+    return TripModel.isOrganizer(trip, actorId) && trip.members.some((m) => m.userId === memberId && m.role === 'member');
+  },
+
+  /** The trip with one member taken off the roster (after they leave or are removed). */
+  withoutMember(trip: Trip, memberId: string): Trip {
+    return { ...trip, members: trip.members.filter((m) => m.userId !== memberId) };
+  },
+
+  /** The trip with a member promoted to organizer. */
+  withOrganizer(trip: Trip, memberId: string): Trip {
+    return {
+      ...trip,
+      members: trip.members.map((m) => (m.userId === memberId ? { ...m, role: 'organizer' as const } : m)),
+    };
+  },
 };

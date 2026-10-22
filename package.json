@@ -29,6 +29,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.11",
     "@types/jest": "29.5.14",
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
@@ -44,7 +45,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "check:contrast": "node scripts/check-contrast.js",
-    "test": "jest"
+    "test": "jest",
+    "test:db": "node scripts/test-database.mjs"
   },
   "jest": {
     "preset": "jest-expo"

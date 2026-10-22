@@ -49,3 +49,51 @@ describe('TripModel roles', () => {
     expect(TripModel.memberName(trip.members[1])).toBe('Trip member');
   });
 });
+
+describe('TripModel organizer tools (mirror 004 and 008)', () => {
+  const group: Trip = {
+    ...trip,
+    members: [
+      { userId: 'sam', role: 'organizer', displayName: 'Sam Lee' },
+      { userId: 'alex', role: 'member', displayName: 'Alex Kim' },
+      { userId: 'jo', role: 'member', displayName: null },
+    ],
+  };
+
+  it('lets members leave freely', () => {
+    expect(TripModel.leaveBlockedReason(group, 'alex')).toBeNull();
+  });
+
+  it('stops the last organizer from leaving, with advice that fits', () => {
+    expect(TripModel.leaveBlockedReason(group, 'sam')).toMatch(/only organizer/);
+    const alone: Trip = { ...group, members: [group.members[0]] };
+    expect(TripModel.leaveBlockedReason(alone, 'sam')).toMatch(/only one on this trip/);
+  });
+
+  it('lets an organizer leave once someone else organizes too', () => {
+    expect(TripModel.leaveBlockedReason(TripModel.withOrganizer(group, 'alex'), 'sam')).toBeNull();
+  });
+
+  it('lets only organizers remove others, never themselves, and only people on the trip', () => {
+    expect(TripModel.canRemoveMember(group, 'sam', 'alex')).toBe(true);
+    expect(TripModel.canRemoveMember(group, 'sam', 'sam')).toBe(false);
+    expect(TripModel.canRemoveMember(group, 'alex', 'jo')).toBe(false);
+    expect(TripModel.canRemoveMember(group, 'sam', 'stranger')).toBe(false);
+    expect(TripModel.canRemoveMember(group, null, 'alex')).toBe(false);
+  });
+
+  it('lets organizers promote members but not re-promote organizers', () => {
+    expect(TripModel.canMakeOrganizer(group, 'sam', 'alex')).toBe(true);
+    expect(TripModel.canMakeOrganizer(group, 'sam', 'sam')).toBe(false);
+    expect(TripModel.canMakeOrganizer(group, 'alex', 'jo')).toBe(false);
+  });
+
+  it('updates the roster without touching the original', () => {
+    const without = TripModel.withoutMember(group, 'alex');
+    expect(without.members.map((m) => m.userId)).toEqual(['sam', 'jo']);
+    expect(group.members).toHaveLength(3);
+    const promoted = TripModel.withOrganizer(group, 'jo');
+    expect(promoted.members.find((m) => m.userId === 'jo')?.role).toBe('organizer');
+    expect(group.members.find((m) => m.userId === 'jo')?.role).toBe('member');
+  });
+});

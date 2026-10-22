@@ -22,6 +22,7 @@ import BudgetScreen from './BudgetScreen';
 import ChecklistItemScreen from './ChecklistItemScreen';
 import ChecklistScreen from './ChecklistScreen';
 import CreateTripScreen from './CreateTripScreen';
+import EditTripScreen from './EditTripScreen';
 import ExpenseScreen from './ExpenseScreen';
 import HomeScreen from './HomeScreen';
 import ItineraryItemScreen from './ItineraryItemScreen';
@@ -29,6 +30,7 @@ import ItineraryScreen from './ItineraryScreen';
 import JoinTripScreen from './JoinTripScreen';
 import OnboardingScreen from './OnboardingScreen';
 import SettingsScreen from './SettingsScreen';
+import TripSettingsScreen from './TripSettingsScreen';
 import TripSwitcherScreen from './TripSwitcherScreen';
 import { RootStackParamList, TabParamList, TabStackParamList } from './types';
 
@@ -116,7 +118,7 @@ function CancelButton() {
   return <HeaderButton label="Cancel" onPress={() => navigation.goBack()} />;
 }
 
-/** Trailing Done for message sheets on iOS: they're for reading, so closing isn't "cancelling". */
+/** Trailing Done on iOS for sheets you read or manage things in (messages, trip settings): closing them isn't "cancelling". */
 function DoneButton() {
   const navigation = useNavigation();
   return <HeaderButton label="Done" prominent onPress={() => navigation.goBack()} />;
@@ -155,7 +157,7 @@ export default function RootNavigator() {
     // Dark mode shows modals on a raised surface, the way the system does.
     headerStyle: { backgroundColor: scheme === 'dark' ? colors.surfaceRaised : colors.background },
   };
-  const messageSheet: NativeStackNavigationOptions = {
+  const doneSheet: NativeStackNavigationOptions = {
     ...formSheet,
     headerLeft: undefined,
     headerRight: Platform.OS === 'ios' ? () => <DoneButton /> : undefined,
@@ -222,8 +224,10 @@ export default function RootNavigator() {
                 title: route.params?.itemId ? 'Edit Item' : 'New Item',
               })}
             />
-            <Stack.Screen name="Announcements" component={AnnouncementsScreen} options={{ ...messageSheet, title: 'Announcements' }} />
-            <Stack.Screen name="ActivityComments" component={ActivityCommentsScreen} options={{ ...messageSheet, title: 'Comments' }} />
+            <Stack.Screen name="TripSettings" component={TripSettingsScreen} options={{ ...doneSheet, title: 'Trip Settings' }} />
+            <Stack.Screen name="EditTrip" component={EditTripScreen} options={{ ...formSheet, title: 'Edit Trip' }} />
+            <Stack.Screen name="Announcements" component={AnnouncementsScreen} options={{ ...doneSheet, title: 'Announcements' }} />
+            <Stack.Screen name="ActivityComments" component={ActivityCommentsScreen} options={{ ...doneSheet, title: 'Comments' }} />
           </>
         ) : (
           <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />

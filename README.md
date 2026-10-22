@@ -21,7 +21,8 @@ Restart the dev server after changing it. Checks to run before committing:
 ```bash
 npx tsc --noEmit   # types
 npx expo lint .    # lint (the bare `expo lint` only checks components/)
-npm test           # unit tests (Jest): budget math, expense and checklist validation
+npm test           # unit tests (Jest): models, validation, links, dates
+npm run test:db    # database rules: runs every migration in an in-memory Postgres and checks RLS as several users
 npm run check:contrast  # WCAG contrast of the color tokens
 ```
 
@@ -66,6 +67,16 @@ The Checklist tab is one shared list per trip, in three groups: **Packing**, **T
 - **Who can delete.** The member who added an item, or a trip organizer, like the itinerary. The app only offers Delete to them.
 - **Ticking is instant.** The check appears straight away and is put back, with a message, if it can't be saved.
 - **Validation.** Syntactic: a name is required and at most 100 characters, and the group is one of the three. Semantic: the assignee must be a member of the trip (an item assigned to someone who later leaves shows as assigned to "a former member" and can still be ticked or reassigned). The database checks the same rules with constraints and a trigger.
+
+## Organizer tools
+
+**Trip Settings** (from the bottom of Home, or Settings → Current Trip) shows the trip's details and members.
+
+- **Edit the trip** (organizers). Name, destination, dates and budget, with the same rules as creating a trip, plus two more: a trip that has already started keeps its start date (only a *new* start date can't be in the past), and the dates must still cover every planned activity. The database checks the second rule too.
+- **Manage members** (organizers). Tap someone to **Make Organizer** or **Remove from Trip**. Screen-reader users get both as actions on the row.
+- **Leave the trip** (anyone). Every trip keeps at least one organizer, so the last organizer is told to make someone else organizer first, or delete the trip.
+- **Delete the trip** (organizers). Removes it for everyone, along with its itinerary, expenses, checklist and messages.
+- **Confirmation and safety.** Every one of these asks first and says what will happen. They need a connection (and say so offline). Leaving or deleting also clears that trip's saved data from the phone. Expenses logged by someone who leaves stay in the budget, shown as "Former member".
 
 ## Announcements and comments
 
@@ -226,6 +237,9 @@ A comment on an itinerary activity. Added in `007_communication.sql`.
 | `reorder_itinerary_items(trip, day, ids[])` | Saves one day's order atomically. Runs as the caller, so the itinerary policies still apply. |
 | `check_expense_splits()` | Trigger on `expenses`: the payer and everyone in the split are on the trip, and the split adds up to the amount. Raises `payer_not_member`, `split_member_not_on_trip`, `splits_total_mismatch` or `invalid_splits`. |
 | `check_checklist_item()` | Trigger on `checklist_items`: an assignee must be on the trip (checked when set or changed), and `completed_by` / `completed_at` follow `done` and the caller. Raises `assignee_not_member`. |
+| `make_trip_organizer(trip, user)` | Organizers only: makes another member an organizer. Raises `not_permitted` or `member_not_found`. |
+| `keep_an_organizer()` | Trigger on `trip_members`: refuses to remove a trip's last organizer (`last_organizer`), except when the whole trip or the person's account is being deleted. |
+| `check_trip_dates_cover_itinerary()` | Trigger on `trips`: new dates must still include every activity's day (`activities_outside_dates`). |
 | `set_activity_comment_trip()` | Trigger on `activity_comments`: fills in the comment's trip from its activity. Raises `activity_not_found` if the activity is gone or not on one of your trips. |
 | `is_trip_member(trip)`, `is_trip_organizer(trip)`, `shares_trip_with(user)` | Helpers used by the policies. They are `SECURITY DEFINER` because a policy that queries `trip_members` directly would recurse forever. |
 
@@ -235,7 +249,7 @@ Signed-out visitors cannot call any of these.
 
 Rule of thumb: **you can only see and change trips you are a member of; only an organizer can edit or delete a trip; any member can plan the itinerary, share the checklist and comment on activities; only organizers post announcements; only whoever paid, or an organizer, can change an expense.** RLS is enabled on every table, and the `anon` role (not signed in) has no access to any of them.
 
-Policies are defined, with comments, in `supabase/migrations/004_access_control.sql`, and for later features in `005_expenses.sql` (expenses), `006_checklist.sql` (checklist) and `007_communication.sql` (announcements and comments).
+Policies are defined, with comments, in `supabase/migrations/004_access_control.sql`, and for later features in `005_expenses.sql` (expenses), `006_checklist.sql` (checklist), `007_communication.sql` (announcements and comments) and `008_organizer_tools.sql` (organizer rules). `npm run test:db` checks them.
 
 ### `profiles`
 
@@ -259,8 +273,8 @@ Policies are defined, with comments, in `supabase/migrations/004_access_control.
 | Operation | Who | Policy |
 | --- | --- | --- |
 | Read | Members see the whole roster of their trips | Members can see who is on their trips |
-| Delete | You (leave a trip) or an organizer (remove someone) | Leave a trip, or organizers remove members |
-| Insert / update | Nobody directly | Use `create_trip()` and `join_trip_by_code()` |
+| Delete | You (leave a trip) or an organizer (remove someone), but never the trip's last organizer (trigger, `008_organizer_tools.sql`) | Leave a trip, or organizers remove members |
+| Insert / update | Nobody directly | Use `create_trip()`, `join_trip_by_code()` and `make_trip_organizer()` |
 
 ### `itinerary_items`
 
@@ -315,4 +329,4 @@ Invite codes are 6 characters from a 31-character alphabet (about 887 million co
 
 ### Changing a policy
 
-Add a new numbered migration rather than editing an old one, and keep the explanatory comment next to each policy. After changing access rules, re-test with at least two accounts: one on the trip, one outside it.
+Add a new numbered migration rather than editing an old one, and keep the explanatory comment next to each policy. After changing access rules, add checks to `scripts/test-database.mjs` and run `npm run test:db`, then re-test in the app with at least two accounts: one on the trip, one outside it.

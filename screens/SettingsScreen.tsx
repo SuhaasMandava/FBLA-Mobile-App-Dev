@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import appConfig from '../app.json';
@@ -12,6 +13,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useTrip } from '../hooks/useTrip';
 import { getErrorMessage } from '../services/errors';
 import { confirmDestructive } from '../utils/confirm';
+import { TabScreenNavigation } from './types';
 
 const appearanceOptions: { value: ThemePreference; label: string; icon: IconName }[] = [
   { value: 'system', label: 'Device Setting', icon: 'phone-portrait-outline' },
@@ -22,7 +24,8 @@ const appearanceOptions: { value: ThemePreference; label: string; icon: IconName
 export default function SettingsScreen() {
   const { colors, preference, setPreference } = useTheme();
   const { email, userId, signOut } = useAuth();
-  const { trips } = useTrip();
+  const navigation = useNavigation<TabScreenNavigation>();
+  const { trips, activeTrip } = useTrip();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
 
@@ -54,6 +57,19 @@ export default function SettingsScreen() {
         {name ? <ListRow leading={<Icon name="person-circle-outline" size={24} color="accent" />} title="Name" value={name} /> : null}
         <ListRow leading={<Icon name="mail-outline" size={24} color="accent" />} title="Email" subtitle={email ?? 'Unknown'} />
       </ListSection>
+
+      {activeTrip ? (
+        <ListSection header="Current Trip">
+          <ListRow
+            leading={<Icon name="airplane-outline" size={24} color="accent" />}
+            title={activeTrip.name}
+            subtitle="Details, members, leave or delete"
+            trailing="chevron"
+            accessibilityHint="Opens trip settings"
+            onPress={() => navigation.navigate('TripSettings')}
+          />
+        </ListSection>
+      ) : null}
 
       <ListSection header="Appearance" footer="Device Setting follows your phone's light or dark mode.">
         {appearanceOptions.map((o) => (

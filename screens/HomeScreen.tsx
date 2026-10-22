@@ -194,6 +194,7 @@ function AnnouncementsSection({ trip, onOpen }: { trip: Trip; onOpen: () => void
 
 export default function HomeScreen() {
   const { colors } = useTheme();
+  const { userId } = useAuth();
   const navigation = useNavigation<TabScreenNavigation>();
   const { activeTrip, trips, loading, error, refresh } = useTrip();
   const { items } = useItinerary();
@@ -350,6 +351,18 @@ export default function HomeScreen() {
             accessibilityLabel={`${TripModel.memberName(member)}${member.role === 'organizer' ? ', organizer' : ''}`}
           />
         ))}
+      </ListSection>
+
+      <ListSection>
+        <ListRow
+          leading={<Icon name="settings-outline" size={22} color="accent" />}
+          title="Trip Settings"
+          subtitle={
+            TripModel.isOrganizer(activeTrip, userId) ? 'Edit details, manage members, or delete the trip' : 'Trip details, members, or leave the trip'
+          }
+          trailing="chevron"
+          onPress={() => navigation.navigate('TripSettings')}
+        />
       </ListSection>
     </Screen>
   );

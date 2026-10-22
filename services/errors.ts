@@ -17,7 +17,10 @@ export type TripServiceErrorCode =
   | 'expense_not_found'
   | 'invalid_split'
   | 'checklist_item_not_found'
-  | 'invalid_assignee';
+  | 'invalid_assignee'
+  | 'last_organizer'
+  | 'member_not_found'
+  | 'activities_outside_dates';
 
 export class TripServiceError extends UserFacingError {
   constructor(

@@ -36,6 +36,29 @@ function toItineraryError(error: PostgrestError): unknown {
   return error;
 }
 
+/** Trip and membership changes fail with a trigger or function message (see 008_organizer_tools.sql). */
+function toTripError(error: PostgrestError): unknown {
+  if (error.message.includes('activities_outside_dates')) {
+    return new TripServiceError(
+      'activities_outside_dates',
+      'Some activities are planned outside those dates. Move or delete them first, then change the dates.',
+    );
+  }
+  if (error.message.includes('last_organizer')) {
+    return new TripServiceError(
+      'last_organizer',
+      'Every trip needs an organizer. Make someone else an organizer first, or delete the trip.',
+    );
+  }
+  if (error.message.includes('member_not_found')) {
+    return new TripServiceError('member_not_found', "That person isn't on the trip anymore.");
+  }
+  if (error.message.includes('not_permitted') || error.code === INSUFFICIENT_PRIVILEGE) {
+    return new TripServiceError('not_permitted', NOT_ORGANIZER);
+  }
+  return error;
+}
+
 export const TripService = {
   /**
    * Trips the user belongs to, soonest first, each with its full member list.
@@ -104,12 +127,12 @@ export const TripService = {
     if (patch.budgetCents !== undefined) row.budget_cents = patch.budgetCents;
 
     const { data, error } = await supabase.from('trips').update(row).eq('id', id).select(TRIP_SELECT).maybeSingle();
-    if (error) throw error;
+    if (error) throw toTripError(error);
     if (!data) throw new TripServiceError('not_permitted', NOT_ORGANIZER);
     return TripModel.fromRow(data as TripRow);
   },
 
-  /** Organizers only; removes the trip with its members, itinerary and expenses. */
+  /** Organizers only; removes the trip with its members, itinerary, expenses, checklist and messages. */
   async remove(id: string): Promise<void> {
     const { data, error } = await supabase.from('trips').delete().eq('id', id).select('id');
     if (error) throw error;
@@ -170,7 +193,7 @@ export const TripService = {
     if (error) throw toItineraryError(error);
   },
 
-  /** Leave a trip (yourself) or, as organizer, remove someone else. */
+  /** Leave a trip (yourself) or, as organizer, remove someone else. A trip's last organizer can't go. */
   async removeMember(tripId: string, userId: string): Promise<void> {
     const { data, error } = await supabase
       .from('trip_members')
@@ -178,7 +201,18 @@ export const TripService = {
       .eq('trip_id', tripId)
       .eq('user_id', userId)
       .select('user_id');
-    if (error) throw error;
-    if (!data || data.length === 0) throw new TripServiceError('not_permitted', NOT_ORGANIZER);
+    if (error) throw toTripError(error);
+    if (!data || data.length === 0) {
+      throw new TripServiceError(
+        'not_permitted',
+        "That person isn't on the trip anymore, or only the trip organizer can remove them.",
+      );
+    }
+  },
+
+  /** Organizers only: give another member the organizer role, so they can manage (or take over) the trip. */
+  async makeOrganizer(tripId: string, userId: string): Promise<void> {
+    const { error } = await supabase.rpc('make_trip_organizer', { p_trip_id: tripId, p_user_id: userId });
+    if (error) throw toTripError(error);
   },
 };

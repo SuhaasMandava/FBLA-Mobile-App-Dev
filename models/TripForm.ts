@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { isValidISODate, todayISO } from '../utils/dates';
 import { normalizeInviteCode } from '../utils/inviteCode';
 import { normalizeDollarInput, parseDollarsToCents } from '../utils/money';
-import { NewTrip } from './TripModel';
+import { NewTrip, Trip } from './TripModel';
 import { firstIssuePerField, Validation } from './validation';
 
 export const TRIP_NAME_MIN = 3;
@@ -33,14 +33,9 @@ const dateField = (label: string) =>
     .min(1, `${label} is required.`)
     .refine((v) => v === '' || isValidISODate(v), `${label} must be a real date.`);
 
-/**
- * Syntactic rules live on the fields (required, length, real dates, positive
- * budget); semantic rules relate fields to each other or to "today" and are
- * only checked once the dates involved are well-formed.
- */
-function createTripSchema(today: string) {
-  return z
-    .object({
+/** Syntactic rules for each field (required, length, real dates, positive budget), shared by Create and Edit. */
+function tripFields() {
+  return z.object({
       name: z
         .string()
         .trim()
@@ -66,15 +61,35 @@ function createTripSchema(today: string) {
           },
           `Budget can't exceed $${MAX_BUDGET_DOLLARS.toLocaleString('en-US')}.`,
         ),
-    })
+    });
+}
+
+const endNotBeforeStart = (v: CreateTripFormValues) =>
+  !(isValidISODate(v.startDate) && isValidISODate(v.endDate) && v.endDate < v.startDate);
+const END_BEFORE_START = { message: "End date can't be before the start date.", path: ['endDate'] };
+
+/**
+ * Semantic rules relate fields to each other or to "today" and are only checked
+ * once the dates involved are well-formed.
+ */
+function createTripSchema(today: string) {
+  return tripFields()
     .refine((v) => !(isValidISODate(v.startDate) && v.startDate < today), {
       message: "Start date can't be in the past.",
       path: ['startDate'],
     })
-    .refine((v) => !(isValidISODate(v.startDate) && isValidISODate(v.endDate) && v.endDate < v.startDate), {
-      message: "End date can't be before the start date.",
-      path: ['endDate'],
-    });
+    .refine(endNotBeforeStart, END_BEFORE_START);
+}
+
+/** The cleaned-up trip from values that passed a schema. */
+function toNewTrip(data: CreateTripFormValues): NewTrip {
+  return {
+    name: data.name,
+    destination: data.destination,
+    startDate: data.startDate,
+    endDate: data.endDate,
+    budgetCents: parseDollarsToCents(data.budget) as number, // already proven non-null by the schema
+  };
 }
 
 /** Validate the form and, if it passes, return the trip ready to save. `today` is injectable for tests. */
@@ -85,18 +100,73 @@ export function validateCreateTripForm(
   const input = { ...values, budget: normalizeDollarInput(values.budget) };
   const result = createTripSchema(today).safeParse(input);
   if (!result.success) return { ok: false, errors: firstIssuePerField(result.error) };
+  return { ok: true, data: toNewTrip(result.data) };
+}
 
-  const { name, destination, startDate, endDate, budget } = result.data;
+/** The Edit Trip form filled in from a saved trip. A budget of 0 ("none set", from older trips) starts empty. */
+export function tripToFormValues(trip: Trip): CreateTripFormValues {
+  const { budgetCents } = trip;
   return {
-    ok: true,
-    data: {
-      name,
-      destination,
-      startDate,
-      endDate,
-      budgetCents: parseDollarsToCents(budget) as number, // already proven non-null by the schema
-    },
+    name: trip.name,
+    destination: trip.destination,
+    startDate: trip.startDate,
+    endDate: trip.endDate,
+    budget: budgetCents <= 0 ? '' : budgetCents % 100 === 0 ? String(budgetCents / 100) : (budgetCents / 100).toFixed(2),
   };
+}
+
+export interface EditTripFormContext {
+  /** The trip as saved, before this edit. */
+  original: Trip;
+  /** The day (YYYY-MM-DD) of every activity on the itinerary. */
+  activityDays: string[];
+}
+
+const activities = (count: number) => (count === 1 ? '1 activity is' : `${count} activities are`);
+
+/**
+ * Edit Trip uses the same field rules as Create, plus:
+ *   * the start date may stay in the past if it isn't changed (a trip that has begun can still be edited);
+ *   * the dates must still cover every planned activity (the database checks this too).
+ */
+function editTripSchema(today: string, { original, activityDays }: EditTripFormContext) {
+  return tripFields()
+    .refine((v) => !(isValidISODate(v.startDate) && v.startDate < today && v.startDate !== original.startDate), {
+      message: "Start date can't be in the past.",
+      path: ['startDate'],
+    })
+    .refine(endNotBeforeStart, END_BEFORE_START)
+    .superRefine((v, ctx) => {
+      if (!isValidISODate(v.startDate) || !isValidISODate(v.endDate) || v.endDate < v.startDate) return;
+      const before = activityDays.filter((day) => day < v.startDate).length;
+      const after = activityDays.filter((day) => day > v.endDate).length;
+      if (before > 0) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['startDate'],
+          message: `${activities(before)} planned before this date. Move or delete them first.`,
+        });
+      }
+      if (after > 0) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['endDate'],
+          message: `${activities(after)} planned after this date. Move or delete them first.`,
+        });
+      }
+    });
+}
+
+/** Validate an edit to a saved trip and, if it passes, return the changes to save. `today` is injectable for tests. */
+export function validateEditTripForm(
+  values: CreateTripFormValues,
+  context: EditTripFormContext,
+  today: string = todayISO(),
+): Validation<CreateTripFormValues, NewTrip> {
+  const input = { ...values, budget: normalizeDollarInput(values.budget) };
+  const result = editTripSchema(today, context).safeParse(input);
+  if (!result.success) return { ok: false, errors: firstIssuePerField(result.error) };
+  return { ok: true, data: toNewTrip(result.data) };
 }
 
 /** Exactly six letters or digits (case-insensitive: codes are stored upper-case). */

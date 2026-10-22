@@ -47,6 +47,17 @@ export const CacheService = {
     }
   },
 
+  /** Forget one trip's saved data (after leaving or deleting it). Trip caches are named `<kind>:<tripId>`. */
+  async clearTrip(userId: string, tripId: string): Promise<void> {
+    try {
+      const prefix = `${PREFIX}:${userId}:`;
+      const keys = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith(prefix) && k.endsWith(`:${tripId}`));
+      if (keys.length > 0) await AsyncStorage.multiRemove(keys);
+    } catch (e) {
+      console.warn('Cache clear failed', e);
+    }
+  },
+
   /** Who was last signed in on this device, so an offline start can still open their saved data. */
   async readLastUser(): Promise<RememberedUser | null> {
     try {
