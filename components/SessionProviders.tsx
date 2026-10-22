@@ -4,8 +4,15 @@ import { CommunicationProvider } from '../context/CommunicationContext';
 import { ExpenseProvider } from '../context/ExpenseContext';
 import { ItineraryProvider } from '../context/ItineraryContext';
 import { TripProvider } from '../context/TripContext';
+import { useActivityReminders } from '../hooks/useActivityReminders';
 import { useAuth } from '../hooks/useAuth';
 import { useTrip } from '../hooks/useTrip';
+
+/** Keeps the active trip's activity reminders scheduled. Renders nothing. */
+function ActivityReminders() {
+  useActivityReminders();
+  return null;
+}
 
 /** The itinerary, expenses, checklist and messages belong to the active trip; keying on it resets them whenever the trip changes. */
 function ActiveTripData({ children }: { children: ReactNode }) {
@@ -16,6 +23,7 @@ function ActiveTripData({ children }: { children: ReactNode }) {
       <ExpenseProvider key={key} tripId={activeTripId}>
         <ChecklistProvider key={key} tripId={activeTripId}>
           <CommunicationProvider key={key} tripId={activeTripId}>
+            <ActivityReminders />
             {children}
           </CommunicationProvider>
         </ChecklistProvider>

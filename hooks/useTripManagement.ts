@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 import { Trip, TripModel } from '../models/TripModel';
 import { CacheService } from '../services/CacheService';
+import { NotificationService } from '../services/NotificationService';
 import { getErrorMessage } from '../services/errors';
 import { TripService } from '../services/TripService';
 import { useAuth } from './useAuth';
@@ -52,6 +53,7 @@ export function useTripManagement(trip: Trip) {
   const forget = () => {
     setTrips(trips.filter((t) => t.id !== trip.id));
     if (userId) void CacheService.clearTrip(userId, trip.id);
+    void NotificationService.syncActivityReminders(trip.id, []); // no reminders for a trip you're no longer on
   };
 
   return {

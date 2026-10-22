@@ -2,11 +2,15 @@ import { createContext, ReactNode, useCallback, useEffect, useMemo, useRef, useS
 import { useAuth } from '../hooks/useAuth';
 import { useLiveSync } from '../hooks/useLiveSync';
 import { useNetwork } from '../hooks/useNetwork';
+import { useNotificationSettings } from '../hooks/useNotificationSettings';
+import { useTrip } from '../hooks/useTrip';
 import { Expense, ExpenseModel, ExpenseRow, NewExpense } from '../models/ExpenseModel';
 import { applyLiveChange, LiveChange } from '../models/LiveChange';
+import { ReminderModel } from '../models/ReminderModel';
 import { CacheService } from '../services/CacheService';
 import { getErrorMessage } from '../services/errors';
 import { ExpenseService } from '../services/ExpenseService';
+import { NotificationService } from '../services/NotificationService';
 import { MutationResult } from './ItineraryContext';
 
 export interface ExpenseContextValue {
@@ -63,6 +67,17 @@ export function ExpenseProvider({ tripId, children }: { tripId: string | null; c
   const [hydrated, setHydrated] = useState(false); // has the saved copy been read yet?
   const gotFreshData = useRef(false); // a server answer always beats the saved copy
   const cacheName = `expenses:${tripId}`;
+  const { activeTrip } = useTrip();
+  const { prefs, permission } = useNotificationSettings();
+  // For telling someone else's new expense apart from the echo of your own (see applyChange).
+  const expensesRef = useRef(expenses);
+  const savingNew = useRef(0);
+  const createdHere = useRef(new Set<string>());
+  const alertContext = useRef({ trip: activeTrip, userId, enabled: false });
+  useEffect(() => {
+    expensesRef.current = expenses;
+    alertContext.current = { trip: activeTrip, userId, enabled: prefs.expenseAlerts && permission === 'granted' };
+  });
 
   const applyCache = useCallback((cached: Expense[] | null) => {
     if (cached && !gotFreshData.current) setExpenses(ExpenseModel.sort(cached));
@@ -106,15 +121,24 @@ export function ExpenseProvider({ tripId, children }: { tripId: string | null; c
   const resync = useCallback(async () => {
     if (tripId) applyLoadResult(await fetchExpenses(tripId));
   }, [tripId, applyLoadResult]);
+  // A new expense from someone else also raises an alert (if they're turned on). Your own
+  // expenses come back as echoes; they're recognized while saving or by their id afterwards.
+  const applyChange = useCallback((change: LiveChange<ExpenseRow>) => {
+    if (
+      change.type === 'upsert' &&
+      savingNew.current === 0 &&
+      !createdHere.current.has(change.row.id) &&
+      !expensesRef.current.some((e) => e.id === change.row.id)
+    ) {
+      const { trip, userId: me, enabled } = alertContext.current;
+      const alert = enabled && trip ? ReminderModel.expenseAlert(ExpenseModel.fromRow(change.row), trip, me) : null;
+      if (alert) void NotificationService.showNow(alert.title, alert.body);
+    }
+    setExpenses((current) => applyLiveChange(current, change, ExpenseModel.fromRow, ExpenseModel.sort));
+  }, []);
   useLiveSync({
     tripId,
-    tables: [
-      {
-        table: 'expenses',
-        onChange: (change: LiveChange<ExpenseRow>) =>
-          setExpenses((current) => applyLiveChange(current, change, ExpenseModel.fromRow, ExpenseModel.sort)),
-      },
-    ],
+    tables: [{ table: 'expenses', onChange: applyChange }],
     onResync: () => void resync(),
   });
 
@@ -122,12 +146,16 @@ export function ExpenseProvider({ tripId, children }: { tripId: string | null; c
     async (input: NewExpense): Promise<MutationResult> => {
       if (!tripId) return NO_TRIP;
       if (!online) return OFFLINE;
+      savingNew.current += 1;
       try {
         const created = await ExpenseService.create(tripId, input);
+        createdHere.current.add(created.id);
         setExpenses((current) => ExpenseModel.sort([...current, created]));
         return OK;
       } catch (e) {
         return failure('Adding expense failed', e);
+      } finally {
+        savingNew.current -= 1;
       }
     },
     [tripId, online],

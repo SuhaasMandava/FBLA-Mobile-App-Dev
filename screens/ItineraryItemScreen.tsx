@@ -9,6 +9,7 @@ import { Sheet } from '../components/Sheet';
 import { useDiscardGuard } from '../hooks/useDiscardGuard';
 import { useItinerary } from '../hooks/useItinerary';
 import { useItineraryItemForm } from '../hooks/useItineraryItemForm';
+import { useNotificationSettings } from '../hooks/useNotificationSettings';
 import { useTrip } from '../hooks/useTrip';
 import { ItineraryItem } from '../models/ItineraryModel';
 import { confirmDestructive } from '../utils/confirm';
@@ -36,7 +37,16 @@ export default function ItineraryItemScreen() {
 function ItineraryItemForm({ item, defaultDay }: { item?: ItineraryItem; defaultDay?: string }) {
   const navigation = useNavigation<RootNavigation>();
   const [done, setDone] = useState(false);
-  const form = useItineraryItemForm({ item, defaultDay, onDone: () => setDone(true) });
+  const { prefs, permission, requestPermission } = useNotificationSettings();
+  const form = useItineraryItemForm({
+    item,
+    defaultDay,
+    onDone: (saved) => {
+      // An activity with a start time is when a reminder first makes sense, so ask then (once).
+      if (saved?.time && prefs.activityReminders && permission === 'undetermined') void requestPermission();
+      setDone(true);
+    },
+  });
   useDiscardGuard(form.control, done, () => navigation.goBack());
 
   const confirmDelete = () =>

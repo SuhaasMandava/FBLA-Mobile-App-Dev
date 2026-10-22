@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AuthService, AuthUser } from '../services/AuthService';
 import { CacheService } from '../services/CacheService';
+import { NotificationService } from '../services/NotificationService';
 
 export type AuthStatus = 'loading' | 'signedOut' | 'signedIn';
 
@@ -52,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     await AuthService.signOut();
     if (userId) await CacheService.clearUser(userId); // don't leave their saved trips on the device
+    await NotificationService.cancelAllActivityReminders(); // nor reminders about them
   }, [userId]);
 
   const value = useMemo<AuthContextValue>(

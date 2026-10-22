@@ -39,7 +39,7 @@ The anon key in `.env` is public by design (it ships inside the app). Row Level 
 | Folder | What lives there |
 | --- | --- |
 | `models/` | Plain data types, row mapping, and rules. Validation lives here as zod schemas (`TripForm`, `ItineraryForm`, `ExpenseForm`, `ChecklistForm`, `MessageForm`, `AuthForm`); the money math (splits, budget summary, settle-up) is `BudgetCalculator`. No React, no network. Unit tests sit next to them in `models/__tests__/`. |
-| `services/` | Everything that talks to Supabase or the device: `TripService`, `ExpenseService`, `ChecklistService`, `CommunicationService`, `AuthService`, `CacheService`, `NetworkService`, `ShareService` (system share sheet, WhatsApp, Messages and X links). They throw typed errors with user-safe messages. |
+| `services/` | Everything that talks to Supabase or the device: `TripService`, `ExpenseService`, `ChecklistService`, `CommunicationService`, `AuthService`, `CacheService`, `NetworkService`, `ShareService` (system share sheet, WhatsApp, Messages and X links), `NotificationService` (local reminders and alerts), `RealtimeService` (live updates). They throw typed errors with user-safe messages. |
 | `context/`, `hooks/` | App state (auth, trips, itinerary, expenses, checklist, messages, network, theme) and the form hooks that tie react-hook-form to the models and services. |
 | `theme/` | Design tokens (`theme.ts`): colors for light and dark, type roles, spacing, radii, motion. Read through `useTheme()`. |
 | `screens/`, `components/` | Presentation only. Navigation is React Navigation (`App.tsx` → `screens/RootNavigator.tsx`). Screens are built from the shared components; none defines its own button, row, or field styles. |
@@ -129,6 +129,15 @@ The itinerary, expenses, checklist, announcements and comments of the open trip 
 - **Your own changes** are shown as soon as the server confirms them; when their echo arrives it just replaces the same row. A checklist tick still being saved isn't overwritten by an older echo.
 - **Falling back.** Offline, the app stops listening and shows what's saved (see below). When the connection comes back, every list reloads and live updates resume. A reload also runs when live updates recover after an outage and when the app comes back to the foreground, since a phone pauses connections in the background. If Realtime can't be used at all (switched off for the project, or `009_live_sync.sql` not run), the app behaves exactly as before: pull to refresh, and reload on reconnect.
 - **Setup.** Running `009_live_sync.sql` adds the five tables to the `supabase_realtime` publication. Nothing else is needed.
+
+## Reminders
+
+Local notifications, scheduled by the phone itself (`services/NotificationService.ts`, rules in `models/ReminderModel.ts`):
+
+- **Activity reminders.** 30 minutes before every activity on the open trip that has a start time. They're rescheduled automatically when an activity is added, retimed, renamed, moved or deleted, including by someone else (live updates), and cleared when you leave or delete the trip, sign out, or turn them off. At most 20 per trip are kept scheduled (iOS allows 64 pending notifications per app).
+- **New-expense alerts.** When someone else on the trip logs an expense while TripHub is open or running: "Sam paid $42.50 for Dinner." Your own expenses never alert you.
+- **Settings → Reminders** has a switch for each. Both start on, but nothing appears until the phone grants permission: TripHub asks the first time you save an activity with a start time (or turn a switch on, or tap **Allow Notifications**). If notifications are off for TripHub in the phone's settings, the screen says so and links there.
+- **Where they work.** In development, preview and store builds. Expo Go (SDK 53 and later) and the web don't support them, so there the switches are disabled with an explanation. Reminders for a trip are refreshed whenever that trip is open. Alerts while the app is fully closed would need server push notifications, which TripHub doesn't use.
 
 ## Offline behavior
 

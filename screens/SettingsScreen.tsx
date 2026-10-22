@@ -1,19 +1,80 @@
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Linking } from 'react-native';
 import appConfig from '../app.json';
 import { InlineBanner } from '../components/InlineBanner';
 import { Icon, IconName } from '../components/Icon';
 import { ListRow } from '../components/ListRow';
 import { ListSection } from '../components/ListSection';
 import { Screen } from '../components/Screen';
+import { SwitchRow } from '../components/SwitchRow';
 import { ThemePreference } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
+import { useNotificationSettings } from '../hooks/useNotificationSettings';
 import { useTheme } from '../hooks/useTheme';
 import { useTrip } from '../hooks/useTrip';
+import { REMINDER_LEAD_MINUTES } from '../models/ReminderModel';
 import { getErrorMessage } from '../services/errors';
 import { confirmDestructive } from '../utils/confirm';
 import { TabScreenNavigation } from './types';
+
+/** Reminder switches, plus what to do when the phone has notifications turned off for TripHub. */
+function NotificationSettings() {
+  const { prefs, setPref, permission, requestPermission } = useNotificationSettings();
+  const unsupported = permission === 'unsupported';
+
+  // Turning a switch on is the moment to ask the phone for permission, if it hasn't been asked yet.
+  const toggle = (key: 'activityReminders' | 'expenseAlerts') => (on: boolean) => {
+    setPref(key, on);
+    if (on && permission === 'undetermined') void requestPermission();
+  };
+
+  return (
+    <>
+      {permission === 'denied' ? (
+        <InlineBanner
+          tone="warning"
+          message="Notifications are turned off for TripHub in your phone's settings, so reminders can't appear."
+          action={{ label: 'Open Settings', onPress: () => void Linking.openSettings() }}
+        />
+      ) : null}
+      <ListSection
+        header="Reminders"
+        footer={
+          unsupported
+            ? 'Reminders work in the installed app (a development or preview build), not in Expo Go or a web browser.'
+            : 'Expense alerts appear while TripHub is open or running. Reminders are scheduled for the trip you have open.'
+        }
+      >
+        <SwitchRow
+          leading={<Icon name="alarm-outline" size={24} color="accent" />}
+          title="Activity reminders"
+          subtitle={`${REMINDER_LEAD_MINUTES} minutes before activities that have a start time`}
+          value={prefs.activityReminders && !unsupported}
+          onValueChange={toggle('activityReminders')}
+          disabled={unsupported}
+        />
+        <SwitchRow
+          leading={<Icon name="receipt-outline" size={24} color="accent" />}
+          title="New expense alerts"
+          subtitle="When someone else on your trip logs an expense"
+          value={prefs.expenseAlerts && !unsupported}
+          onValueChange={toggle('expenseAlerts')}
+          disabled={unsupported}
+        />
+        {permission === 'undetermined' && (prefs.activityReminders || prefs.expenseAlerts) ? (
+          <ListRow
+            leading={<Icon name="notifications-outline" size={24} color="accent" />}
+            title="Allow Notifications"
+            subtitle="Your phone asks once whether TripHub may notify you."
+            trailing="chevron"
+            onPress={() => void requestPermission()}
+          />
+        ) : null}
+      </ListSection>
+    </>
+  );
+}
 
 const appearanceOptions: { value: ThemePreference; label: string; icon: IconName }[] = [
   { value: 'system', label: 'Device Setting', icon: 'phone-portrait-outline' },
@@ -70,6 +131,8 @@ export default function SettingsScreen() {
           />
         </ListSection>
       ) : null}
+
+      <NotificationSettings />
 
       <ListSection header="Appearance" footer="Device Setting follows your phone's light or dark mode.">
         {appearanceOptions.map((o) => (

@@ -13,8 +13,8 @@ interface Options {
   item?: ItineraryItem;
   /** Day to start the new activity on (e.g. the day whose "Add" button was tapped). */
   defaultDay?: string;
-  /** Runs once the activity is saved or deleted. */
-  onDone: () => void;
+  /** Runs once the activity is saved (with what was saved) or deleted (with nothing). */
+  onDone: (saved?: NewItineraryItem) => void;
 }
 
 /** Form state and save/delete logic for adding or editing an activity. Dates are checked against the active trip's dates. */
@@ -45,7 +45,7 @@ export function useItineraryItemForm({ item, defaultDay, onDone }: Options) {
     async (data) => {
       setSubmitError(null);
       const result = item ? await updateItem(item.id, data) : await addItem(data);
-      if (result.ok) onDone();
+      if (result.ok) onDone(data);
       else fail(result.error);
     },
     (errors) => {

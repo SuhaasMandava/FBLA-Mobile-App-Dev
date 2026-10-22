@@ -5,6 +5,7 @@ import { SessionProviders } from './components/SessionProviders';
 import { AuthProvider } from './context/AuthContext';
 import { InviteLinkProvider } from './context/InviteLinkContext';
 import { NetworkProvider } from './context/NetworkContext';
+import { NotificationSettingsProvider } from './context/NotificationSettingsContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useTheme } from './hooks/useTheme';
 import RootNavigator from './screens/RootNavigator';
@@ -25,12 +26,14 @@ export default function App() {
       <ThemeProvider>
         <NetworkProvider>
           <InviteLinkProvider>
-            <AuthProvider>
-              <SessionProviders>
-                <RootNavigator />
-                <ThemedStatusBar />
-              </SessionProviders>
-            </AuthProvider>
+            <NotificationSettingsProvider>
+              <AuthProvider>
+                <SessionProviders>
+                  <RootNavigator />
+                  <ThemedStatusBar />
+                </SessionProviders>
+              </AuthProvider>
+            </NotificationSettingsProvider>
           </InviteLinkProvider>
         </NetworkProvider>
       </ThemeProvider>
