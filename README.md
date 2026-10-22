@@ -34,6 +34,57 @@ npm run check:contrast  # WCAG contrast of the color tokens
 
 The anon key in `.env` is public by design (it ships inside the app). Row Level Security is what protects the data, which is why every table has it on.
 
+### Building a preview (EAS)
+
+`eas.json` defines three build profiles. None of them has been run yet; builds happen in Expo's cloud under your Expo account.
+
+| Profile | What you get | Use it for |
+| --- | --- | --- |
+| `preview` | An installable Android `.apk`, and an iOS build for registered devices (internal distribution) | Judges' and teammates' phones, two-phone testing, reminders and invite links (none of which work in Expo Go) |
+| `preview-simulator` | The same, but an iOS Simulator build | Demoing on a Mac without an Apple Developer account |
+| `production` | Store builds (Android `.aab`, App Store iOS) with the build number bumped automatically | Publishing |
+
+**Environment variables.** Your `.env` is git-ignored, so EAS never uploads it. Builds read the two variables from EAS instead, from the environment named in each profile (`preview` or `production`). Set them once per environment, using the same values as your `.env`. They're `plaintext` because `EXPO_PUBLIC_` values are compiled into the app anyway (the anon key is public by design; Row Level Security protects the data):
+
+```bash
+npx eas-cli@latest env:set preview --name EXPO_PUBLIC_SUPABASE_URL --value "https://YOUR-PROJECT.supabase.co" --visibility plaintext
+```
+
+```bash
+npx eas-cli@latest env:set preview --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "YOUR-ANON-KEY" --visibility plaintext
+```
+
+Repeat with `production` for store builds. `npx eas-cli@latest env:list preview` shows what's set. A build made without them opens on a "TripHub isn't set up yet" screen rather than crashing.
+
+**First build.** Link the project to your Expo account once (this adds `extra.eas.projectId` to `app.json`), then build:
+
+```bash
+npx eas-cli@latest init
+```
+
+```bash
+npx eas-cli@latest build --profile preview --platform android
+```
+
+The first build asks for an Android package name and iOS bundle identifier (for example `com.yourteam.triphub`) and saves them in `app.json`. iOS device builds also need an Apple Developer account; `preview-simulator` doesn't.
+
+### Demo mode
+
+`supabase/seed/demo_trip.sql` preloads a trip to present: **Smoky Mountains Weekend** (invite code `DEMO26`), starting today, with 7 activities (one later today, so a reminder can fire during the demo), 4 expenses ($838.95 of a $1,500 budget, split evenly), 8 checklist items with some done, an announcement, and comment threads.
+
+1. Run `schema.sql` and migrations 001–009 on a **demo or test** Supabase project (not one with real users' data).
+2. In the app, create `demo.organizer@example.com` with Create Account. Optionally also create `demo.member@example.com` and `demo.friend@example.com` (for the second and third phones). Any passwords work.
+3. Paste `supabase/seed/demo_trip.sql` into the SQL editor and run it. It says how many members it added.
+4. Sign in as the organizer (and the member on a second phone) and pull down to refresh, or relaunch.
+
+Run it again any time to reset the demo: it deletes the old `DEMO26` trip and rebuilds it around today's date. `npm run test:db` checks the seed too.
+
+### When the server can't be reached
+
+- **No connection, or Supabase down or unreachable.** Everything already loaded stays on screen from the phone's saved copy, with a banner, and changes say up front that they need a connection. Requests give up after 15 seconds instead of spinning (`utils/fetchWithTimeout.ts`), and data reloads by itself when the connection returns. Signing in shows "Couldn't reach the server."
+- **Built without the Supabase settings.** A "TripHub isn't set up yet" screen instead of a crash.
+- **Anything unexpected while drawing a screen.** A "Something went wrong" screen with Try Again (`components/ErrorBoundary.tsx`), never a blank or red screen.
+
 ## How the code is organized
 
 | Folder | What lives there |

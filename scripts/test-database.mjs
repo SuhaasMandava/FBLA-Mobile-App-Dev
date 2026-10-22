@@ -20,8 +20,13 @@ await db.exec(`
   create role authenticated nologin;
   create schema auth;
   create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb default '{}'::jsonb);
-  create or replace function auth.uid() returns uuid language sql stable
-    as $$ select nullif(current_setting('app.uid', true), '')::uuid $$;
+  -- The same definition Supabase uses: the signed-in user comes from the request's JWT claims.
+  create or replace function auth.uid() returns uuid language sql stable as $$
+    select coalesce(
+      nullif(current_setting('request.jwt.claim.sub', true), ''),
+      (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')
+    )::uuid
+  $$;
   grant usage on schema auth to anon, authenticated;
   grant execute on function auth.uid() to anon, authenticated;
   grant usage on schema public to anon, authenticated;
@@ -62,13 +67,13 @@ function check(label, ok, detail = '') {
 
 /** Run one statement as a signed-in user, the way the API does: role `authenticated` plus their id. */
 async function as(uid, sql, params = []) {
-  await db.exec(`set role authenticated; select set_config('app.uid', '${uid}', false);`);
+  await db.exec(`set role authenticated; select set_config('request.jwt.claims', '{"sub":"${uid}"}', false);`);
   try {
     return { rows: (await db.query(sql, params)).rows };
   } catch (e) {
     return { error: e.message };
   } finally {
-    await db.exec(`reset role; select set_config('app.uid', '', false);`);
+    await db.exec(`reset role; select set_config('request.jwt.claims', '', false);`);
   }
 }
 async function refused(label, uid, sql, pattern, params) {
@@ -173,6 +178,46 @@ for (const table of ['trips', 'trip_members', 'itinerary_items', 'expenses', 'ch
   await db.exec('reset role;');
   check(`cannot read ${table}`, error !== null, 'read succeeded');
 }
+
+console.log('\nDemo seed (supabase/seed/demo_trip.sql)');
+const seed = readFileSync(join(root, 'supabase/seed/demo_trip.sql'), 'utf8');
+let seedError = null;
+try {
+  await db.exec(seed);
+} catch (e) {
+  seedError = e.message;
+}
+check('explains what to do when the demo organizer account is missing', /Create it in the app first/.test(seedError ?? ''), seedError ?? 'ran');
+const ORGANIZER = '00000000-0000-0000-0000-0000000000d1';
+const MEMBER = '00000000-0000-0000-0000-0000000000d2';
+await db.query(`insert into auth.users (id, email, raw_user_meta_data) values ($1, 'demo.organizer@example.com', '{"display_name":"Riley"}')`, [ORGANIZER]);
+async function seedCounts() {
+  const [row] = (await db.query(`select t.id,
+    (select count(*) from public.trip_members m where m.trip_id = t.id)::int as members,
+    (select count(*) from public.itinerary_items i where i.trip_id = t.id)::int as activities,
+    (select count(*) from public.expenses e where e.trip_id = t.id)::int as expenses,
+    (select coalesce(sum(e.amount_cents), 0) from public.expenses e where e.trip_id = t.id)::int as spent,
+    (select count(*) from public.checklist_items c where c.trip_id = t.id)::int as checklist,
+    (select count(*) from public.checklist_items c where c.trip_id = t.id and c.done and c.completed_by is not null)::int as done_by_someone,
+    (select count(*) from public.trip_announcements a where a.trip_id = t.id and a.created_by is not null)::int as announcements,
+    (select count(*) from public.activity_comments c where c.trip_id = t.id)::int as comments
+    from public.trips t where t.invite_code = 'DEMO26'`)).rows;
+  return row;
+}
+await db.exec(seed);
+const soloSeed = await seedCounts();
+check('seeds a trip with only the organizer account', soloSeed?.members === 1 && soloSeed.activities === 7 && soloSeed.expenses === 4 && soloSeed.checklist === 7, JSON.stringify(soloSeed));
+check('authors and "done by" are filled in as the organizer', soloSeed?.announcements === 1 && soloSeed.done_by_someone === 3, JSON.stringify(soloSeed));
+await db.query(`insert into auth.users (id, email) values ($1, 'demo.member@example.com')`, [MEMBER]);
+await db.exec(seed);
+const pair = await seedCounts();
+check('re-running replaces the old demo trip (one trip, more people)', pair?.members === 2 && pair.id !== soloSeed.id, JSON.stringify(pair));
+check('the second account gets a reply thread and its own tick', pair?.comments === 3 && pair.checklist === 8, JSON.stringify(pair));
+check('money stays in integer cents and adds up', pair?.spent === 48000 + 21000 + 8655 + 6240, String(pair?.spent));
+const [{ n: oldLeft }] = (await db.query(`select count(*)::int as n from public.trips where id = $1`, [soloSeed.id])).rows;
+check('nothing from the previous demo trip is left', oldLeft === 0);
+await rows('the demo organizer sees the trip through the normal rules', ORGANIZER, `select * from public.trips where invite_code = 'DEMO26'`, 1);
+await rows('the member sees the same expenses', MEMBER, `select * from public.expenses where trip_id = $1`, 4, [pair.id]);
 
 console.log(failures === 0 ? '\nAll database checks passed.' : `\n${failures} database check(s) failed.`);
 process.exit(failures === 0 ? 0 : 1);

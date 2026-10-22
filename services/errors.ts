@@ -38,7 +38,7 @@ const OFFLINE_MESSAGE = "You appear to be offline. Check your connection and try
 /** Does this look like the request never reached the server? (fetch fails with a different message per platform) */
 export function isNetworkError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : typeof error === 'object' && error !== null && 'message' in error ? String((error as { message: unknown }).message) : '';
-  return /network request failed|failed to fetch|network error|load failed/i.test(message);
+  return /network request failed|failed to fetch|network error|load failed|timed out/i.test(message);
 }
 
 /** Message to show the user. Unexpected errors (database) get a generic one; log the real error separately. */
