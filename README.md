@@ -1,6 +1,44 @@
 # TripHub
 
-TripHub is a group trip planner built with Expo and React Native. People sign up, create or join a trip with an invite code, plan its itinerary together, share a packing list and to-do checklist, and track what the group spends, with a settle-up that works out who owes whom in the fewest payments. Data lives in Supabase.
+TripHub is a group trip planner for phones, built with Expo and React Native on a Supabase backend. A group creates or joins a trip with an invite code, plans the days together, splits what it spends, shares a packing and to-do list, and talks it through, with every phone updating live.
+
+## FBLA Mobile Application Development
+
+TripHub is our entry for the **FBLA Mobile Application Development** event, 2026–2027 topic **"Together We Go: Group Trip Planner"**. The topic asks for an app that helps a group organize and manage a shared trip from planning through completion, with support for collaboration, communication, scheduling, budgeting, organization and trip management for multiple users. The event guidelines and rating sheet are published by FBLA on the [Mobile Application Development event page](https://www.fbla.org/competitive-events/mobile-application-development/).
+
+- **Platform.** iOS and Android phones (tablets work too) from one TypeScript codebase. It runs standalone as an installed build (see [Building a preview](#building-a-preview-eas)); no app store needed.
+- **Planning documents.** [Timeline](docs/planning/timeline.md), [wireframes and user journey](docs/planning/wireframes.md), [requirements map](docs/planning/requirements-map.md), [design system and UX audit](docs/design-system.md).
+
+### How TripHub answers the prompt
+
+| The prompt asks for | TripHub |
+| --- | --- |
+| **Multiple users** | Accounts; create a trip (you're its organizer) or join one with a 6-character invite code or a `triphub://join/CODE` link. Everyone on a trip sees the same data. |
+| **Collaboration** | Any member can plan the itinerary and share the checklist; changes from other phones appear live (Supabase Realtime). |
+| **Communication** | Organizer announcements (latest one on Home) and a comment thread on every activity. |
+| **Scheduling** | Day-by-day itinerary within the trip's dates, reorderable, with "Coming Up" on Home and reminders 30 minutes before each timed activity. |
+| **Budgeting** | Trip budget, expenses split evenly or by shares in exact integer cents, what's left, and a settle-up in the fewest payments. Alerts when someone else logs an expense. |
+| **Organization** | Shared checklist in Packing / To-Do / Bookings, with assignees, "done by", progress, and quick add for whole lists. |
+| **Trip management** | Trip Settings: edit details, make organizers, remove members, leave, delete. Switch between trips. |
+| **Planning through completion** | Trip progress on Home ("Day 2 of 4"), and settle-up to close out the money afterwards. |
+| **Social media** (rating sheet) | Invites go straight to WhatsApp or Messages, and **Post on X** starts a public post; each opens the app directly, with a web fallback. |
+
+The full map from prompt and rating sheet to screens and code is in [docs/planning/requirements-map.md](docs/planning/requirements-map.md).
+
+### Demo steps
+
+About 7 minutes with two phones (A = organizer, B = member). Before presenting, load the demo trip ([Demo mode](#demo-mode)), sign in on both phones, and turn on notifications on both.
+
+1. **Why** (30 s). Group trips fall apart across group chats, spreadsheets and payment apps; TripHub keeps them in one place.
+2. **Join** (1 min). On A, Home → Invite Friends → **WhatsApp** or **Text** shows the invite with the link and code. On B, Join with Code (or open the link) to show the code filled in.
+3. **Plan together** (1.5 min). On A, add an activity with a start time; it appears on B without refreshing. On B, open its comment bubble and ask a question; A sees it. Mention the reminder 30 minutes before.
+4. **Money** (1.5 min). On B, log an expense split by shares; A gets an alert and the budget and settle-up change. Point out integer cents and validation (try $0 or a blank name).
+5. **Organize** (1 min). On A, paste a packing list into Checklist quick add; tick one on B and watch it tick on A ("Done by …").
+6. **Manage** (30 s). Trip Settings: Make Organizer, Remove from Trip, the confirmation, and why the last organizer can't leave.
+7. **Reliability and access** (30 s). Airplane mode on A: saved data, offline banner, edits refused politely; back online, it catches up. Dark mode and large text.
+8. **Under the hood** (30 s). MVVM layers below, Row Level Security, 230+ unit tests and `npm run test:db`.
+
+Judges may not scan QR codes or click links, so show invites on the phones themselves.
 
 ## Getting started
 
@@ -85,7 +123,53 @@ Run it again any time to reset the demo: it deletes the old `DEMO26` trip and re
 - **Built without the Supabase settings.** A "TripHub isn't set up yet" screen instead of a crash.
 - **Anything unexpected while drawing a screen.** A "Something went wrong" screen with Try Again (`components/ErrorBoundary.tsx`), never a blank or red screen.
 
-## How the code is organized
+## Architecture (MVVM)
+
+TripHub follows Model–View–ViewModel. Screens only draw and forward taps; view models (React context providers and hooks) hold state and turn taps into changes; models are plain TypeScript with the rules, testable without React or a network; services are the only code that talks to Supabase or the device.
+
+```mermaid
+flowchart TB
+  subgraph View["View: screens/ and components/"]
+    screens["Screens: Home, Itinerary, Budget, Checklist, Settings, and sheets"]
+    comps["Shared components on design tokens (theme/)"]
+  end
+  subgraph ViewModel["ViewModel: context/ and hooks/"]
+    providers["Providers: Trip, Itinerary, Expense, Checklist, Communication"]
+    forms["Form and tool hooks: useExpenseForm, useEditTripForm, useTripManagement, useQuickAdd"]
+    sync["useLiveSync, useActivityReminders"]
+  end
+  subgraph Model["Model: models/"]
+    types["Domain types and row mapping"]
+    rules["Zod validation and rules: TripForm, ExpenseForm, ChecklistForm, MessageForm, BudgetCalculator, ReminderModel"]
+  end
+  subgraph Services["Services: services/"]
+    data["TripService, ExpenseService, ChecklistService, CommunicationService, AuthService"]
+    device["CacheService, NetworkService, NotificationService, ShareService, RealtimeService"]
+  end
+  subgraph Supabase["Supabase"]
+    db[("Postgres with Row Level Security")]
+    realtime["Realtime"]
+    auth["Auth"]
+  end
+  phone[("Phone: saved data, notifications, other apps")]
+
+  screens --> providers
+  screens --> forms
+  comps --> screens
+  providers --> rules
+  forms --> rules
+  providers --> data
+  forms --> data
+  sync --> device
+  data --> db
+  data --> auth
+  device --> realtime
+  device --> phone
+```
+
+A change flows one way: a screen calls a view-model function (for example `addExpense`), which validates with a model, saves through a service, and updates state; the screen redraws. Changes from other phones arrive through `RealtimeService` and are merged by the same view models.
+
+### How the code is organized
 
 | Folder | What lives there |
 | --- | --- |
@@ -98,6 +182,15 @@ Run it again any time to reset the demo: it deletes the old `DEMO26` trip and re
 | `supabase/` | `schema.sql` (baseline) and `migrations/` (everything since). |
 
 Forms use react-hook-form, with the rules themselves written in zod under `models/` so they can be tested without React.
+
+## Itinerary
+
+The Itinerary tab is the trip day by day, from the start date to the end date, hung on the Route (the dotted line from the app icon). Today is marked, and the Route is drawn lighter for days still ahead.
+
+- **Plan together.** Any member can add an activity (title, day, optional time, place and notes), edit it, or reorder a day with **Edit** and the arrows. Screen-reader users get Move earlier / Move later on every activity at any time. Only whoever added an activity, or an organizer, can delete it.
+- **Talk about it.** The bubble on each activity shows how many comments it has and opens its thread (see Announcements and comments).
+- **Validation.** Syntactic: a title (up to 100 characters), a real date, a time like 9:30 pm, and length limits on place and notes. Semantic: the day must fall within the trip's dates (also enforced by a database trigger), and trip dates can't later be shortened around a planned activity.
+- **Reminders** go off 30 minutes before activities with a start time (see Reminders).
 
 ## Budget and settle-up
 
@@ -404,3 +497,59 @@ Invite codes are 6 characters from a 31-character alphabet (about 887 million co
 ### Changing a policy
 
 Add a new numbered migration rather than editing an old one, and keep the explanatory comment next to each policy. After changing access rules, add checks to `scripts/test-database.mjs` and run `npm run test:db`, then re-test in the app with at least two accounts: one on the trip, one outside it.
+
+## Credits and licenses
+
+TripHub's own code and artwork are by the TripHub team. Everything else it uses is listed here.
+
+### Libraries the app ships with
+
+| Package | Version | License |
+| --- | --- | --- |
+| [Expo](https://expo.dev) (`expo`, `expo-crypto`, `expo-font`, `expo-notifications`, `expo-splash-screen`, `expo-status-bar`, `@expo/metro-runtime`) | SDK 57 | MIT |
+| [React](https://react.dev) and React DOM | 19.2 | MIT |
+| [React Native](https://reactnative.dev) | 0.86 | MIT |
+| [React Native Web](https://github.com/necolas/react-native-web) | 0.21 | MIT |
+| [React Navigation](https://reactnavigation.org) (`native`, `native-stack`, `bottom-tabs`, `elements`) | 7 | MIT |
+| [react-native-screens](https://github.com/software-mansion/react-native-screens) | 4.26 | MIT |
+| [react-native-safe-area-context](https://github.com/AppAndFlow/react-native-safe-area-context) | 5.7 | MIT |
+| [@react-native-async-storage/async-storage](https://github.com/react-native-async-storage/async-storage) | 2.2 | MIT |
+| [@react-native-community/datetimepicker](https://github.com/react-native-community/datetimepicker) | 9.1 | MIT |
+| [@react-native-community/netinfo](https://github.com/react-native-netinfo/react-native-netinfo) | 12.0 | MIT |
+| [@supabase/supabase-js](https://github.com/supabase/supabase-js) | 2.116 | MIT |
+| [react-hook-form](https://react-hook-form.com) | 7.90 | MIT |
+| [Zod](https://zod.dev) | 4.6 | MIT |
+| [@expo/vector-icons](https://github.com/expo/vector-icons) | 15.1 | MIT |
+
+### Tools used to build and test it (not shipped in the app)
+
+| Package | License |
+| --- | --- |
+| [TypeScript](https://www.typescriptlang.org) | Apache-2.0 |
+| [ESLint](https://eslint.org) and `eslint-config-expo` | MIT |
+| [Jest](https://jestjs.io) and `jest-expo` | MIT |
+| `@types/jest`, `@types/react` ([DefinitelyTyped](https://github.com/DefinitelyTyped/DefinitelyTyped)) | MIT |
+| [PGlite](https://pglite.dev) (`@electric-sql/pglite`, in-memory Postgres for `npm run test:db`) | Apache-2.0 |
+| [Pillow](https://python-pillow.org) and [NumPy](https://numpy.org) (Python, used by `scripts/make-icons.py`) | MIT-CMU; BSD-3-Clause |
+
+Licenses are as declared by each package (`npm ls` and each package's `package.json`). The libraries those packages depend on are listed in `package-lock.json`.
+
+### Icons, artwork and fonts
+
+- **App icon, splash and in-app mark.** The team's own "Pin & Orbit" artwork (`assets/TripHub Icon.jpg`); every icon size is generated from it by `scripts/make-icons.py`.
+- **Interface icons.** [Ionicons](https://ionic.io/ionicons) by Ionic, MIT license, through `@expo/vector-icons`.
+- **WhatsApp and X logos.** The Ionicons `logo-whatsapp` and `logo-x` glyphs label the share buttons only. WhatsApp is a trademark of WhatsApp LLC and X is a trademark of X Corp.; TripHub isn't affiliated with or endorsed by either.
+- **Fonts.** The phone's system fonts; none are bundled.
+- **Backend.** [Supabase](https://supabase.com) (hosted Postgres, Auth and Realtime).
+
+### Sources
+
+- FBLA, *Mobile Application Development* 2026–2027 guidelines and rating sheet ([event page](https://www.fbla.org/competitive-events/mobile-application-development/)). Referenced, not reproduced.
+- Apple [Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/) and Google [Material Design](https://m3.material.io) for platform conventions, and W3C [WCAG 2.2](https://www.w3.org/TR/WCAG22/) for contrast and accessibility (see [docs/design-system.md](docs/design-system.md)).
+- [Expo](https://docs.expo.dev), [React Navigation](https://reactnavigation.org/docs/getting-started) and [Supabase](https://supabase.com/docs) documentation for the APIs used.
+
+## Before submitting
+
+- **Remove the vendored design-review skill.** `.claude/skills/apple-design/` (and `skills-lock.json`) is a third-party Claude Code skill containing summaries of Apple's Human Interface Guidelines. It was a development aid for the design review, isn't part of the app, and its content isn't ours to redistribute. Delete it from the copy of the repository you submit, or check its license first. It is flagged here and left in place for now.
+- **LICENSE.** Make sure `LICENSE` names the team, not the Expo template.
+- **Secrets.** `.env` is git-ignored; only the public anon key is ever compiled into the app.
