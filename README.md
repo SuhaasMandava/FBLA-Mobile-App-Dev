@@ -7,7 +7,7 @@ TripHub is a group trip planner for phones, built with Expo and React Native on 
 TripHub is our entry for the **FBLA Mobile Application Development** event, 2026–2027 topic **"Together We Go: Group Trip Planner"**. The topic asks for an app that helps a group organize and manage a shared trip from planning through completion, with support for collaboration, communication, scheduling, budgeting, organization and trip management for multiple users. The event guidelines and rating sheet are published by FBLA on the [Mobile Application Development event page](https://www.fbla.org/competitive-events/mobile-application-development/).
 
 - **Platform.** iOS and Android phones (tablets work too) from one TypeScript codebase. It runs standalone as an installed build (see [Building a preview](#building-a-preview-eas)); no app store needed.
-- **Planning documents.** [Timeline](docs/planning/timeline.md), [wireframes and user journey](docs/planning/wireframes.md), [requirements map](docs/planning/requirements-map.md), [design system and UX audit](docs/design-system.md).
+- **Planning documents.** [Timeline](docs/planning/timeline.md), [wireframes and user journey](docs/planning/wireframes.md), [requirements map](docs/planning/requirements-map.md), [rating sheet self-assessment](docs/planning/self-assessment.md), [design system and UX audit](docs/design-system.md).
 
 ### How TripHub answers the prompt
 
