@@ -7,9 +7,9 @@ MVVM. Full diagram: `README.md` → Architecture (MVVM). React Navigation (stack
 | View | `screens/`, `components/`, `theme/theme.ts` | Draw and forward taps only. Use design tokens and shared components. |
 | ViewModel | `context/`, `hooks/` | Providers hold state per feature (Trip, Itinerary, Expense, Checklist, Communication). Form hooks (`useExpenseForm`, `useCreateTripForm`...) wrap react-hook-form plus a zod model. |
 | Model | `models/` | Plain TypeScript: zod forms (`*Form.ts`, `validation.ts`), calculators (`BudgetCalculator.ts`). No React, no network. Tests in `models/__tests__/`. |
-| Services | `services/` | The only code that talks to Supabase or the device (`TripService`, `ExpenseService`, `NotificationService`, `RealtimeService`, `ShareService`, `CacheService`...). |
+| Services | `services/` | The only code that talks to Supabase or the device (`TripService`, `ExpenseService`, `SettlementService`, `NotificationService`, `RealtimeService`, `ShareService`, `CacheService`...). |
 | Utils | `utils/` | Pure helpers: `money.ts`, `dates.ts`, `inviteCode.ts`, `inviteLink.ts`, `shareTargets.ts`, `tripProgress.ts`. Tests in `utils/__tests__/`. |
-| Database | `supabase/` | `schema.sql` baseline, `migrations/001` to `009`, `seed/demo_trip.sql`. |
+| Database | `supabase/` | `schema.sql` baseline, `migrations/001` to `010` (010 = settlements), `seed/demo_trip.sql`. |
 
 ## Entry and provider order
 `index.ts` → `App.tsx` → `screens/RootNavigator.tsx`. In `App.tsx`, outer to inner: Theme, ErrorBoundary, Network, InviteLink, NotificationSettings, Intro, Auth, then `components/SessionProviders.tsx` (the per-trip providers). If the Supabase env vars are missing, `App.tsx` shows a "TripHub isn't set up yet" screen instead (`backendConfigError` in `services/supabase.ts`).

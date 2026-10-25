@@ -190,3 +190,52 @@ describe('BudgetCalculator.settleUp', () => {
     expect(() => BudgetCalculator.settleUp({ a: 0.5, b: -0.5 })).toThrow(RangeError);
   });
 });
+
+describe('BudgetCalculator.balances with recorded payments', () => {
+  const expenses = [{ paidBy: 'a', amountCents: 9000, splits: { a: 3000, b: 3000, c: 3000 } }];
+
+  it('moves balances toward zero when someone has paid', () => {
+    const balances = BudgetCalculator.balances(expenses, [{ from: 'b', to: 'a', amountCents: 3000 }]);
+    expect(balances).toEqual({ a: 3000, b: 0, c: -3000 });
+    expect(sum(balances)).toBe(0);
+  });
+
+  it('reaches zero for everyone once every suggested payment is recorded', () => {
+    const transfers = BudgetCalculator.settleUp(BudgetCalculator.balances(expenses));
+    const balances = BudgetCalculator.balances(expenses, transfers);
+    expect(Object.values(balances).every((cents) => cents === 0)).toBe(true);
+    expect(BudgetCalculator.settleUp(balances)).toEqual([]);
+  });
+
+  it('settles only what is left after a part payment', () => {
+    const balances = BudgetCalculator.balances(expenses, [{ from: 'c', to: 'a', amountCents: 1000 }]);
+    expect(BudgetCalculator.settleUp(balances)).toEqual(
+      expect.arrayContaining([
+        { from: 'b', to: 'a', amountCents: 3000 },
+        { from: 'c', to: 'a', amountCents: 2000 },
+      ]),
+    );
+  });
+
+  it('is unchanged without payments', () => {
+    expect(BudgetCalculator.balances(expenses, [])).toEqual(BudgetCalculator.balances(expenses));
+  });
+});
+
+describe('BudgetCalculator.totalsByPerson', () => {
+  it('adds what each person paid and their share', () => {
+    const totals = BudgetCalculator.totalsByPerson([
+      { paidBy: 'a', amountCents: 9000, splits: { a: 3000, b: 3000, c: 3000 } },
+      { paidBy: 'b', amountCents: 3000, splits: { a: 1500, b: 1500 } },
+    ]);
+    expect(totals).toEqual({
+      a: { paidCents: 9000, shareCents: 4500 },
+      b: { paidCents: 3000, shareCents: 4500 },
+      c: { paidCents: 0, shareCents: 3000 },
+    });
+  });
+
+  it('skips an expense whose splits do not add up', () => {
+    expect(BudgetCalculator.totalsByPerson([{ paidBy: 'a', amountCents: 1000, splits: { a: 500 } }])).toEqual({});
+  });
+});

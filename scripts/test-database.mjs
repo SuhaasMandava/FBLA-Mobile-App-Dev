@@ -119,6 +119,20 @@ await rows("an organizer deletes a member's comment", SAM, `delete from public.a
 await rows('an author deletes their own comment', SAM, `delete from public.activity_comments where created_by = $1 returning id`, 1, [SAM]);
 await as(ALEX, `insert into public.activity_comments (item_id, body) values ($1, 'Still here')`, [item.id]);
 
+console.log('\nSettlements (010)');
+const pay = `insert into public.settlements (trip_id, from_user, to_user, amount_cents) values ($1, $2, $3, `;
+await rows('a payer records a payment', ALEX, `${pay}2500) returning *`, 1, [trip.id, ALEX, SAM]);
+await rows('a payee records a payment', SAM, `${pay}100) returning *`, 1, [trip.id, ALEX, SAM]);
+await refused('an outsider cannot record one', JO, `${pay}100)`, /row-level security|settlement_member_not_on_trip/, [trip.id, ALEX, SAM]);
+await refused('zero amounts are refused', ALEX, `${pay}0)`, /check constraint/, [trip.id, ALEX, SAM]);
+await refused('paying yourself is refused', ALEX, `${pay}100)`, /check constraint/, [trip.id, ALEX, ALEX]);
+await refused('both people must be on the trip', SAM, `${pay}100)`, /settlement_member_not_on_trip/, [trip.id, JO, SAM]);
+await refused('a payment cannot be edited', ALEX, `update public.settlements set amount_cents = 1`, /permission denied/);
+await rows('an outsider reads none', JO, `select * from public.settlements`, 0);
+await rows('a member reads them', ALEX, `select * from public.settlements`, 2);
+await rows('a payer undoes their payment', ALEX, `delete from public.settlements where amount_cents = 2500 returning id`, 1);
+await rows('a payee undoes theirs', SAM, `delete from public.settlements returning id`, 1);
+
 console.log('\nOrganizer tools (004, 008)');
 await refused('the last organizer cannot leave', SAM, `delete from public.trip_members where trip_id = $1 and user_id = $2`, /last_organizer/, [trip.id, SAM]);
 await refused('a member cannot make anyone organizer', ALEX, `select public.make_trip_organizer($1, $2)`, /not_permitted/, [trip.id, ALEX]);
@@ -162,12 +176,12 @@ console.log('\nLive updates (009)');
 const published = (await db.query(`select tablename from pg_publication_tables where pubname = 'supabase_realtime'`)).rows.map(
   (r) => r.tablename,
 );
-for (const table of ['itinerary_items', 'expenses', 'checklist_items', 'trip_announcements', 'activity_comments']) {
+for (const table of ['itinerary_items', 'expenses', 'checklist_items', 'trip_announcements', 'activity_comments', 'settlements']) {
   check(`${table} is in the realtime publication`, published.includes(table), published.join(', '));
 }
 
 console.log('\nSigned-out visitors');
-for (const table of ['trips', 'trip_members', 'itinerary_items', 'expenses', 'checklist_items', 'trip_announcements', 'activity_comments']) {
+for (const table of ['trips', 'trip_members', 'itinerary_items', 'expenses', 'checklist_items', 'trip_announcements', 'activity_comments', 'settlements']) {
   await db.exec('set role anon;');
   let error = null;
   try {

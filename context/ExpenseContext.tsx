@@ -7,10 +7,12 @@ import { useTrip } from '../hooks/useTrip';
 import { Expense, ExpenseModel, ExpenseRow, NewExpense } from '../models/ExpenseModel';
 import { applyLiveChange, LiveChange } from '../models/LiveChange';
 import { ReminderModel } from '../models/ReminderModel';
+import { NewSettlement, Settlement, SettlementModel, SettlementRow } from '../models/SettlementModel';
 import { CacheService } from '../services/CacheService';
 import { getErrorMessage } from '../services/errors';
 import { ExpenseService } from '../services/ExpenseService';
 import { NotificationService } from '../services/NotificationService';
+import { SettlementService } from '../services/SettlementService';
 import { MutationResult } from './ItineraryContext';
 
 export interface ExpenseContextValue {
@@ -24,6 +26,10 @@ export interface ExpenseContextValue {
   addExpense: (expense: NewExpense) => Promise<MutationResult>;
   updateExpense: (id: string, expense: NewExpense) => Promise<MutationResult>;
   deleteExpense: (id: string) => Promise<MutationResult>;
+  /** Payments members have recorded as made ("Mark as paid"), newest first. Empty if 010_settlements.sql hasn't been run. */
+  settlements: Settlement[];
+  recordPayment: (payment: NewSettlement) => Promise<MutationResult>;
+  undoPayment: (id: string) => Promise<MutationResult>;
 }
 
 export const ExpenseContext = createContext<ExpenseContextValue | undefined>(undefined);
@@ -34,6 +40,11 @@ const NO_TRIP: MutationResult = { ok: false, error: 'Pick a trip first.' };
 const OFFLINE: MutationResult = {
   ok: false,
   error: "You're offline. Expenses can be saved once you're connected again.",
+};
+
+const OFFLINE_PAYMENT: MutationResult = {
+  ok: false,
+  error: "You're offline. Payments can be recorded once you're connected again.",
 };
 
 function failure(what: string, error: unknown): MutationResult {
@@ -53,8 +64,18 @@ async function fetchExpenses(tripId: string): Promise<LoadResult> {
   }
 }
 
+/** Recorded payments are an extra on top of the expenses, so a failure here (say the migration isn't run yet) is logged, not shown. */
+async function fetchSettlements(tripId: string): Promise<Settlement[] | null> {
+  try {
+    return await SettlementService.listByTrip(tripId);
+  } catch (e) {
+    console.error('Loading payments failed', e);
+    return null;
+  }
+}
+
 /**
- * The active trip's expenses. Mounted once per trip (the parent keys it on the
+ * The active trip's expenses and recorded payments. Mounted once per trip (the parent keys it on the
  * trip id), so switching trips never shows the previous trip's spending.
  * Readable offline from the saved copy; changes need a connection.
  */
@@ -62,11 +83,13 @@ export function ExpenseProvider({ tripId, children }: { tripId: string | null; c
   const { userId } = useAuth();
   const { online, onReconnect } = useNetwork();
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [loading, setLoading] = useState(tripId !== null);
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false); // has the saved copy been read yet?
   const gotFreshData = useRef(false); // a server answer always beats the saved copy
   const cacheName = `expenses:${tripId}`;
+  const settlementsCacheName = `settlements:${tripId}`;
   const { activeTrip } = useTrip();
   const { prefs, permission } = useNotificationSettings();
   // For telling someone else's new expense apart from the echo of your own (see applyChange).
@@ -99,19 +122,28 @@ export function ExpenseProvider({ tripId, children }: { tripId: string | null; c
   useEffect(() => {
     if (!tripId || !userId) return;
     void CacheService.read<Expense[]>(userId, cacheName).then(applyCache);
+    void CacheService.read<Settlement[]>(userId, settlementsCacheName).then((cached) => {
+      if (cached) setSettlements((current) => (current.length === 0 ? SettlementModel.sort(cached) : current));
+    });
     void fetchExpenses(tripId).then(applyLoadResult);
-  }, [tripId, userId, cacheName, applyCache, applyLoadResult]);
+    void fetchSettlements(tripId).then((fresh) => fresh && setSettlements(fresh));
+  }, [tripId, userId, cacheName, settlementsCacheName, applyCache, applyLoadResult]);
 
   // Keep the saved copy current. Waits until the old copy has been read so it isn't overwritten empty.
   useEffect(() => {
     if (tripId && userId && hydrated) void CacheService.write(userId, cacheName, expenses);
   }, [tripId, userId, hydrated, cacheName, expenses]);
+  useEffect(() => {
+    if (tripId && userId && hydrated) void CacheService.write(userId, settlementsCacheName, settlements);
+  }, [tripId, userId, hydrated, settlementsCacheName, settlements]);
 
   const refresh = useCallback(async () => {
     if (!tripId) return;
     setLoading(true);
     setError(null);
-    applyLoadResult(await fetchExpenses(tripId));
+    const [result, payments] = await Promise.all([fetchExpenses(tripId), fetchSettlements(tripId)]);
+    if (payments) setSettlements(payments);
+    applyLoadResult(result);
   }, [tripId, applyLoadResult]);
 
   // Catch up automatically when the connection comes back.
@@ -119,7 +151,10 @@ export function ExpenseProvider({ tripId, children }: { tripId: string | null; c
 
   // Changes from other phones arrive live; a quiet reload covers anything missed.
   const resync = useCallback(async () => {
-    if (tripId) applyLoadResult(await fetchExpenses(tripId));
+    if (!tripId) return;
+    const [result, payments] = await Promise.all([fetchExpenses(tripId), fetchSettlements(tripId)]);
+    if (payments) setSettlements(payments);
+    applyLoadResult(result);
   }, [tripId, applyLoadResult]);
   // A new expense from someone else also raises an alert (if they're turned on). Your own
   // expenses come back as echoes; they're recognized while saving or by their id afterwards.
@@ -136,9 +171,15 @@ export function ExpenseProvider({ tripId, children }: { tripId: string | null; c
     }
     setExpenses((current) => applyLiveChange(current, change, ExpenseModel.fromRow, ExpenseModel.sort));
   }, []);
+  const applyPaymentChange = useCallback((change: LiveChange<SettlementRow>) => {
+    setSettlements((current) => applyLiveChange(current, change, SettlementModel.fromRow, SettlementModel.sort));
+  }, []);
   useLiveSync({
     tripId,
-    tables: [{ table: 'expenses', onChange: applyChange }],
+    tables: [
+      { table: 'expenses', onChange: applyChange },
+      { table: 'settlements', onChange: applyPaymentChange },
+    ],
     onResync: () => void resync(),
   });
 
@@ -189,9 +230,38 @@ export function ExpenseProvider({ tripId, children }: { tripId: string | null; c
     [online],
   );
 
+  const recordPayment = useCallback(
+    async (payment: NewSettlement): Promise<MutationResult> => {
+      if (!tripId) return NO_TRIP;
+      if (!online) return OFFLINE_PAYMENT;
+      try {
+        const created = await SettlementService.create(tripId, payment);
+        setSettlements((current) => SettlementModel.sort([...current.filter((s) => s.id !== created.id), created]));
+        return OK;
+      } catch (e) {
+        return failure('Recording payment failed', e);
+      }
+    },
+    [tripId, online],
+  );
+
+  const undoPayment = useCallback(
+    async (id: string): Promise<MutationResult> => {
+      if (!online) return OFFLINE_PAYMENT;
+      try {
+        await SettlementService.remove(id);
+        setSettlements((current) => current.filter((s) => s.id !== id));
+        return OK;
+      } catch (e) {
+        return failure('Undoing payment failed', e);
+      }
+    },
+    [online],
+  );
+
   const value = useMemo<ExpenseContextValue>(
-    () => ({ expenses, loading, error, refresh, addExpense, updateExpense, deleteExpense }),
-    [expenses, loading, error, refresh, addExpense, updateExpense, deleteExpense],
+    () => ({ expenses, loading, error, refresh, addExpense, updateExpense, deleteExpense, settlements, recordPayment, undoPayment }),
+    [expenses, loading, error, refresh, addExpense, updateExpense, deleteExpense, settlements, recordPayment, undoPayment],
   );
 
   return <ExpenseContext.Provider value={value}>{children}</ExpenseContext.Provider>;

@@ -14,8 +14,12 @@ Update at the end of every session. Last updated: 2026-10-24, from `docs/plannin
 - Oct 22: group features (announcements, comments, sharing, join links, organizer tools, live sync, reminders, quick add, intro), demo seed, graceful offline failure, planning docs.
 - Oct 24: LICENSE names the TripHub team; rating-sheet self-assessment added; `docs/` notes created.
 
+- Oct 25: trip completion built (not yet run on a device): "Mark as paid" settle-up payments (`supabase/migrations/010_settlements.sql`, `models/SettlementModel.ts`, `services/SettlementService.ts`, shared in `ExpenseContext`) and an end-of-trip `screens/TripSummaryScreen.tsx` (opened from Budget → Wrap Up). tsc, 243 jest tests and `test:db` pass; uncommitted.
+
 ## Open notes
 - `app.json` has no `extra.eas.projectId`, Android package or iOS bundle id yet. The first `eas init` / build adds them (README → Building a preview).
+
+- Migration 010 must be run in Supabase before "Mark as paid" works (see [[human-todo]] section A and the new settle-up test in section C). `docs/planning/self-assessment.md` weakness #2 (completion) and #3 (LICENSE) are now stale; re-score after device testing.
 
 ## Unverified
 - Whether any preview build has been run since README said none had.

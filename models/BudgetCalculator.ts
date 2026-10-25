@@ -93,9 +93,10 @@ export class BudgetCalculator {
    * they owe. Positive = the group owes them; negative = they owe the group.
    * The balances always add up to zero. An expense whose splits don't add up
    * to its amount (which the database refuses) is skipped rather than
-   * throwing the whole group off.
+   * throwing the whole group off. Recorded payments (`payments`, "A paid B") move
+   * the balances toward zero: A's goes up by the amount and B's goes down.
    */
-  static balances(expenses: ExpenseShare[]): Splits {
+  static balances(expenses: ExpenseShare[], payments: Transfer[] = []): Splits {
     const net: Splits = {};
     const add = (id: string, cents: number) => {
       net[id] = (net[id] ?? 0) + cents;
@@ -106,7 +107,24 @@ export class BudgetCalculator {
       add(expense.paidBy, expense.amountCents);
       for (const [id, cents] of Object.entries(expense.splits)) add(id, -cents);
     }
+    for (const payment of payments) {
+      add(payment.from, payment.amountCents);
+      add(payment.to, -payment.amountCents);
+    }
     return net;
+  }
+
+  /** What each person paid out and what their share of the spending came to, for the end-of-trip summary. */
+  static totalsByPerson(expenses: ExpenseShare[]): Record<string, { paidCents: number; shareCents: number }> {
+    const totals: Record<string, { paidCents: number; shareCents: number }> = {};
+    const entry = (id: string) => (totals[id] ??= { paidCents: 0, shareCents: 0 });
+    for (const expense of expenses) {
+      const owed = Object.values(expense.splits).reduce((sum, cents) => sum + cents, 0);
+      if (owed !== expense.amountCents) continue;
+      entry(expense.paidBy).paidCents += expense.amountCents;
+      for (const [id, cents] of Object.entries(expense.splits)) entry(id).shareCents += cents;
+    }
+    return totals;
   }
 
   /**

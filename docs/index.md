@@ -11,6 +11,7 @@ Start here. Read only the notes you need for the task.
 - [[references/index|references]]: catalog of reference images, PDFs and sources (read this, not the files)
 - [[gotchas]]: bugs, quirks and setup traps already hit once
 - [[current-work]]: what is happening now and what is next
+- [[human-todo]]: manual steps only a person can do (migrations, two-phone tests, demo prep)
 - [[wrap-up]]: end-of-session checklist for updating these notes
 
 ## Existing docs (don't duplicate, link instead)

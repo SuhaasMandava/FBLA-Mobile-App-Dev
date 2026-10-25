@@ -31,6 +31,7 @@ import ItineraryScreen from './ItineraryScreen';
 import JoinTripScreen from './JoinTripScreen';
 import OnboardingScreen from './OnboardingScreen';
 import SettingsScreen from './SettingsScreen';
+import TripSummaryScreen from './TripSummaryScreen';
 import TripSettingsScreen from './TripSettingsScreen';
 import TripSwitcherScreen from './TripSwitcherScreen';
 import WelcomeScreen from './WelcomeScreen';
@@ -229,6 +230,7 @@ export default function RootNavigator() {
               })}
             />
             <Stack.Screen name="TripSettings" component={TripSettingsScreen} options={{ ...doneSheet, title: 'Trip Settings' }} />
+            <Stack.Screen name="TripSummary" component={TripSummaryScreen} options={{ ...doneSheet, title: 'Trip Summary' }} />
             <Stack.Screen name="EditTrip" component={EditTripScreen} options={{ ...formSheet, title: 'Edit Trip' }} />
             <Stack.Screen name="Intro" component={WelcomeScreen} options={{ ...doneSheet, title: 'How TripHub Works' }} />
             <Stack.Screen name="Announcements" component={AnnouncementsScreen} options={{ ...doneSheet, title: 'Announcements' }} />

@@ -3,7 +3,7 @@ import { LiveChange } from '../models/LiveChange';
 import { supabase } from './supabase';
 
 /** Tables the app listens to; each has a `trip_id` column and is in the realtime publication (009_live_sync.sql). */
-export type LiveTable = 'itinerary_items' | 'expenses' | 'checklist_items' | 'trip_announcements' | 'activity_comments';
+export type LiveTable = 'itinerary_items' | 'expenses' | 'settlements' | 'checklist_items' | 'trip_announcements' | 'activity_comments';
 
 /** `live` once the server is sending changes; `down` when the channel failed, timed out or closed. */
 export type LiveStatus = 'live' | 'down';

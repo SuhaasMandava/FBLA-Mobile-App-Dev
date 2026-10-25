@@ -20,7 +20,7 @@ TripHub is our entry for the **FBLA Mobile Application Development** event, 2026
 | **Budgeting** | Trip budget, expenses split evenly or by shares in exact integer cents, what's left, and a settle-up in the fewest payments. Alerts when someone else logs an expense. |
 | **Organization** | Shared checklist in Packing / To-Do / Bookings, with assignees, "done by", progress, and quick add for whole lists. |
 | **Trip management** | Trip Settings: edit details, make organizers, remove members, leave, delete. Switch between trips. |
-| **Planning through completion** | Trip progress on Home ("Day 2 of 4"), and settle-up to close out the money afterwards. |
+| **Planning through completion** | Trip progress on Home ("Day 2 of 4"), and settle-up to close out the money afterwards: mark each payment as paid until balances reach zero, then open the end-of-trip Trip Summary (spending vs. budget, who paid what, plan and checklist). |
 | **Social media** (rating sheet) | Invites go straight to WhatsApp or Messages, and **Post on X** starts a public post; each opens the app directly, with a web fallback. |
 
 The full map from prompt and rating sheet to screens and code is in [docs/planning/requirements-map.md](docs/planning/requirements-map.md).
@@ -110,7 +110,7 @@ The first build asks for an Android package name and iOS bundle identifier (for 
 
 `supabase/seed/demo_trip.sql` preloads a trip to present: **Smoky Mountains Weekend** (invite code `DEMO26`), starting today, with 7 activities (one later today, so a reminder can fire during the demo), 4 expenses ($838.95 of a $1,500 budget, split evenly), 8 checklist items with some done, an announcement, and comment threads.
 
-1. Run `schema.sql` and migrations 001–009 on a **demo or test** Supabase project (not one with real users' data).
+1. Run `schema.sql` and migrations 001–010 on a **demo or test** Supabase project (not one with real users' data).
 2. In the app, create `demo.organizer@example.com` with Create Account. Optionally also create `demo.member@example.com` and `demo.friend@example.com` (for the second and third phones). Any passwords work.
 3. Paste `supabase/seed/demo_trip.sql` into the SQL editor and run it. It says how many members it added.
 4. Sign in as the organizer (and the member on a second phone) and pull down to refresh, or relaunch.
@@ -199,6 +199,7 @@ The Budget tab shows what the active trip has spent against its budget (with how
 - **Expenses.** Description, amount, category, who paid, and how it's split: **evenly** among the people you pick, or **by shares** (a couple takes 2). Each person's amount previews as you type, and the sheet warns before an expense takes the trip over budget.
 - **Exact money.** Amounts are integer cents. A split always adds up to exactly the expense; leftover cents go to the largest remainders, ties in roster order (`BudgetCalculator.splitByShare`).
 - **Settle-up in the fewest payments.** Each person's balance is what they paid minus what they owe. People can always settle in one fewer payment than there are people with a balance, and every group within them whose balances cancel out saves one more. `BudgetCalculator.settleUp` searches for the largest number of such groups exactly (fine for groups up to 15 people; larger groups fall back to pairing the largest debtor with the largest creditor), then settles each group. The tests include a case where the simple pairing needs 4 payments and TripHub needs 3.
+- **Mark as paid.** Tapping a suggested payment (if you're the payer, the payee or an organizer) records it in the `settlements` table (`010_settlements.sql`). Recorded payments are added to the balances, so the remaining settle-up shrinks to zero; either person or an organizer can undo one. If the migration hasn't been run, payments simply don't load and settle-up works as before.
 - **Who can change what.** You log what you paid; an organizer can log an expense for anyone. Only whoever paid, or an organizer, can edit or delete it. The app hides editing from everyone else, and the database enforces the same rule (see `expenses` below).
 - **Validation.** Syntactic: description required and under 80 characters, an amount like `42.50`, whole-number shares from 0 to 99. Semantic: more than $0 and at most $1,000,000, the payer and everyone in the split are on the trip, and at least one person shares the cost. The database checks the split again with a trigger.
 
@@ -277,7 +278,7 @@ The itinerary, expenses, checklist, announcements and comments of the open trip 
 - **Only your trips.** Each list listens to its own trip only, and Supabase checks the same read policies before sending a row, so no one receives another trip's data. Deleted rows arrive as just an id, and the app removes an id only if it's showing it.
 - **Your own changes** are shown as soon as the server confirms them; when their echo arrives it just replaces the same row. A checklist tick still being saved isn't overwritten by an older echo.
 - **Falling back.** Offline, the app stops listening and shows what's saved (see below). When the connection comes back, every list reloads and live updates resume. A reload also runs when live updates recover after an outage and when the app comes back to the foreground, since a phone pauses connections in the background. If Realtime can't be used at all (switched off for the project, or `009_live_sync.sql` not run), the app behaves exactly as before: pull to refresh, and reload on reconnect.
-- **Setup.** Running `009_live_sync.sql` adds the five tables to the `supabase_realtime` publication. Nothing else is needed.
+- **Setup.** Running `009_live_sync.sql` adds the five tables (and `010_settlements.sql` adds a sixth, `settlements`) to the `supabase_realtime` publication. Nothing else is needed.
 
 ## Reminders
 

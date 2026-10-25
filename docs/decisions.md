@@ -15,3 +15,4 @@ One entry per decision: what, why. Newest at the bottom. Dates come from `docs/p
 - **No QR codes** (Oct 22): judges may not scan or click links; invites are shown as codes on screen, plus `triphub://join/CODE` links.
 - **Invite codes: 6 characters from a 31-character alphabet without 0/O/1/I/L** (`utils/inviteCode.ts`): codes are read aloud and typed by hand; random bytes are rejection-sampled to avoid bias.
 - **Dev bypass sign-in** (`services/DevBypass.ts`): goes through real auth for fast local testing; `__DEV__` only, so release bundles drop it.
+- **Settle-up payments are a separate `settlements` table** (Oct 25): balances = expenses + recorded payments, so expenses stay untouched and a payment can be undone. Payer, payee or an organizer may record/undo; rows are never edited. Settlements load quietly in `ExpenseContext` (a failure, e.g. migration not run, is logged not shown).

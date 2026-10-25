@@ -26,6 +26,8 @@ export type RootStackParamList = {
   ItineraryItem: { itemId?: string; day?: string } | undefined;
   /** Log a new expense, or edit the one with `expenseId`. */
   Expense: { expenseId?: string } | undefined;
+  /** End-of-trip recap: spending, who paid what, activities and checklist. */
+  TripSummary: undefined;
   /** Add a checklist item (optionally starting in `category`), or edit the one with `itemId`. */
   ChecklistItem: { itemId?: string; category?: ChecklistCategory } | undefined;
   /** The active trip's details and members, with the organizer tools and Leave Trip. */
