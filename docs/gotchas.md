@@ -11,3 +11,4 @@ Bugs, quirks and failed approaches. One or two lines each, newest at the bottom.
 - **A migration fails `npm run test:db`** → `scripts/test-database.mjs` applies the schema and every migration twice, so each file must be safe to re-run.
 - **Saved data has the wrong shape after a model change** → bump `PREFIX` in `services/CacheService.ts`.
 - **Demo seed fails or shows nothing** → create `demo.organizer@example.com` in the app first, then run `supabase/seed/demo_trip.sql` on a test project only (README → Demo mode).
+- Obsidian MCP (`.mcp.json`) must use the plugin's HTTP port 27123, not HTTPS 27124: Claude Code rejects the plugin's self-signed cert ("unsupported name constraint type"). Needs `OBSIDIAN_API_KEY` set as a user env var, and the plugin's "Enable HTTP server" on. Vault root is `docs/`, so MCP paths are `index.md`, not `docs/index.md`.
