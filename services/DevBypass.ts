@@ -7,8 +7,8 @@ import { supabase } from './supabase';
 
 // DEV BYPASS: throwaway test account. Never use real credentials here.
 const DEV_USER = {
-  displayName: 'Dev Tester',
-  email: 'dev.bypass@example.com',
+  displayName: 'Tester',
+  email: 'tester@example.com',
   password: 'devbypass123',
 };
 
