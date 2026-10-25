@@ -46,7 +46,12 @@ export const SettlementModel = {
     return [...settlements].sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id));
   },
 
-  /** Either person in the payment, or a trip organizer, may record or undo it (the database enforces the same). */
+  /** Only the person who was paid, or a trip organizer, may record a payment, so nobody clears their own debt (the database enforces the same). */
+  canRecord(payment: Pick<Settlement, 'toUser'>, trip: Trip, userId: string | null): boolean {
+    return userId !== null && (payment.toUser === userId || TripModel.isOrganizer(trip, userId));
+  },
+
+  /** Either person in the payment, or a trip organizer, may undo it (the database enforces the same). */
   canManage(payment: Pick<Settlement, 'fromUser' | 'toUser'>, trip: Trip, userId: string | null): boolean {
     return userId !== null && (payment.fromUser === userId || payment.toUser === userId || TripModel.isOrganizer(trip, userId));
   },

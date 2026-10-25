@@ -121,10 +121,11 @@ await as(ALEX, `insert into public.activity_comments (item_id, body) values ($1,
 
 console.log('\nSettlements (010)');
 const pay = `insert into public.settlements (trip_id, from_user, to_user, amount_cents) values ($1, $2, $3, `;
-await rows('a payer records a payment', ALEX, `${pay}2500) returning *`, 1, [trip.id, ALEX, SAM]);
-await rows('a payee records a payment', SAM, `${pay}100) returning *`, 1, [trip.id, ALEX, SAM]);
+await refused('a payer cannot record their own payment', ALEX, `${pay}2500)`, /row-level security/, [trip.id, ALEX, SAM]);
+await rows('a payee records a payment', SAM, `${pay}2500) returning *`, 1, [trip.id, ALEX, SAM]);
+await rows('an organizer records one for others', SAM, `${pay}100) returning *`, 1, [trip.id, ALEX, SAM]);
 await refused('an outsider cannot record one', JO, `${pay}100)`, /row-level security|settlement_member_not_on_trip/, [trip.id, ALEX, SAM]);
-await refused('zero amounts are refused', ALEX, `${pay}0)`, /check constraint/, [trip.id, ALEX, SAM]);
+await refused('zero amounts are refused', SAM, `${pay}0)`, /check constraint/, [trip.id, ALEX, SAM]);
 await refused('paying yourself is refused', ALEX, `${pay}100)`, /check constraint/, [trip.id, ALEX, ALEX]);
 await refused('both people must be on the trip', SAM, `${pay}100)`, /settlement_member_not_on_trip/, [trip.id, JO, SAM]);
 await refused('a payment cannot be edited', ALEX, `update public.settlements set amount_cents = 1`, /permission denied/);
@@ -148,7 +149,10 @@ await rows('renaming skips the date check', ALEX, `update public.trips set name 
 await rows('someone who left cannot edit the trip', SAM, `update public.trips set name = 'Hijack' where id = $1 returning *`, 0, [trip.id]);
 await as(JO, `select * from public.join_trip_by_code('K7M9PQ')`);
 await rows('a member cannot remove another member', JO, `delete from public.trip_members where trip_id = $1 and user_id = $2 returning *`, 0, [trip.id, ALEX]);
+await rows('a member logs an expense', JO, `insert into public.expenses (trip_id, paid_by, description, amount_cents, splits) values ($1, $2::uuid, 'Taxi', 1000, jsonb_build_object($2::text, 1000)) returning *`, 1, [trip.id, JO]);
 await rows('an organizer removes a member', ALEX, `delete from public.trip_members where trip_id = $1 and user_id = $2 returning *`, 1, [trip.id, JO]);
+await rows('an expense of someone who left can still be renamed', ALEX, `update public.expenses set description = 'Airport taxi' where paid_by = $1::uuid returning *`, 1, [JO]);
+await refused('but its split cannot be changed to include them again', ALEX, `update public.expenses set amount_cents = 2000, splits = jsonb_build_object($1::text, 2000) where paid_by = $1::uuid`, /payer_not_member/, [JO]);
 await rows('a removed member sees nothing', JO, `select * from public.itinerary_items where trip_id = $1`, 0, [trip.id]);
 
 console.log('\nDeleting');

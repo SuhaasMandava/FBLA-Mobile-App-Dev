@@ -4,7 +4,7 @@ import { TripServiceError } from './errors';
 import { supabase } from './supabase';
 
 const INSUFFICIENT_PRIVILEGE = '42501';
-const NOT_INVOLVED = 'Only the two people involved, or the trip organizer, can do that.';
+const NOT_INVOLVED = 'Only the person who was paid, or the trip organizer, can record a payment. Either person can undo one.';
 
 /** Settlement writes fail with a trigger message or a Row Level Security code (see 010_settlements.sql); turn those into plain language. */
 function toSettlementError(error: PostgrestError): unknown {

@@ -39,7 +39,14 @@ describe('SettlementModel', () => {
     expect(SettlementModel.sort([a, c, b]).map((p) => p.id)).toEqual(['b', 'c', 'a']);
   });
 
-  it('lets either person in the payment, or an organizer, manage it', () => {
+  it('lets only the person paid, or an organizer, record a payment', () => {
+    expect(SettlementModel.canRecord({ toUser: 'jo' }, trip, 'jo')).toBe(true);
+    expect(SettlementModel.canRecord({ toUser: 'jo' }, trip, 'sam')).toBe(true);
+    expect(SettlementModel.canRecord({ toUser: 'jo' }, trip, 'alex')).toBe(false);
+    expect(SettlementModel.canRecord({ toUser: 'jo' }, trip, null)).toBe(false);
+  });
+
+  it('lets either person in the payment, or an organizer, undo it', () => {
     const payment = { fromUser: 'alex', toUser: 'jo' };
     expect(SettlementModel.canManage(payment, trip, 'alex')).toBe(true);
     expect(SettlementModel.canManage(payment, trip, 'jo')).toBe(true);

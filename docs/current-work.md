@@ -16,6 +16,10 @@ Update at the end of every session. Last updated: 2026-10-24, from `docs/plannin
 
 - Oct 25: trip completion built (not yet run on a device): "Mark as paid" settle-up payments (`supabase/migrations/010_settlements.sql`, `models/SettlementModel.ts`, `services/SettlementService.ts`, shared in `ExpenseContext`) and an end-of-trip `screens/TripSummaryScreen.tsx` (opened from Budget → Wrap Up). tsc, 243 jest tests and `test:db` pass; uncommitted.
 
+- Oct 25: presentation prep notes written: [[demo-script]], [[qa-cheatsheet]], [[known-limits]], [[backup-plan]], [[usability-test-plan]]; [[self-assessment]] weakness list refreshed.
+
+- Oct 25: audit fixes ([[bug-list-2026-10-25]]): migration 011, payee-only payments, web confirm dialogs, payments cache, vendored HIG skill untracked. tsc, 244 jest tests, `test:db` pass. Uncommitted. Run 010 and 011 in Supabase before device testing.
+
 ## Open notes
 - `app.json` has no `extra.eas.projectId`, Android package or iOS bundle id yet. The first `eas init` / build adds them (README → Building a preview).
 

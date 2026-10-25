@@ -46,3 +46,6 @@ docs/references/fbla/
 
 # Obsidian settings for the docs vault
 docs/.obsidian/
+
+# Third-party skill content (Apple HIG notes): kept locally, not submitted
+.claude/skills/apple-design/

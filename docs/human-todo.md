@@ -13,6 +13,10 @@ Things Claude Code can't do for us. Tick them off here in Obsidian. Context: [[c
 - [ ] Confirm "Confirm email" is OFF in Supabase Auth settings (sign-up breaks otherwise)
 - [ ] Use the app the day before the event (free Supabase projects pause after about a week idle)
 
+- [ ] Run `supabase/migrations/010_settlements.sql` then `011_audit_fixes.sql` (011 changes who can record a payment and fixes two edge cases)
+- [ ] Before submitting: delete the `tester@example.com` user in Supabase (Authentication → Users) and remove the DEV BYPASS code
+- [ ] Delete the leftover "QA Trip" on the tester account
+
 ## B. Two-phone test: Checklist
 - [ ] Phone A adds an item; B pulls to refresh and sees it; it shows on A's list too
 - [ ] B ticks it; A shows "Done by <B's name>". Untick and the "Done by" line goes away
@@ -59,9 +63,15 @@ Things Claude Code can't do for us. Tick them off here in Obsidian. Context: [[c
 ## F. Decisions to confirm
 - [ ] Checklist delete rule: only the adder or an organizer (matches itinerary). Keep, or let any member delete?
 
+- [ ] Skills from the TikTok list: install any yourself at user level after reading their hooks (see [[candidate-skills]]); I recommend only ponytail's review commands, and none in the submitted repo
+
 ## G. Presentation and paperwork
 - [ ] Gaps from `planning/self-assessment.md`: evidence of pre-build planning, short usability sessions with real users
 - [ ] Slides follow the rating sheet: planning, architecture (MVVM diagram), UX and accessibility, live demo
 - [ ] Rehearse Q&A (why this architecture, how data is secured, what is innovative)
 - [ ] Links and QR codes can be shown but judges can't scan or click them
 - [ ] Bring photo ID matching the name badge, and FBLA dress code attire
+
+- [ ] Run the three sessions in [[usability-test-plan]] and write [[usability-results]]
+- [ ] Time a full run with [[demo-script]]; log it in [[rehearsal-log]]; skim [[qa-cheatsheet]] and [[known-limits]] out loud
+- [ ] Record the backup video from [[backup-plan]]

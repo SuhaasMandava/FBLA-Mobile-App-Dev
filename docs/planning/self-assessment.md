@@ -38,12 +38,16 @@ Our own scoring of TripHub against the 2026–2027 Mobile Application Developmen
 
 ## What's still weak, most important first
 
-1. **Nothing has run on a real phone yet.** Reminders and alerts, invite links, WhatsApp/Messages/X, live sync and the EAS preview build all need the two-phone test list. Migrations 007–009 have only run in the in-memory test database, not the Supabase project.
-2. **Trip completion.** Add "Mark as paid" for settle-up payments (stored like expenses, with the same rules), and a short end-of-trip summary (total spent, per person, activities done).
-3. **LICENSE** is still the Expo template's notice.
+Updated Oct 25. Talking points for each are in [[known-limits]]; usability sessions are planned in [[usability-test-plan]].
+
+1. **Nothing has run on a real phone yet.** Reminders and alerts, invite links, WhatsApp/Messages/X, live sync and the EAS preview build all need the two-phone test list. Migrations 007–010 have only run in the in-memory test database, not the Supabase project.
+2. ~~Trip completion~~ **Done Oct 25:** "Mark as paid" settle-up payments and the Trip Summary screen (migration 010). Not yet device-tested, so "Addresses all parts of the prompt" stays 8–9 until it is.
+3. ~~LICENSE~~ **Done Oct 24:** names the TripHub team.
 4. **Vendored Apple HIG content** in `.claude/skills/apple-design/` should be removed from the submitted repository.
-5. **No usability testing evidence.** Three sessions, five tasks each, with notes and one change made because of them.
+5. **No usability testing evidence.** Three sessions, five tasks each, with notes and one change made because of them ([[usability-test-plan]]).
 6. **Account controls.** No way to change your display name or delete your account in the app.
 7. **Reminders and alerts are local.** Alerts only appear while TripHub is running, and reminders are scheduled for the open trip. Real push notifications would need a server function; explain this as a known limit if asked.
 8. **Dependency advisories.** `npm audit` reports advisories in the Expo/React Native toolchain (for example in `react-devtools-core`, a development tool). They come from upstream SDK packages, not TripHub's code; forcing fixes would break the SDK. Re-check after the next Expo SDK patch.
 9. **Expo Router.** The project guide prefers Expo Router; TripHub uses React Navigation directly. Not a rating-sheet item, and switching now would be risky; mention it only if asked.
+
+Update Oct 25 (later): item 4 (vendored Apple HIG content) is now untracked and git-ignored; the files remain only on this computer. Delete the `tester@example.com` account before submission ([[bug-list-2026-10-25]]).

@@ -32,3 +32,5 @@ Shipped icon and splash files live in `assets/` (`icon.png`, `splash-icon.png`, 
 
 ## Links and sources
 - FBLA event page and rating sheet: https://www.fbla.org/competitive-events/mobile-application-development/ (summarized in `docs/planning/requirements-map.md`)
+
+- **Candidate skills screenshots** (3 TikTok slides, pasted in chat Oct 25, not saved in `references/`): GitHub pages for ponytail, i-have-adhd and ui-ux-pro-max-skill. Facts and review in [[candidate-skills]].

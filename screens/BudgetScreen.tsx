@@ -125,7 +125,7 @@ export default function BudgetScreen() {
   const confirmPaid = (from: string, to: string, amountCents: number) =>
     confirmDestructive({
       title: 'Mark as paid?',
-      message: `${name(from)} paid ${name(to)} ${formatCents(amountCents)}. Everyone's balances update.`,
+      message: `${name(from)} paid ${name(to)} ${formatCents(amountCents)}. Only confirm money that was actually received. Everyone's balances update.`,
       confirmLabel: 'Mark as Paid',
       destructive: false,
       onConfirm: () =>
@@ -172,7 +172,7 @@ export default function BudgetScreen() {
               />
             ) : (
               transfers.map((t) => {
-                const canMark = SettlementModel.canManage({ fromUser: t.from, toUser: t.to }, activeTrip, userId);
+                const canMark = SettlementModel.canRecord({ toUser: t.to }, activeTrip, userId);
                 return (
                   <ListRow
                     key={`${t.from}-${t.to}`}
@@ -180,7 +180,7 @@ export default function BudgetScreen() {
                     title={`${name(t.from)} ${t.from === userId ? 'pay' : 'pays'} ${t.to === userId ? 'you' : name(t.to)}`}
                     value={formatCents(t.amountCents)}
                     trailing={canMark ? 'chevron' : undefined}
-                    accessibilityHint={canMark ? 'Marks this payment as paid' : undefined}
+                    accessibilityHint={canMark ? 'Marks this payment as received' : undefined}
                     onPress={canMark ? () => confirmPaid(t.from, t.to, t.amountCents) : undefined}
                   />
                 );

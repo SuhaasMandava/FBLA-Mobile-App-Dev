@@ -35,8 +35,8 @@ export default function TripSummaryScreen() {
   const { activeTrip } = useTrip();
   const { userId } = useAuth();
   const { expenses, settlements } = useExpenses();
-  const { items: activities } = useItinerary();
-  const { items: checklist } = useChecklist();
+  const { items: activities, error: planError } = useItinerary();
+  const { items: checklist, error: checklistError } = useChecklist();
 
   const payments = useMemo(
     () => settlements.map((s) => ({ from: s.fromUser, to: s.toUser, amountCents: s.amountCents })),
@@ -62,6 +62,7 @@ export default function TripSummaryScreen() {
   const name = (id: string) => personName(activeTrip, id, userId);
   const progress = ChecklistModel.progress(checklist);
   const settled = stillOwed.length === 0;
+  const travelers = activeTrip.members.length;
   const hasBudget = summary.budgetCents > 0;
   const budgetLine = !hasBudget
     ? 'No budget was set'
@@ -99,14 +100,16 @@ export default function TripSummaryScreen() {
           title={
             expenses.length === 0
               ? 'No expenses were logged'
-              : settled
-                ? "Everyone's settled up"
-                : `${count(stillOwed.length, 'payment', 'payments')} still to make`
+              : travelers < 2
+                ? 'Nothing to settle'
+                : settled
+                  ? "Everyone's settled up"
+                  : `${count(stillOwed.length, 'payment', 'payments')} still to make`
           }
           subtitle={settlements.length > 0 ? `${count(settlements.length, 'payment', 'payments')} marked as paid` : undefined}
-          trailing="chevron"
-          accessibilityHint="Goes back to the Budget tab"
-          onPress={() => navigation.goBack()}
+          trailing={settled ? undefined : 'chevron'}
+          accessibilityHint={settled ? undefined : 'Goes back to the Budget tab to mark payments as paid'}
+          onPress={settled ? undefined : () => navigation.goBack()}
         />
       </ListSection>
 
@@ -127,10 +130,10 @@ export default function TripSummaryScreen() {
       <ListSection header="The Plan">
         <ListRow
           leading={<Icon name="map" size={24} color="labelSecondary" />}
-          title={count(activities.length, 'activity', 'activities')}
-          subtitle={`${count(daysWithPlans(activities), 'day', 'days')} with plans`}
+          title={planError && activities.length === 0 ? "Couldn't load the itinerary" : count(activities.length, 'activity', 'activities')}
+          subtitle={planError && activities.length === 0 ? 'Pull to refresh on the Itinerary tab' : `${count(daysWithPlans(activities), 'day', 'days')} with plans`}
         />
-        <ListRow leading={<Icon name="checkbox" size={24} color="labelSecondary" />} title="Checklist" subtitle={progress.label} />
+        <ListRow leading={<Icon name="checkbox" size={24} color="labelSecondary" />} title="Checklist" subtitle={checklistError && checklist.length === 0 ? "Couldn't load the checklist" : progress.label} />
       </ListSection>
     </Screen>
   );

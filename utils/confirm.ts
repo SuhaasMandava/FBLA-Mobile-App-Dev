@@ -25,6 +25,11 @@ export function confirmDestructive({
   cancelLabel = 'Cancel',
   destructive = true,
 }: ConfirmOptions) {
+  // react-native-web's Alert does nothing, so the browser's own dialog stands in (web is only used for testing).
+  if (Platform.OS === 'web') {
+    if (window.confirm([title, message].filter(Boolean).join('\n\n'))) onConfirm();
+    return;
+  }
   if (Platform.OS === 'ios') {
     ActionSheetIOS.showActionSheetWithOptions(
       {
@@ -59,6 +64,11 @@ interface ActionChoice {
  */
 export function chooseAction({ title, message, actions }: { title: string; message?: string; actions: ActionChoice[] }) {
   const shown = actions.slice(0, 2);
+  if (Platform.OS === 'web') {
+    const chosen = shown.find((a) => window.confirm(`${[title, message].filter(Boolean).join('\n\n')}\n\n${a.label}?`));
+    chosen?.onPress();
+    return;
+  }
   if (Platform.OS === 'ios') {
     ActionSheetIOS.showActionSheetWithOptions(
       {

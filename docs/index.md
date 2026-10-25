@@ -14,6 +14,13 @@ Start here. Read only the notes you need for the task.
 - [[human-todo]]: manual steps only a person can do (migrations, two-phone tests, demo prep)
 - [[wrap-up]]: end-of-session checklist for updating these notes
 
+- Presentation: [[demo-script]] (timed run), [[qa-cheatsheet]], [[known-limits]], [[backup-plan]]
+- [[usability-test-plan]]: three-session test that closes the UX evidence gap
+
+- [[bug-list-2026-10-25]]: bugs found in the web pass, fixed and open
+
+- [[candidate-skills]]: three third-party Claude Code skills, reviewed and deliberately not installed
+
 ## Existing docs (don't duplicate, link instead)
 - `README.md`: setup, EAS builds, demo steps, demo seed, database schema, Row Level Security, credits
 - `docs/design-system.md`: tokens, components, UX audit (large; search it, don't read it whole)

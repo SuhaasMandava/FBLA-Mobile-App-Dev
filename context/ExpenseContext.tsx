@@ -84,6 +84,7 @@ export function ExpenseProvider({ tripId, children }: { tripId: string | null; c
   const { online, onReconnect } = useNetwork();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [settlements, setSettlements] = useState<Settlement[]>([]);
+  const [gotFreshPayments, setGotFreshPayments] = useState(false);
   const [loading, setLoading] = useState(tripId !== null);
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false); // has the saved copy been read yet?
@@ -107,6 +108,12 @@ export function ExpenseProvider({ tripId, children }: { tripId: string | null; c
     setHydrated(true);
   }, []);
 
+  const applyPayments = useCallback((fresh: Settlement[] | null) => {
+    if (!fresh) return;
+    setSettlements(fresh);
+    setGotFreshPayments(true);
+  }, []);
+
   const applyLoadResult = useCallback((result: LoadResult) => {
     if ('expenses' in result) {
       gotFreshData.current = true;
@@ -126,25 +133,26 @@ export function ExpenseProvider({ tripId, children }: { tripId: string | null; c
       if (cached) setSettlements((current) => (current.length === 0 ? SettlementModel.sort(cached) : current));
     });
     void fetchExpenses(tripId).then(applyLoadResult);
-    void fetchSettlements(tripId).then((fresh) => fresh && setSettlements(fresh));
-  }, [tripId, userId, cacheName, settlementsCacheName, applyCache, applyLoadResult]);
+    void fetchSettlements(tripId).then(applyPayments);
+  }, [tripId, userId, cacheName, settlementsCacheName, applyCache, applyLoadResult, applyPayments]);
 
   // Keep the saved copy current. Waits until the old copy has been read so it isn't overwritten empty.
   useEffect(() => {
     if (tripId && userId && hydrated) void CacheService.write(userId, cacheName, expenses);
   }, [tripId, userId, hydrated, cacheName, expenses]);
+  // Only after a payments answer from the server, so a failed load can't save an empty list over the old one.
   useEffect(() => {
-    if (tripId && userId && hydrated) void CacheService.write(userId, settlementsCacheName, settlements);
-  }, [tripId, userId, hydrated, settlementsCacheName, settlements]);
+    if (tripId && userId && gotFreshPayments) void CacheService.write(userId, settlementsCacheName, settlements);
+  }, [tripId, userId, gotFreshPayments, settlementsCacheName, settlements]);
 
   const refresh = useCallback(async () => {
     if (!tripId) return;
     setLoading(true);
     setError(null);
     const [result, payments] = await Promise.all([fetchExpenses(tripId), fetchSettlements(tripId)]);
-    if (payments) setSettlements(payments);
+    applyPayments(payments);
     applyLoadResult(result);
-  }, [tripId, applyLoadResult]);
+  }, [tripId, applyLoadResult, applyPayments]);
 
   // Catch up automatically when the connection comes back.
   useEffect(() => onReconnect(() => void refresh()), [onReconnect, refresh]);
@@ -153,9 +161,9 @@ export function ExpenseProvider({ tripId, children }: { tripId: string | null; c
   const resync = useCallback(async () => {
     if (!tripId) return;
     const [result, payments] = await Promise.all([fetchExpenses(tripId), fetchSettlements(tripId)]);
-    if (payments) setSettlements(payments);
+    applyPayments(payments);
     applyLoadResult(result);
-  }, [tripId, applyLoadResult]);
+  }, [tripId, applyLoadResult, applyPayments]);
   // A new expense from someone else also raises an alert (if they're turned on). Your own
   // expenses come back as echoes; they're recognized while saving or by their id afterwards.
   const applyChange = useCallback((change: LiveChange<ExpenseRow>) => {
@@ -176,10 +184,13 @@ export function ExpenseProvider({ tripId, children }: { tripId: string | null; c
   }, []);
   useLiveSync({
     tripId,
-    tables: [
-      { table: 'expenses', onChange: applyChange },
-      { table: 'settlements', onChange: applyPaymentChange },
-    ],
+    tables: [{ table: 'expenses', onChange: applyChange }],
+    onResync: () => void resync(),
+  });
+  // Its own channel: if 010_settlements.sql hasn't been run, this one fails without taking expense updates down with it.
+  useLiveSync({
+    tripId,
+    tables: [{ table: 'settlements', onChange: applyPaymentChange }],
     onResync: () => void resync(),
   });
 
