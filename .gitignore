@@ -40,3 +40,9 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# FBLA official documents (copyrighted; keep local, do not publish)
+docs/references/fbla/
+
+# Obsidian settings for the docs vault
+docs/.obsidian/

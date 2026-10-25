@@ -1,5 +1,23 @@
 {
   "enabledPlugins": {
     "expo@claude-plugins-official": true
+  },
+  "enableAllProjectMcpServers": false,
+  "enabledMcpjsonServers": ["obsidian"],
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/notes-reminder.sh\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "deny": ["mcp__obsidian__vault_delete", "mcp__obsidian__command_execute"]
   }
 }
