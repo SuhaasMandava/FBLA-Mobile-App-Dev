@@ -44,13 +44,15 @@ const signInSchema = z.object({
   password: z.string().min(1, 'Password is required.'),
 });
 
+const displayNameSchema = z
+  .string()
+  .min(1, 'Your name is required.')
+  .min(2, 'Your name must be at least 2 characters.')
+  .max(40, 'Keep your name under 40 characters.');
+
 const signUpSchema = z
   .object({
-    displayName: z
-      .string()
-      .min(1, 'Your name is required.')
-      .min(2, 'Your name must be at least 2 characters.')
-      .max(40, 'Keep your name under 40 characters.'),
+    displayName: displayNameSchema,
     email,
     password: z
       .string()
@@ -78,4 +80,14 @@ export function validateSignUpForm(values: SignUpValues): Validation<SignUpValue
   if (!result.success) return { ok: false, errors: firstIssuePerField(result.error) };
   const { displayName, email: cleanEmail, password } = result.data;
   return { ok: true, data: { displayName, email: cleanEmail, password } };
+}
+
+export interface DisplayNameValues {
+  displayName: string;
+}
+
+/** The Your Name screen: same rules as sign-up, with stray spaces ignored. */
+export function validateDisplayNameForm(values: DisplayNameValues): Validation<DisplayNameValues, string> {
+  const result = displayNameSchema.safeParse(values.displayName.trim());
+  return result.success ? { ok: true, data: result.data } : { ok: false, errors: { displayName: result.error.issues[0].message } };
 }

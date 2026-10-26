@@ -1,7 +1,7 @@
 import { AuthChangeEvent, AuthError } from '@supabase/supabase-js';
 import { SignInValues, SignUpData } from '../models/AuthForm';
 import { CacheService } from './CacheService';
-import { UserFacingError } from './errors';
+import { isNetworkError, UserFacingError } from './errors';
 import { supabase } from './supabase';
 
 export interface AuthUser {
@@ -48,6 +48,8 @@ function toUserFacing(error: AuthError): UserFacingError {
   console.error('Unexpected auth error', error);
   return new UserFacingError('Something went wrong. Please try again.');
 }
+
+const OFFLINE = 'You appear to be offline. Check your connection and try again.';
 
 export const AuthService = {
   /**
@@ -117,6 +119,35 @@ export const AuthService = {
     const { error } = await supabase.auth.signOut();
     // With no connection the server can't be told, but the session on this device is still removed, so that counts.
     if (error && !isNetworkAuthError(error)) throw toUserFacing(error);
+    await CacheService.clearLastUser();
+  },
+
+  /** Change the name other members see. Profiles are updatable by their owner only (004). */
+  async updateDisplayName(userId: string, displayName: string): Promise<void> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ display_name: displayName })
+      .eq('id', userId)
+      .select('id');
+    if (error) throw new UserFacingError(isNetworkError(error) ? OFFLINE : "Couldn't save your name. Please try again.");
+    if (!data || data.length === 0) throw new UserFacingError("Couldn't save your name. Please try again.");
+  },
+
+  /** Permanently delete the signed-in account (012). Trips only they organize, with other members, must be handed over first. */
+  async deleteAccount(): Promise<void> {
+    const { error } = await supabase.rpc('delete_my_account');
+    if (error) {
+      if (error.message.includes('hand_over_trip')) {
+        throw new UserFacingError(
+          'You are the only organizer of a trip that has other members. Make someone else an organizer in Trip Settings first.',
+        );
+      }
+      if (isNetworkError(error)) throw new UserFacingError(OFFLINE);
+      console.error('Deleting account failed', error);
+      throw new UserFacingError("Couldn't delete your account. Please try again.");
+    }
+    // The server session is gone with the user; clear what's on this device.
+    await supabase.auth.signOut({ scope: 'local' });
     await CacheService.clearLastUser();
   },
 };

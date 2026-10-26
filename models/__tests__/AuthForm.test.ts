@@ -1,4 +1,4 @@
-import { passwordMatch, validateSignUpForm } from '../AuthForm';
+import { passwordMatch, validateDisplayNameForm, validateSignUpForm } from '../AuthForm';
 
 describe('passwordMatch', () => {
   it('says nothing until the confirm box has something in it', () => {
@@ -26,5 +26,17 @@ describe('passwordMatch', () => {
     expect(validateSignUpForm({ ...base, confirmPassword: 'hunter22' }).ok).toBe(true);
     const result = validateSignUpForm({ ...base, confirmPassword: 'hunter23' });
     expect(result.ok ? null : result.errors.confirmPassword).toBe("Passwords don't match.");
+  });
+});
+
+describe('validateDisplayNameForm', () => {
+  it('trims the name', () => {
+    expect(validateDisplayNameForm({ displayName: '  Sam  ' })).toEqual({ ok: true, data: 'Sam' });
+  });
+
+  it('refuses a blank, one-letter or very long name', () => {
+    expect(validateDisplayNameForm({ displayName: '   ' })).toMatchObject({ ok: false });
+    expect(validateDisplayNameForm({ displayName: 'S' })).toMatchObject({ ok: false });
+    expect(validateDisplayNameForm({ displayName: 'x'.repeat(41) })).toMatchObject({ ok: false });
   });
 });

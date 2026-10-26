@@ -11,6 +11,8 @@ export interface AuthContextValue {
   userId: string | null;
   email: string | null;
   signOut: () => Promise<void>;
+  /** Permanently delete the account and everything saved on this device. */
+  deleteAccount: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -56,14 +58,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await NotificationService.cancelAllActivityReminders(); // nor reminders about them
   }, [userId]);
 
+  const deleteAccount = useCallback(async () => {
+    await AuthService.deleteAccount();
+    if (userId) await CacheService.clearUser(userId);
+    await NotificationService.cancelAllActivityReminders();
+  }, [userId]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       status: !loaded ? 'loading' : user ? 'signedIn' : 'signedOut',
       userId,
       email: user?.email ?? null,
       signOut,
+      deleteAccount,
     }),
-    [loaded, user, userId, signOut],
+    [loaded, user, userId, signOut, deleteAccount],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -34,6 +34,8 @@ export type RootStackParamList = {
   TripSettings: undefined;
   /** Change the active trip's details (organizers only). */
   EditTrip: undefined;
+  /** Change the name other members see. */
+  EditName: undefined;
   /** Every announcement on the active trip; organizers post from here. */
   Announcements: undefined;
   /** The comment thread on the activity with `itemId`. */

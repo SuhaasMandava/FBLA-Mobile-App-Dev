@@ -181,6 +181,11 @@ function ExpenseForm({ expense }: { expense?: Expense }) {
       <View style={{ gap: spacing.xs }}>
         <SectionHeader title="Split" />
         <SegmentedControl options={splitOptions} value={splitMode.field.value} onChange={splitMode.field.onChange} />
+        <AppText variant="footnote" color="labelSecondary">
+          {splitMode.field.value === 'even'
+            ? 'Evenly: everyone you pick pays the same. Any leftover cent goes to one person so the total is exact.'
+            : 'By Shares: give bigger shares to people who use more, like 2 for a couple sharing a room and 1 for one person.'}
+        </AppText>
       </View>
 
       {splitMode.field.value === 'even' ? (

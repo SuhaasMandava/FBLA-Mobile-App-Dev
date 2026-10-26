@@ -29,6 +29,7 @@ import ExpenseScreen from './ExpenseScreen';
 import HomeScreen from './HomeScreen';
 import ItineraryItemScreen from './ItineraryItemScreen';
 import ItineraryScreen from './ItineraryScreen';
+import EditNameScreen from './EditNameScreen';
 import JoinTripScreen from './JoinTripScreen';
 import OnboardingScreen from './OnboardingScreen';
 import SettingsScreen from './SettingsScreen';
@@ -205,6 +206,7 @@ export default function RootNavigator() {
             />
             {/* Forms open as full modals (not pushed inside the sheet, which would squeeze them into half a screen). */}
             <Stack.Screen name="CreateTrip" component={CreateTripScreen} options={{ ...formSheet, title: 'New Trip' }} />
+            <Stack.Screen name="EditName" component={EditNameScreen} options={{ ...formSheet, title: 'Your Name' }} />
             <Stack.Screen name="JoinTrip" component={JoinTripScreen} options={{ ...formSheet, title: 'Join Trip' }} />
             <Stack.Screen
               name="ItineraryItem"

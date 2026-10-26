@@ -176,6 +176,20 @@ check("deleting the account of a trip's only organizer still works", accountErro
 const [{ n: soloMembers }] = (await db.query(`select count(*)::int as n from public.trip_members where trip_id = $1`, [solo.id])).rows;
 check('their membership goes with the account', soloMembers === 0);
 
+console.log('\nDelete my account (012)');
+const [team] = await rows('Sam starts a trip', SAM, `select * from public.create_trip('Ski week', 'Aspen', '2027-01-01', '2027-01-05', 1000, 'DEL234')`, 1);
+await as(ALEX, `select * from public.join_trip_by_code('del234')`);
+await refused('the only organizer of a trip with members must hand it over first', SAM, `select public.delete_my_account()`, /hand_over_trip/);
+await as(SAM, `select public.make_trip_organizer($1, $2)`, [team.id, ALEX]);
+const [solo2] = (await as(SAM, `select * from public.create_trip('Solo', 'Oslo', '2027-02-01', '2027-02-02', 1000, 'DEL567')`)).rows;
+const gone = await as(SAM, `select public.delete_my_account()`);
+check('after handing over, the account can be deleted', !gone.error, gone.error ?? '');
+const [after] = (await db.query(`select
+  (select count(*) from auth.users where id = $1)::int as users,
+  (select count(*) from public.trips where id = $2)::int as solo_trips,
+  (select count(*) from public.trips where id = $3)::int as shared_trips`, [SAM, solo2.id, team.id])).rows;
+check('the user and their solo trips go; the shared trip stays', after.users === 0 && after.solo_trips === 0 && after.shared_trips === 1, JSON.stringify(after));
+
 console.log('\nLive updates (009)');
 const published = (await db.query(`select tablename from pg_publication_tables where pubname = 'supabase_realtime'`)).rows.map(
   (r) => r.tablename,

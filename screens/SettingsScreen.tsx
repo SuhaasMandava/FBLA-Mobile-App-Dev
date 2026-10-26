@@ -87,11 +87,13 @@ const appearanceOptions: { value: ThemePreference; label: string; icon: IconName
 
 export default function SettingsScreen() {
   const { colors, spacing, radii, preference, setPreference } = useTheme();
-  const { email, userId, signOut } = useAuth();
+  const { email, userId, signOut, deleteAccount } = useAuth();
   const navigation = useNavigation<TabScreenNavigation>();
   const { trips, activeTrip } = useTrip();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // The name other members see, as stored on any trip you're on.
   const name = trips.flatMap((t) => t.members).find((m) => m.userId === userId)?.displayName ?? null;
@@ -113,6 +115,26 @@ export default function SettingsScreen() {
       message: 'Trips saved on this phone will be removed. You can sign back in any time.',
       confirmLabel: 'Sign Out',
       onConfirm: doSignOut,
+    });
+
+  const doDelete = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteAccount(); // signing out of the deleted account sends the app back to Sign In
+    } catch (e) {
+      setDeleting(false);
+      setDeleteError(getErrorMessage(e));
+    }
+  };
+
+  const confirmDelete = () =>
+    confirmDestructive({
+      title: 'Delete your account?',
+      message:
+        'This permanently deletes your account, removes you from your trips, and deletes expenses you paid. It can’t be undone.',
+      confirmLabel: 'Delete Account',
+      onConfirm: doDelete,
     });
 
   return (
@@ -141,6 +163,18 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Reveal>
+
+      <ListSection header="Account">
+        <ListRow
+          leading={<Icon name="person-outline" size={24} color="accent" />}
+          title="Your Name"
+          subtitle="The name other members see"
+          value={name ?? undefined}
+          trailing="chevron"
+          accessibilityHint="Opens a form to change your name"
+          onPress={() => navigation.navigate('EditName')}
+        />
+      </ListSection>
 
       {activeTrip ? (
         <ListSection header="Current Trip">
@@ -200,6 +234,24 @@ export default function SettingsScreen() {
           destructive
           accessibilityHint="Asks before signing you out"
           onPress={signingOut ? undefined : confirmSignOut}
+        />
+      </ListSection>
+
+      {deleteError ? <InlineBanner tone="error" message={`Couldn't delete your account. ${deleteError}`} /> : null}
+
+      <ListSection footer="Permanently deletes your account and your data. If you're the only organizer of a trip with other members, make someone else an organizer first.">
+        <ListRow
+          leading={
+            deleting ? (
+              <ActivityIndicator color={colors.danger} accessibilityLabel="Deleting account" />
+            ) : (
+              <Icon name="trash-outline" size={24} color="danger" />
+            )
+          }
+          title="Delete Account"
+          destructive
+          accessibilityHint="Asks before permanently deleting your account"
+          onPress={deleting ? undefined : confirmDelete}
         />
       </ListSection>
     </Screen>
