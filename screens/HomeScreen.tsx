@@ -284,7 +284,7 @@ export default function HomeScreen() {
               <GlanceTile
                 icon="checkbox-outline"
                 label="Checklist"
-                value={checklist.total === 0 ? 'Empty' : `${checklist.done}/${checklist.total}`}
+                value={checklist.total === 0 ? 'No items' : `${checklist.done}/${checklist.total}`}
                 caption={checklist.total === 0 ? 'Nothing on the list yet' : checklist.label}
                 fraction={checklist.fraction}
                 accessibilityLabel={`Checklist, ${checklist.label}`}

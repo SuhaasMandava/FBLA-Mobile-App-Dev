@@ -19,7 +19,12 @@ export function ListSection({ children, header, headerAction, footer }: ListSect
   return (
     <View style={{ gap: spacing.xs }}>
       {header ? <SectionHeader title={header} action={headerAction} /> : null}
-      <View style={[styles.group, { backgroundColor: colors.surface, borderRadius: radii.lg }]}>
+      <View
+        style={[
+          styles.group,
+          { backgroundColor: colors.surface, borderRadius: radii.lg, borderColor: colors.separator },
+        ]}
+      >
         {rows.map((row, i) => (
           <Fragment key={i}>
             {i > 0 ? (
@@ -45,5 +50,5 @@ export function ListSection({ children, header, headerAction, footer }: ListSect
 }
 
 const styles = StyleSheet.create({
-  group: { overflow: 'hidden' },
+  group: { overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth },
 });
