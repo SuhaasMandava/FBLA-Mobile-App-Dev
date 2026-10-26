@@ -17,6 +17,7 @@ import { useIntro } from '../hooks/useIntro';
 import { useInviteLink } from '../hooks/useInviteLink';
 import { useTheme } from '../hooks/useTheme';
 import { useTrip } from '../hooks/useTrip';
+import { fonts } from '../theme/theme';
 import ActivityCommentsScreen from './ActivityCommentsScreen';
 import AnnouncementsScreen from './AnnouncementsScreen';
 import BudgetScreen from './BudgetScreen';
@@ -49,8 +50,8 @@ function useHeaderOptions(): NativeStackNavigationOptions {
   return {
     headerStyle: { backgroundColor: colors.background },
     headerTintColor: colors.accent,
-    headerTitleStyle: { color: colors.label },
-    headerLargeTitleStyle: { color: colors.label },
+    headerTitleStyle: { color: colors.label, fontFamily: fonts.display },
+    headerLargeTitleStyle: { color: colors.label, fontFamily: fonts.display },
     headerLargeTitleShadowVisible: false,
     headerShadowVisible: false,
     headerBackButtonDisplayMode: 'minimal',

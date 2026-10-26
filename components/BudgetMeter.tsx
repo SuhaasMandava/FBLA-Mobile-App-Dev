@@ -6,7 +6,7 @@ import { useTheme } from '../hooks/useTheme';
  * the Route drawn there: the text next to it says the amounts, and "Over budget" is always
  * written out with an icon, never shown by the bar alone.
  */
-export function BudgetMeter({ fraction }: { fraction: number }) {
+export function BudgetMeter({ fraction, tone = 'hero' }: { fraction: number; tone?: 'hero' | 'surface' | 'alert' }) {
   const { colors, radii } = useTheme();
   const filled = Math.min(Math.max(fraction, 0), 1);
   return (
@@ -15,8 +15,21 @@ export function BudgetMeter({ fraction }: { fraction: number }) {
       importantForAccessibility="no-hide-descendants"
       style={[styles.track, { borderRadius: radii.pill }]}
     >
-      <View style={[StyleSheet.absoluteFill, styles.trackFill, { backgroundColor: colors.onHeroSecondary }]} />
-      <View style={{ width: `${filled * 100}%`, height: '100%', borderRadius: radii.pill, backgroundColor: colors.heroAccent }} />
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          tone === 'hero' ? styles.trackFill : null,
+          { backgroundColor: tone === 'hero' ? colors.onHeroSecondary : colors.skeleton },
+        ]}
+      />
+      <View
+        style={{
+          width: `${filled * 100}%`,
+          height: '100%',
+          borderRadius: radii.pill,
+          backgroundColor: tone === 'hero' ? colors.heroAccent : tone === 'alert' ? colors.danger : colors.accent,
+        }}
+      />
     </View>
   );
 }

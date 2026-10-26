@@ -44,6 +44,10 @@ export interface ColorTokens {
   onHeroSecondary: string;
   /** The Route and icons drawn on `hero` (decorative). */
   heroAccent: string;
+  /** A slightly lighter panel inside the hero (the ticket stub). */
+  heroPanel: string;
+  /** The perforation between ticket and stub (decorative). */
+  heroLine: string;
   /** The app mark from the icon (decorative, never text): navy disc, white pin, amber center, blue orbiting dots. */
   markDisc: string;
   markPin: string;
@@ -72,6 +76,8 @@ export const lightColors: ColorTokens = {
   onHero: '#FFFFFF',
   onHeroSecondary: '#C9D3EA',
   heroAccent: '#FF8A7A',
+  heroPanel: '#1D3A78',
+  heroLine: '#6E84B8',
   markDisc: '#223658',
   markPin: '#F4F6FA',
   markSun: '#D9822B',
@@ -99,6 +105,8 @@ export const darkColors: ColorTokens = {
   onHero: '#FFFFFF',
   onHeroSecondary: '#C9D3EA',
   heroAccent: '#FF8A7A',
+  heroPanel: '#223463',
+  heroLine: '#6E84B8',
   markDisc: '#223658',
   markPin: '#F4F6FA',
   markSun: '#D9822B',
@@ -122,16 +130,33 @@ export type TypeRole =
   | 'subheadStrong'
   | 'footnote'
   | 'caption'
+  | 'display'
+  | 'stat'
   | 'code';
+
+/**
+ * Bricolage Grotesque (SIL OFL 1.1, via @expo-google-fonts), loaded in App.tsx. Used for titles and numerals only;
+ * body text stays in the system font so it matches each platform. Each weight is its own family on native,
+ * so display roles set `fontFamily` and no `fontWeight`.
+ */
+export const fonts = {
+  display: 'BricolageGrotesque_700Bold',
+  displayHeavy: 'BricolageGrotesque_800ExtraBold',
+  displayMedium: 'BricolageGrotesque_600SemiBold',
+} as const;
 
 const monospace = Platform.select({ ios: 'Menlo', default: 'monospace' });
 
 /** Sizes follow the iOS "Large (default)" Dynamic Type table; they scale with the system text size. */
 export const typography: Record<TypeRole, TextStyle> = {
-  largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: '700' },
-  title1: { fontSize: 28, lineHeight: 34, fontWeight: '700' },
-  title2: { fontSize: 22, lineHeight: 28, fontWeight: '700' },
-  title3: { fontSize: 20, lineHeight: 25, fontWeight: '600' },
+  largeTitle: { fontSize: 34, lineHeight: 41, fontFamily: fonts.display },
+  title1: { fontSize: 28, lineHeight: 34, fontFamily: fonts.display },
+  title2: { fontSize: 22, lineHeight: 28, fontFamily: fonts.display },
+  title3: { fontSize: 20, lineHeight: 25, fontFamily: fonts.displayMedium },
+  /** The trip hero's destination. */
+  display: { fontSize: 38, lineHeight: 42, fontFamily: fonts.displayHeavy, letterSpacing: -0.5 },
+  /** Big numerals: the countdown and the tile figures. */
+  stat: { fontSize: 26, lineHeight: 30, fontFamily: fonts.display },
   headline: { fontSize: 17, lineHeight: 22, fontWeight: '600' },
   body: { fontSize: 17, lineHeight: 22, fontWeight: '400' },
   callout: { fontSize: 16, lineHeight: 21, fontWeight: '400' },
@@ -181,6 +206,9 @@ export const motion = {
   standard: 250,
   /** The Route filling in when the trip changes. */
   route: 300,
+  /** Sections sliding in when a screen opens; each one starts `stagger` after the last. */
+  enter: 380,
+  stagger: 70,
   pressedOpacity: 0.7,
 } as const;
 

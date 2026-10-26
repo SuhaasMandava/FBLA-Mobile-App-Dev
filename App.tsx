@@ -1,6 +1,13 @@
+import {
+  BricolageGrotesque_600SemiBold,
+  BricolageGrotesque_700Bold,
+  BricolageGrotesque_800ExtraBold,
+} from '@expo-google-fonts/bricolage-grotesque';
+import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { LoadingScreen } from './components/LoadingScreen';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SessionProviders } from './components/SessionProviders';
@@ -31,6 +38,16 @@ function NotSetUp() {
   );
 }
 
+/** Holds the app until the title font is ready (or has failed, in which case the system font stands in). */
+function FontGate({ children }: { children: ReactNode }) {
+  const [loaded, error] = useFonts({
+    BricolageGrotesque_600SemiBold,
+    BricolageGrotesque_700Bold,
+    BricolageGrotesque_800ExtraBold,
+  });
+  return loaded || error ? <>{children}</> : <LoadingScreen />;
+}
+
 export default function App() {
   useEffect(() => {
     void NotificationService.configure();
@@ -40,6 +57,7 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <ErrorBoundary>
+          <FontGate>
           {backendConfigError ? (
             <NotSetUp />
           ) : (
@@ -57,6 +75,7 @@ export default function App() {
               </InviteLinkProvider>
             </NetworkProvider>
           )}
+          </FontGate>
         </ErrorBoundary>
         <ThemedStatusBar />
       </ThemeProvider>

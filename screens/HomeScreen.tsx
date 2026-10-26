@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useLayoutEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { AppText } from '../components/AppText';
-import { AvatarStack, Avatar } from '../components/Avatar';
+import { Avatar } from '../components/Avatar';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -13,74 +13,33 @@ import { InlineBanner } from '../components/InlineBanner';
 import { ListRow } from '../components/ListRow';
 import { ListSection } from '../components/ListSection';
 import { OfflineBanner } from '../components/OfflineBanner';
-import { RouteProgress } from '../components/Route';
+import { Reveal } from '../components/Reveal';
+import { GlanceTile } from '../components/GlanceTile';
+import { InviteCode } from '../components/InviteCode';
 import { Screen } from '../components/Screen';
+import { TripTicket } from '../components/TripTicket';
 import { SkeletonList } from '../components/Skeleton';
 import { MessageRow } from '../components/MessageRow';
 import { useAuth } from '../hooks/useAuth';
+import { useChecklist } from '../hooks/useChecklist';
 import { useCommunication } from '../hooks/useCommunication';
 import { useExpenses } from '../hooks/useExpenses';
 import { useItinerary } from '../hooks/useItinerary';
-import { useLargeText } from '../hooks/useLargeText';
 import { useTheme } from '../hooks/useTheme';
 import { useTrip } from '../hooks/useTrip';
+import { ChecklistModel } from '../models/ChecklistModel';
 import { CommunicationModel } from '../models/CommunicationModel';
 import { ItineraryModel } from '../models/ItineraryModel';
 import { Trip, TripModel } from '../models/TripModel';
 import { getErrorMessage } from '../services/errors';
 import { ShareService } from '../services/ShareService';
-import { formatClockTime, formatDateRange, formatDayHeading, formatRelativeTime, todayISO } from '../utils/dates';
+import { formatClockTime, formatDayHeading, formatRelativeTime, todayISO } from '../utils/dates';
 import { formatCents } from '../utils/money';
 import { ShareTarget } from '../utils/shareTargets';
-import { tripProgress } from '../utils/tripProgress';
 import { TabScreenNavigation } from './types';
 
+/** The next stop gets its own tile, so this many more are listed under Coming Up. */
 const UPCOMING_COUNT = 3;
-/** Trip names longer than this may not fit in the large title. */
-const LONG_NAME = 22;
-
-function TripHero({ trip }: { trip: Trip }) {
-  const { spacing } = useTheme();
-  const largeText = useLargeText();
-  const progress = tripProgress(trip.startDate, trip.endDate, todayISO());
-  const dates = formatDateRange(trip.startDate, trip.endDate);
-  const people = trip.members.length === 1 ? '1 person' : `${trip.members.length} people`;
-  return (
-    <Card
-      variant="hero"
-      accessible
-      accessibilityLabel={`${trip.name}. ${trip.destination}, ${dates}. ${progress.label}. ${people}.`}
-    >
-      <View style={{ gap: spacing.xxs }}>
-        {/* An iOS large title is one line; a long trip name gets cut off there, so show it in full here. */}
-        {trip.name.length > LONG_NAME ? <AppText variant="title3" color="onHero">
-            {trip.name}
-          </AppText> : null}
-        <View style={[styles.inline, { gap: spacing.xs }]}>
-          <Icon name="location-outline" size={18} color="heroAccent" />
-          <AppText variant="headline" color="onHero" style={styles.shrink}>
-            {trip.destination}
-          </AppText>
-        </View>
-        <AppText variant="subhead" color="onHeroSecondary" tabular>
-          {dates}
-        </AppText>
-      </View>
-      <RouteProgress key={trip.id} onHero dayCount={progress.dayCount} todayIndex={progress.todayIndex} />
-      <View style={[styles.heroFooter, largeText && styles.stacked, { gap: spacing.xs }]}>
-        <AppText variant="subheadStrong" color="onHeroSecondary" tabular>
-          {progress.label}
-        </AppText>
-        <View style={[styles.inline, { gap: spacing.xs }]}>
-          <AvatarStack onHero names={trip.members.map((m) => m.displayName)} />
-          <AppText variant="subhead" color="onHeroSecondary">
-            {people}
-          </AppText>
-        </View>
-      </View>
-    </Card>
-  );
-}
 
 /** Which share action is running, so only its button shows a spinner. */
 type Sharing = 'sheet' | ShareTarget | null;
@@ -93,7 +52,7 @@ interface InviteSectionProps {
 }
 
 function InviteSection({ trip, sharing, onShare, onSend }: InviteSectionProps) {
-  const { spacing } = useTheme();
+  const { spacing, colors } = useTheme();
   if (!trip.inviteCode) return null;
   const alone = trip.members.length === 1;
   return (
@@ -101,15 +60,9 @@ function InviteSection({ trip, sharing, onShare, onSend }: InviteSectionProps) {
       <AppText variant="title3" accessibilityRole="header" style={{ paddingHorizontal: spacing.xxs }}>
         Invite Friends
       </AppText>
-      <Card>
-        <View
-          accessible
-          accessibilityLabel={`Invite code: ${trip.inviteCode.split('').join(' ')}`}
-          style={{ gap: spacing.xxs, alignItems: 'center' }}
-        >
-          <AppText variant="code" selectable align="center">
-            {trip.inviteCode}
-          </AppText>
+      <Card style={{ borderWidth: 1, borderColor: colors.separator, borderStyle: 'dashed' }}>
+        <View style={{ gap: spacing.sm }}>
+          <InviteCode code={trip.inviteCode} />
           <AppText variant="subhead" color="labelSecondary" align="center">
             {alone
               ? "You're the only one here so far. Send this code so friends can join."
@@ -193,12 +146,13 @@ function AnnouncementsSection({ trip, onOpen }: { trip: Trip; onOpen: () => void
 }
 
 export default function HomeScreen() {
-  const { colors } = useTheme();
+  const { colors, spacing } = useTheme();
   const { userId } = useAuth();
   const navigation = useNavigation<TabScreenNavigation>();
   const { activeTrip, trips, loading, error, refresh } = useTrip();
   const { items } = useItinerary();
   const { expenses } = useExpenses();
+  const { items: checklistItems } = useChecklist();
   const spentCents = expenses.reduce((sum, e) => sum + e.amountCents, 0);
   const [sharing, setSharing] = useState<Sharing>(null);
   const [shareError, setShareError] = useState<string | null>(null);
@@ -247,7 +201,11 @@ export default function HomeScreen() {
 
   if (!activeTrip) return null; // setTrips always selects one when trips exist
 
-  const upcoming = ItineraryModel.upcoming(items, todayISO(), UPCOMING_COUNT);
+  const upcoming = ItineraryModel.upcoming(items, todayISO(), UPCOMING_COUNT + 1);
+  const [nextStop, ...later] = upcoming;
+  const checklist = ChecklistModel.progress(checklistItems);
+  const hasBudget = activeTrip.budgetCents > 0;
+  const overBudget = hasBudget && spentCents > activeTrip.budgetCents;
   const alone = activeTrip.members.length === 1;
 
   const runShare = async (which: Exclude<Sharing, null>, action: () => Promise<void>) => {
@@ -277,58 +235,97 @@ export default function HomeScreen() {
       {error ? <InlineBanner tone="error" message={error} action={{ label: 'Try Again', onPress: refresh }} /> : null}
       {shareError ? <InlineBanner tone="error" message={shareError} /> : null}
 
-      <TripHero trip={activeTrip} />
+      <Reveal index={0}>
+        <TripTicket trip={activeTrip} />
+      </Reveal>
 
       {/* Getting people in comes first while you're the only member. */}
-      {alone ? invite : null}
+      {alone ? <Reveal index={1}>{invite}</Reveal> : null}
 
-      <AnnouncementsSection trip={activeTrip} onOpen={() => navigation.navigate('Announcements')} />
+      <Reveal index={alone ? 2 : 1}>
+        <View style={{ gap: spacing.sm }}>
+          <GlanceTile
+            icon="map-outline"
+            label="Next stop"
+            value={nextStop ? nextStop.title : 'Nothing planned yet'}
+            caption={
+              nextStop
+                ? [
+                    `${formatDayHeading(nextStop.day)}${nextStop.time ? ` · ${formatClockTime(nextStop.time)}` : ''}`,
+                    nextStop.location,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')
+                : 'Add the first stop and everyone will see it.'
+            }
+            hint="Opens the itinerary"
+            onPress={() => navigation.navigate('Itinerary')}
+          />
+          <View style={[styles.tileRow, { gap: spacing.sm }]}>
+            <View style={styles.tileCell}>
+              <GlanceTile
+                icon="wallet-outline"
+                label="Budget"
+                value={formatCents(spentCents)}
+                caption={
+                  !hasBudget
+                    ? 'spent so far'
+                    : overBudget
+                      ? `${formatCents(spentCents - activeTrip.budgetCents)} over your ${formatCents(activeTrip.budgetCents)} budget`
+                      : `of ${formatCents(activeTrip.budgetCents)}`
+                }
+                fraction={hasBudget ? spentCents / activeTrip.budgetCents : null}
+                alert={overBudget}
+                hint="Opens the budget and settle-up"
+                onPress={() => navigation.navigate('Budget')}
+              />
+            </View>
+            <View style={styles.tileCell}>
+              <GlanceTile
+                icon="checkbox-outline"
+                label="Checklist"
+                value={checklist.total === 0 ? 'Empty' : `${checklist.done}/${checklist.total}`}
+                caption={checklist.total === 0 ? 'Nothing on the list yet' : checklist.label}
+                fraction={checklist.fraction}
+                accessibilityLabel={`Checklist, ${checklist.label}`}
+                hint="Opens the trip checklist"
+                onPress={() => navigation.navigate('Checklist')}
+              />
+            </View>
+          </View>
+        </View>
+      </Reveal>
 
-      {upcoming.length === 0 ? (
-        <ListSection header="Coming Up">
-          <EmptyState inline title="Nothing planned yet" body="Add the first stop and everyone will see it.">
-            <Button label="Plan the Itinerary" variant="tinted" onPress={() => navigation.navigate('Itinerary')} />
-          </EmptyState>
-        </ListSection>
-      ) : (
-        <ListSection
-          header="Coming Up"
-          headerAction={{
-            label: 'See All',
-            hint: 'Opens the full itinerary',
-            onPress: () => navigation.navigate('Itinerary'),
-          }}
-        >
-          {upcoming.map((item) => (
-            <ListRow
-              key={item.id}
-              overline={`${formatDayHeading(item.day)}${item.time ? ` · ${formatClockTime(item.time)}` : ''}`}
-              title={item.title}
-              subtitle={item.location ?? undefined}
-              trailing="chevron"
-              accessibilityHint="Opens the itinerary"
-              onPress={() => navigation.navigate('Itinerary')}
-            />
-          ))}
-        </ListSection>
-      )}
+      <Reveal index={alone ? 3 : 2}>
+        <AnnouncementsSection trip={activeTrip} onOpen={() => navigation.navigate('Announcements')} />
+      </Reveal>
 
-      {alone ? null : invite}
+      {later.length > 0 ? (
+        <Reveal index={alone ? 4 : 3}>
+          <ListSection
+            header="Coming Up"
+            headerAction={{
+              label: 'See All',
+              hint: 'Opens the full itinerary',
+              onPress: () => navigation.navigate('Itinerary'),
+            }}
+          >
+            {later.map((item) => (
+              <ListRow
+                key={item.id}
+                overline={`${formatDayHeading(item.day)}${item.time ? ` · ${formatClockTime(item.time)}` : ''}`}
+                title={item.title}
+                subtitle={item.location ?? undefined}
+                trailing="chevron"
+                accessibilityHint="Opens the itinerary"
+                onPress={() => navigation.navigate('Itinerary')}
+              />
+            ))}
+          </ListSection>
+        </Reveal>
+      ) : null}
 
-      <ListSection header="Budget">
-        <ListRow
-          leading={<Icon name="wallet-outline" size={22} color="accent" />}
-          title={activeTrip.budgetCents > 0 ? 'Spent of budget' : 'Spent so far'}
-          value={
-            activeTrip.budgetCents > 0
-              ? `${formatCents(spentCents)} of ${formatCents(activeTrip.budgetCents)}`
-              : formatCents(spentCents)
-          }
-          trailing="chevron"
-          accessibilityHint="Opens the budget and settle-up"
-          onPress={() => navigation.navigate('Budget')}
-        />
-      </ListSection>
+      {alone ? null : <Reveal index={4}>{invite}</Reveal>}
 
       <ListSection header="Share the Trip" footer="Posts never include your invite code, so only people you invite can join.">
         <ListRow
@@ -369,10 +366,8 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  inline: { flexDirection: 'row', alignItems: 'center' },
-  shrink: { flexShrink: 1 },
-  heroFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' },
-  stacked: { flexDirection: 'column', alignItems: 'flex-start' },
+  tileRow: { flexDirection: 'row', flexWrap: 'wrap' },
+  tileCell: { flexGrow: 1, flexBasis: 150 },
   shareRow: { flexDirection: 'row', flexWrap: 'wrap' },
   shareButton: { flexGrow: 1, flexBasis: 140 },
 });

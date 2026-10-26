@@ -20,3 +20,22 @@ export function tripProgress(startISO: string, endISO: string, todayISO: string)
   const index = days.indexOf(todayISO);
   return { dayCount, todayIndex: index, label: `Day ${index + 1} of ${dayCount}` };
 }
+
+export interface TripCountdown {
+  /** The big figure: "46", "3", or a short word like "Done". */
+  figure: string;
+  /** What the figure counts: "days to go", "of 5 days", "trip complete". */
+  caption: string;
+}
+
+/** The ticket stub on the Trip Hub: days until the trip, which day it is, or that it's over. Display only. */
+export function tripCountdown(startISO: string, endISO: string, todayISO: string): TripCountdown {
+  const days = daysBetween(startISO, endISO);
+  const dayCount = Math.max(1, days.length);
+  if (todayISO < startISO) {
+    const until = daysBetween(todayISO, startISO).length - 1;
+    return { figure: String(until), caption: until === 1 ? 'day to go' : 'days to go' };
+  }
+  if (todayISO > endISO) return { figure: 'Done', caption: 'trip complete' };
+  return { figure: `Day ${days.indexOf(todayISO) + 1}`, caption: `of ${dayCount}` };
+}

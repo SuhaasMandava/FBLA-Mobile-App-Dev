@@ -41,6 +41,9 @@ const pairs = [
   ['onHero', 'hero', 4.5],
   ['onHeroSecondary', 'hero', 4.5],
   ['heroAccent', 'hero', 3], // Route and icons on the hero card
+  ['onHero', 'heroPanel', 4.5],
+  ['onHeroSecondary', 'heroPanel', 4.5],
+  ['heroAccent', 'heroPanel', 3],
 ];
 
 let failures = 0;
