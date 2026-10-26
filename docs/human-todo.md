@@ -1,24 +1,38 @@
 ---
 tags: [triphub, todo, manual]
 created: 2026-10-25
+updated: 2026-10-26
 ---
-# Human to-do
+# Human to-do (build stage)
 
-Things Claude Code can't do for us. Tick them off here in Obsidian. Context: [[current-work]], [[index]]. Test steps assume two phones signed in as different members of one trip (one organizer, one plain member).
+Only what is needed to finish building and testing the app, highest priority first. Presentation, demo and submission tasks are parked in [[human-todo-later]]. Context: [[current-work]], [[index]]. Phones: two iPhones running Expo Go (SDK 58). In Expo Go, reminders and `triphub://join/` links don't work; test those later in an installed build or skip them.
 
-## A. Database (Supabase SQL editor)
-- [ ] Run `supabase/migrations/006_checklist.sql` (safe to re-run), then restart the app
-- [ ] Run the Budget/expenses migration if not already done
-- [ ] Run every migration numbered after 006 (added with the Oct 22 group features), in order. Check `supabase/migrations/`
-- [ ] Confirm "Confirm email" is OFF in Supabase Auth settings (sign-up breaks otherwise)
-- [ ] Use the app the day before the event (free Supabase projects pause after about a week idle)
+## 0. Already verified by Claude on web (Oct 26, one signed-in user, phone-width browser)
+Sign-up with weak/mismatched password errors; Create Trip validation (empty fields, end before start); trip creation; Trip Hub ticket ("Day 1 of 4"), invite code tiles; checklist quick add and tick ("Done by you", Home tile 1/3); itinerary add with time (today's stop highlighted); $0 expense rejected; over-budget expense; Budget, Home tile and Trip Summary all show over budget; Next stop tile opens Itinerary; delete trip confirm and delete. NOT covered here: a second user (RLS, live sync, who-can-edit), sharing to apps, VoiceOver, large text, reminders, real iPhone layout. Database rules for two users pass in `npm run test:db`.
 
-- [ ] Run `supabase/migrations/010_settlements.sql` then `011_audit_fixes.sql` (011 changes who can record a payment and fixes two edge cases)
-- [ ] Before submitting: delete the `tester@example.com` user in Supabase (Authentication → Users) and remove the DEV BYPASS code
-- [ ] Delete the leftover "QA Trip" on the tester account
+## 1. Get the app running on both iPhones (now)
+- [x] Supabase migrations 006 to 011 run (Oct 26)
+- [x] "Confirm email" off, "Allow anonymous sign-ins" off (Oct 26; confirm Save changes was clicked)
+- [x] EAS linked (`eas init`) and Supabase env vars set for `preview` (Oct 26). Only needed for an installed build, not Expo Go
+- [x] Project upgraded to Expo SDK 58 so the App Store Expo Go can open it (Oct 26)
+- [x] Install Expo Go on both phones, run `npx expo start`, scan the QR code with each phone's Camera (same Wi-Fi, or a phone hotspot). Report any error text
+- [x] Create two accounts (one per phone) and make one the organizer; join the other with the invite code
+- [ ] Load the seed trip for realistic test data: create `demo.organizer@example.com` and `demo.member@example.com` in the app, then run `supabase/seed/demo_trip.sql` in the Supabase SQL editor (README → Demo mode)
 
-## B. Two-phone test: Checklist
-- [ ] Phone A adds an item; B pulls to refresh and sees it; it shows on A's list too
+## 2. Two-phone test: Budget and Checklist (money and shared list)
+Budget
+- [ ] Add an expense on A; B sees it (single-user add works on web, Oct 26)
+- [ ] Even and custom splits sum exactly to the total (try $10.01 among 3)
+- [ ] Only the payer or organizer can edit/delete an expense
+- [ ] Settle-up "who owes whom" matches hand math
+- [ ] Mark a suggested payment as paid on A; B sees the balances change live; "Payments Made" lists it; undo restores it
+- [ ] A member not in the payment (and not an organizer) can't mark or undo it
+- [ ] Budget → Trip Summary shows totals, who paid what, and "Everyone's settled up" once all are paid
+- [x] Over-budget state shows correctly (verified on web Oct 26: Budget card, Home tile and Trip Summary all say over, with icon)
+- [ ] Airplane mode: list readable, writes refused with a friendly message
+
+Checklist
+- [ ] Phone A adds an item; B pulls to refresh and sees it (quick add and tick verified single-user on web Oct 26)
 - [ ] B ticks it; A shows "Done by <B's name>". Untick and the "Done by" line goes away
 - [ ] Both phones tick the same item at once; end state is consistent, no errors
 - [ ] Assign an item to the other person; each phone reads "Assigned to you" or the name correctly
@@ -26,52 +40,25 @@ Things Claude Code can't do for us. Tick them off here in Obsidian. Context: [[c
 - [ ] A deletes an item while B has its edit sheet open; B gets an error or "This item is gone" on save
 - [ ] Remove the assigned member from the trip; item shows "a former member" and can still be ticked
 - [ ] Airplane mode on one phone, tick an item: offline message appears and the tick is reverted
-- [ ] Light and dark mode; VoiceOver/TalkBack reads the checkbox as checked/unchecked
+- [ ] Light and dark mode
 
-## C. Two-phone test: Budget
-- [ ] Add an expense on A; B sees it
-- [ ] Even and custom splits sum exactly to the total (try $10.01 among 3)
-- [ ] Only the payer or organizer can edit/delete an expense
-- [ ] Settle-up "who owes whom" matches hand math
-- [ ] Over-budget state shows correctly
-- [ ] Airplane mode: list readable, writes refused with a friendly message
-
-- [ ] Run `supabase/migrations/010_settlements.sql` first (new, Oct 25)
-- [ ] Mark a suggested payment as paid on A; B sees the balances change live; "Payments Made" lists it; undo restores it
-- [ ] A member not in the payment (and not an organizer) can't mark or undo it
-- [ ] Budget → Trip Summary shows totals, who paid what, and "Everyone's settled up" once all are paid
-
-## D. Two-phone test: Oct 22 group features
+## 3. Two-phone test: group features and sharing
+- [ ] Share to 2+ platforms works (WhatsApp, Text, X); "app not installed" fails gracefully
 - [ ] Announcements: organizer posts, member sees it; member can't post
 - [ ] Comments on an itinerary activity appear on the other phone
-- [ ] Share to 2+ platforms works; "app not installed" fails gracefully
-- [ ] `triphub://join/CODE` link opens the join flow with the code prefilled
-- [ ] Organizer tools: edit trip, delete trip, leave trip, remove member (confirm prompts, RLS blocks plain members)
 - [ ] Live sync: a change on A shows on B without pull-to-refresh; falls back to refresh when offline
-- [ ] Reminders fire, and the setting to turn them off works
+- [ ] Organizer tools: edit trip, delete trip, leave trip, remove member (confirm prompts, RLS blocks plain members)
 - [ ] Checklist quick-add and the first-run intro behave
+- [ ] Not in Expo Go (needs an installed build): reminders firing, and `triphub://join/CODE` links
 
-## E. Demo safety net
-- [ ] Run `eas init` / first preview build (adds the project id, Android package and iOS bundle id to `app.json`)
-- [ ] Set Supabase env vars as EAS environment variables (the app crashes at startup without them)
-- [ ] Install the standalone build on both phones and sign in ahead of time
-- [ ] Load the demo seed trip (activities, expenses, checklist items)
-- [ ] Practice on a phone hotspot (venue Wi-Fi may fail)
-- [ ] Record a backup demo video; keep it on the laptop and a phone
-- [ ] Time the full run: 3 min setup, 7 min presentation, 3 min Q&A
+## 4. Look at the redesign on a real phone (see [[trip-hub]], [[screen-changelog]])
+- [ ] Trip Hub: ticket and countdown show the right day; invite code tiles are readable and Share, WhatsApp, Text open the right app; the Checklist tile fills as you tick items; the Next stop tile opens the Itinerary; pull to refresh works; airplane mode shows the offline banner
+- [ ] Itinerary (with activities), Budget (with an unsettled debt and an over-budget trip) and Checklist (with items): I only saw their empty or error states
+- [ ] Largest phone text size: nothing is cut off, ticket stub and tiles stack. Reduce Motion on: screens appear at once with no sliding
+- [ ] VoiceOver: the ticket reads as one sentence, tiles read like "Budget, $42.50, of $1,500", the invite code reads letter by letter. Write what you hear in [[user-journey-and-accessibility]]
+- [ ] Decide whether to keep the Bricolage Grotesque title font; if it feels too playful, change `fonts` in `theme/theme.ts` (one place)
+- [ ] Decide whether to restyle the forms (add/edit screens), Welcome, Trip Settings and Trip Summary to match the Trip Hub; they only have the new fonts so far
 
-## F. Decisions to confirm
+## 5. Decisions to confirm (lowest urgency; defaults already work)
 - [ ] Checklist delete rule: only the adder or an organizer (matches itinerary). Keep, or let any member delete?
-
 - [ ] Skills from the TikTok list: install any yourself at user level after reading their hooks (see [[candidate-skills]]); I recommend only ponytail's review commands, and none in the submitted repo
-
-## G. Presentation and paperwork
-- [ ] Gaps from `planning/self-assessment.md`: evidence of pre-build planning, short usability sessions with real users
-- [ ] Slides follow the rating sheet: planning, architecture (MVVM diagram), UX and accessibility, live demo
-- [ ] Rehearse Q&A (why this architecture, how data is secured, what is innovative)
-- [ ] Links and QR codes can be shown but judges can't scan or click them
-- [ ] Bring photo ID matching the name badge, and FBLA dress code attire
-
-- [ ] Run the three sessions in [[usability-test-plan]] and write [[usability-results]]
-- [ ] Time a full run with [[demo-script]]; log it in [[rehearsal-log]]; skim [[qa-cheatsheet]] and [[known-limits]] out loud
-- [ ] Record the backup video from [[backup-plan]]

@@ -20,6 +20,8 @@ Update at the end of every session. Last updated: 2026-10-24, from `docs/plannin
 
 - Oct 25: audit fixes ([[bug-list-2026-10-25]]): migration 011, payee-only payments, web confirm dialogs, payments cache, vendored HIG skill untracked. tsc, 244 jest tests, `test:db` pass. Uncommitted. Run 010 and 011 in Supabase before device testing.
 
+- Oct 25: Impeccable set up: `PRODUCT.md` (platform adaptive) and the design hook on (`.impeccable/config.json`). Uncommitted. If the hook doesn't fire after UI edits, run `/impeccable doctor`.
+
 ## Open notes
 - `app.json` has no `extra.eas.projectId`, Android package or iOS bundle id yet. The first `eas init` / build adds them (README → Building a preview).
 
@@ -28,3 +30,11 @@ Update at the end of every session. Last updated: 2026-10-24, from `docs/plannin
 ## Unverified
 - Whether any preview build has been run since README said none had.
 - `CLAUDE.md` points to `.claude/commands/wrap-up.md`, which doesn't exist; the checklist is `docs/wrap-up.md`.
+
+- Oct 25: UI/UX redesign started with the Trip Hub (`c7fec1c`, `fdc8072`): ticket hero, glance tiles, invite code tiles, Bricolage Grotesque titles, staggered entrance. tsc, lint, 247 tests, contrast check pass; checked in the browser at phone width, light and dark. Not checked on a real device or with a screen reader. Next: restyle Itinerary, Budget, Checklist, Settings and forms the same way (see [[screen-changelog]]).
+- Oct 25: Itinerary, Budget, Checklist and Settings restyled to match the Trip Hub (see [[screen-changelog]]). Forms (add/edit screens, Welcome, Trip Settings, Summary) still use the old look plus the new fonts.
+- Oct 26: Supabase migrations 006 to 011 run (all Success); "Confirm email" off, anonymous sign-ins turned off. Console 404s gone. Next: EAS preview build ([[human-todo]] section 2), then two-phone tests.
+- Oct 26: EAS linked (projectId in app.json), preview env vars set, first Android preview build finished (apk link on expo.dev under suhaasmandava/triphub). Not yet installed or tested on a phone. Expo Go is the fallback for the demo (no reminders or invite links).
+- Oct 26: demo phones are two iPhones, so the demo runs in Expo Go (no reminders or join links); the Android apk is unused. See [[human-todo]] section 2.
+- Oct 26: upgraded Expo SDK 57 to 58 (RN 0.88, React 19.3, Node 24 ok) on merged branch `sdk-58-upgrade`, because the App Store Expo Go only opens the latest SDK. tsc, lint, 247 tests, `test:db`, expo-doctor 20/20 pass; web loads and signs in. Not yet opened in Expo Go on an iPhone. The tester account has no trips now (QA Trip gone).
+- Oct 26: Claude verified the single-user flows on web (see [[human-todo]] section 0). Found: `tester@example.com` has no profiles row so it cannot create trips; use a new account. Two-user tests still need the two iPhones.

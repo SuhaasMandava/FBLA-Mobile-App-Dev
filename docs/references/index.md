@@ -34,3 +34,12 @@ Shipped icon and splash files live in `assets/` (`icon.png`, `splash-icon.png`, 
 - FBLA event page and rating sheet: https://www.fbla.org/competitive-events/mobile-application-development/ (summarized in `docs/planning/requirements-map.md`)
 
 - **Candidate skills screenshots** (3 TikTok slides, pasted in chat Oct 25, not saved in `references/`): GitHub pages for ponytail, i-have-adhd and ui-ux-pro-max-skill. Facts and review in [[candidate-skills]].
+
+## Third-party assets used in the redesign (sourcing for judges)
+| Asset | Source | License | Where used |
+| --- | --- | --- | --- |
+| Bricolage Grotesque (typeface) | https://fonts.google.com/specimen/Bricolage+Grotesque, by Mathieu Triay (github.com/ateliertriay/bricolage) | SIL Open Font License 1.1 (free for commercial use) | Titles and numerals via `theme/theme.ts` `fonts` |
+| `@expo-google-fonts/bricolage-grotesque` 0.4.1 (font packaging) | https://github.com/expo/google-fonts, npm package | MIT (packaging) and OFL-1.1 (font files) | Loaded in `App.tsx` |
+| Ionicons via `@expo/vector-icons` | https://ionic.io/ionicons | MIT | All icons (already in use before the redesign) |
+| App icon, Route, AppMark | Original work by the TripHub team | `LICENSE` | Icon, splash, empty states |
+No photographs or stock images are used.

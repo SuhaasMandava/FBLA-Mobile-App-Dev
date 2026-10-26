@@ -491,3 +491,17 @@ Out of scope (no business logic, service, schema, or validation changes): expens
 - Tokens live in a root `theme/theme.ts`; components stay in `components/`. The repo keeps its root-folder layout instead of moving under `src/`.
 - Home's iOS large title is the trip name. Names longer than 22 characters are also shown in full in the hero card, since a large title is one line.
 - The icon is the team's supplied artwork (`assets/TripHub Icon.jpg`); `scripts/make-icons.py` (Pillow) builds the icon, Android layers, splash, and favicon from it.
+
+---
+
+## 12. Trip Hub redesign (Oct 25) — evolves sections 4 to 8
+
+Full screen notes: [[trip-hub]]. Changelog: [[screen-changelog]].
+
+- **Direction:** "Boarding pass at midnight". Same Midnight & Sunset palette; the hero is now a ticket with a perforation and a countdown stub.
+- **Type:** Bricolage Grotesque (SIL OFL) for `largeTitle`, `title1-3`, new `display` (38) and `stat` (26); system font for everything else. Tokens: `fonts` in `theme/theme.ts`. Display roles set `fontFamily` and no `fontWeight` (each weight is its own family on native).
+- **New color tokens:** `heroPanel` (stub), `heroLine` (perforation). Both in `scripts/check-contrast.js`.
+- **New motion tokens:** `motion.enter` 380 ms, `motion.stagger` 70 ms (`Reveal`). Reduce Motion shows content at once.
+- **New components:** `TripTicket`, `GlanceTile` (icon, label, value, optional meter, alert state), `InviteCode` (six tiles), `Reveal`. `BudgetMeter` takes `tone` (`hero`, `surface`, `alert`).
+- **Lists:** `ListSection` has a hairline border so white cards hold their edge in light mode.
+- **App icon:** unchanged. The shipped Pin & Orbit already uses the navy and amber of this palette (`icon-options/palettes.png`, "Midnight & Sunset"), so no new icon was needed.

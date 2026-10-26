@@ -25,3 +25,8 @@ Messages safe to show users use `UserFacingError` / `TripServiceError` (`service
 
 ## Where features live
 Feature → file table: `docs/planning/requirements-map.md`.
+
+## Trip Hub components (Oct 25)
+`components/TripTicket.tsx` (hero), `GlanceTile.tsx`, `InviteCode.tsx`, `Reveal.tsx` (entrance animation), used by `screens/HomeScreen.tsx`. `FontGate` in `App.tsx` loads Bricolage Grotesque (`@expo-google-fonts/bricolage-grotesque`). `utils/tripProgress.ts` gains `tripCountdown`. See [[trip-hub]].
+`components/HeroStat.tsx` (navy headline card with stub) is used by Budget and Checklist.
+Stack as of Oct 26: Expo SDK 58, React Native 0.88, React 19.3 (upgraded from 57 so iOS Expo Go can open the app). EAS project linked in `app.json` (`extra.eas.projectId`), env vars set for the `preview` environment.

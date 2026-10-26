@@ -13,7 +13,7 @@ npx expo install <pkg>  # always use this to add packages
 Run lint, typecheck and tests before calling a task done.
 
 ## Rules
-- Expo SDK 57 (React Native 0.86, React 19). Expo APIs change every SDK: check `https://docs.expo.dev/versions/v57.0.0/` before touching Expo, EAS or RN APIs.
+- Expo SDK 58 (React Native 0.88, React 19.3). Expo APIs change every SDK: check `https://docs.expo.dev/versions/v58.0.0/` before touching Expo, EAS or RN APIs.
 - Money is integer cents, never floats (`utils/money.ts` parses dollar strings by digits).
 - Validate twice: zod in `models/*Form.ts` (syntax + semantics) and again in Postgres (constraints/triggers in a migration).
 - Every database change is a new numbered migration in `supabase/migrations/`, safe to re-run, with Row Level Security, covered by `npm run test:db`. Don't edit old migrations.
@@ -26,3 +26,8 @@ Run lint, typecheck and tests before calling a task done.
 
 ## Definition of done (per feature)
 Migration + RLS + db test → zod model + unit tests → service → hook/context → screens → README updated. Typecheck, lint and tests pass. Source: `docs/planning/timeline.md`.
+
+- Product context lives in root `PRODUCT.md` (Impeccable); the design detector hook is enabled in `.impeccable/config.json`; `config.local.json` is git-ignored. Decisions: [[decisions]].
+- Impeccable (design plugin) runs inside the same Claude session, so it already has the Obsidian MCP. `PRODUCT.md` → Operating Context tells it which notes to read and where to record changes. Deny list stays: no `vault_delete`, no `command_execute` (`.claude/settings.json`).
+
+- Titles and numerals use the display font through type roles (`AppText variant`), never a raw `fontFamily`. New animated entrances go through `Reveal` so Reduce Motion is honored. Any new third-party asset gets a row in `docs/references/index.md` (name, URL, license) in the same change.

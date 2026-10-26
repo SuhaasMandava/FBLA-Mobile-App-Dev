@@ -2,7 +2,7 @@
 
 Start here. Read only the notes you need for the task.
 
-**What it is:** TripHub, a group trip planner (Expo SDK 57, React Native, Supabase). Entry for the FBLA Mobile Application Development event, topic "Together We Go: Group Trip Planner". Full overview: `README.md`.
+**What it is:** TripHub, a group trip planner (Expo SDK 58, React Native, Supabase). Entry for the FBLA Mobile Application Development event, topic "Together We Go: Group Trip Planner". Full overview: `README.md`.
 
 ## Notes
 - [[architecture]]: folders, MVVM layers, provider order, data flow
@@ -11,13 +11,16 @@ Start here. Read only the notes you need for the task.
 - [[references/index|references]]: catalog of reference images, PDFs and sources (read this, not the files)
 - [[gotchas]]: bugs, quirks and setup traps already hit once
 - [[current-work]]: what is happening now and what is next
-- [[human-todo]]: manual steps only a person can do (migrations, two-phone tests, demo prep)
+- [[human-todo]]: manual build-stage steps only a person can do (phone setup, two-phone tests); [[human-todo-later]]: demo, presentation and submission tasks, parked
 - [[wrap-up]]: end-of-session checklist for updating these notes
 
 - Presentation: [[demo-script]] (timed run), [[qa-cheatsheet]], [[known-limits]], [[backup-plan]]
 - [[usability-test-plan]]: three-session test that closes the UX evidence gap
 
 - [[bug-list-2026-10-25]]: bugs found in the web pass, fixed and open
+
+- [[trip-hub]]: the redesigned home screen; [[screen-changelog]] (before/after per screen); [[user-journey-and-accessibility]]
+- [[design-talking-points]]: 7-minute design segment and judge Q&A
 
 - [[candidate-skills]]: three third-party Claude Code skills, reviewed and deliberately not installed
 
