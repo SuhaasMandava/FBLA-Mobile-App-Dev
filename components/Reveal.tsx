@@ -30,6 +30,8 @@ export function Reveal({ index = 0, children }: { index?: number; children: Reac
   return (
     <Animated.View
       style={{
+        // Fill the parent's width even inside a centered column (empty states), or wide text can't wrap.
+        alignSelf: 'stretch',
         opacity: progress,
         transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }],
       }}
