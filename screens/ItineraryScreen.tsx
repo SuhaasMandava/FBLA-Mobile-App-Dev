@@ -60,7 +60,13 @@ function StopRow({ item, state, first, last, editing, commentCount, onOpen, onMo
       <View
         style={[
           styles.card,
-          { backgroundColor: colors.surface, borderRadius: radii.lg, marginVertical: spacing.xxs, marginLeft: spacing.xs },
+          {
+            backgroundColor: colors.surface,
+            borderRadius: radii.lg,
+            marginVertical: spacing.xxs,
+            marginLeft: spacing.xs,
+            borderColor: state === 'current' ? colors.accent : colors.separator,
+          },
         ]}
       >
         <Pressable
@@ -72,14 +78,30 @@ function StopRow({ item, state, first, last, editing, commentCount, onOpen, onMo
           onPress={onOpen}
           style={({ pressed }) => [
             styles.cardMain,
-            { minHeight: layout.minTarget + 12, padding: spacing.sm, paddingLeft: spacing.md, gap: 2 },
+            {
+              minHeight: layout.minTarget + 12,
+              padding: spacing.sm,
+              paddingLeft: spacing.md,
+              gap: 2,
+            },
             pressed && { opacity: motion.pressedOpacity },
           ]}
         >
           {item.time ? (
-            <AppText variant="subheadStrong" color="labelSecondary" tabular>
-              {formatClockTime(item.time)}
-            </AppText>
+            <View
+              style={[
+                styles.timePill,
+                {
+                  backgroundColor: colors.accentTint,
+                  borderRadius: radii.pill,
+                  paddingHorizontal: spacing.xs,
+                },
+              ]}
+            >
+              <AppText variant="caption" color="onAccentTint" tabular>
+                {formatClockTime(item.time)}
+              </AppText>
+            </View>
           ) : null}
           <AppText variant="headline">{item.title}</AppText>
           {item.location ? (
@@ -125,7 +147,12 @@ function StopRow({ item, state, first, last, editing, commentCount, onOpen, onMo
             onPress={onComments}
             style={({ pressed }) => [
               styles.comments,
-              { minWidth: layout.minTarget, minHeight: layout.minTarget, paddingHorizontal: spacing.xs, gap: 2 },
+              {
+                minWidth: layout.minTarget,
+                minHeight: layout.minTarget,
+                paddingHorizontal: spacing.xs,
+                gap: 2,
+              },
               pressed && { opacity: motion.pressedOpacity },
             ]}
           >
@@ -143,7 +170,7 @@ function StopRow({ item, state, first, last, editing, commentCount, onOpen, onMo
 }
 
 export default function ItineraryScreen() {
-  const { colors, spacing, layout } = useTheme();
+  const { colors, spacing, radii, layout } = useTheme();
   const navigation = useNavigation<TabScreenNavigation>();
   const { activeTrip } = useTrip();
   const { items, loading, error, refresh, moveItem } = useItinerary();
@@ -223,7 +250,11 @@ export default function ItineraryScreen() {
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={[
         styles.content,
-        { padding: spacing.md, paddingBottom: spacing.xl, maxWidth: layout.maxContentWidth },
+        {
+          padding: spacing.md,
+          paddingBottom: spacing.xl,
+          maxWidth: layout.maxContentWidth,
+        },
       ]}
       sections={sections}
       keyExtractor={(item) => item.id}
@@ -244,7 +275,16 @@ export default function ItineraryScreen() {
         </View>
       }
       renderSectionHeader={({ section }) => (
-        <View style={[styles.dayHeader, { marginTop: spacing.lg, marginBottom: spacing.xxs, gap: spacing.xs }]}>
+        <View
+          style={[
+            styles.dayHeader,
+            {
+              marginTop: spacing.lg,
+              marginBottom: spacing.xxs,
+              gap: spacing.xs,
+            },
+          ]}
+        >
           <View style={[styles.dayTitle, { gap: spacing.xs }]}>
             <AppText variant="title3" accessibilityRole="header">
               {`Day ${section.index + 1} · ${formatDayHeading(section.day)}`}
@@ -263,9 +303,19 @@ export default function ItineraryScreen() {
       )}
       renderSectionFooter={({ section }) =>
         section.data.length === 0 ? (
-          <View style={[styles.emptyDay, { paddingLeft: RAIL + spacing.xs, paddingVertical: spacing.xxs }]}>
+          <View
+            style={[
+              styles.emptyDay,
+              {
+                marginLeft: RAIL + spacing.xs,
+                padding: spacing.sm,
+                borderRadius: radii.lg,
+                borderColor: colors.separator,
+              },
+            ]}
+          >
             <AppText variant="subhead" color="labelSecondary">
-              Nothing planned. Tap Add to plan this day.
+              Nothing planned yet. Tap Add to plan this day.
             </AppText>
           </View>
         ) : null
@@ -291,17 +341,44 @@ const styles = StyleSheet.create({
   content: { width: '100%', alignSelf: 'center' },
   inline: { flexDirection: 'row', alignItems: 'center' },
   shrink: { flexShrink: 1 },
-  dayHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' },
-  dayTitle: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flexShrink: 1 },
-  emptyDay: { minHeight: 32, justifyContent: 'center' },
+  dayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+  },
+  dayTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    flexShrink: 1,
+  },
+  emptyDay: {
+    minHeight: 44,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
   stopRow: { flexDirection: 'row', alignItems: 'stretch' },
   rail: { alignItems: 'center' },
   railSegment: { flex: 1, minHeight: 8, alignItems: 'center' },
-  card: { flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
+  card: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  timePill: { alignSelf: 'flex-start', paddingVertical: 2 },
   cardMain: { flex: 1, justifyContent: 'center' },
   reorder: { flexDirection: 'row' },
   reorderStacked: { flexDirection: 'column' },
   arrow: { alignItems: 'center', justifyContent: 'center' },
   arrowDisabled: { opacity: 0.3 },
-  comments: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch' },
+  comments: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'stretch',
+  },
 });
