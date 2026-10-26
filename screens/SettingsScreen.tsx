@@ -1,7 +1,10 @@
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
-import { ActivityIndicator, Linking } from 'react-native';
+import { ActivityIndicator, Linking, View } from 'react-native';
 import appConfig from '../app.json';
+import { AppText } from '../components/AppText';
+import { Avatar } from '../components/Avatar';
+import { Reveal } from '../components/Reveal';
 import { InlineBanner } from '../components/InlineBanner';
 import { Icon, IconName } from '../components/Icon';
 import { ListRow } from '../components/ListRow';
@@ -83,7 +86,7 @@ const appearanceOptions: { value: ThemePreference; label: string; icon: IconName
 ];
 
 export default function SettingsScreen() {
-  const { colors, preference, setPreference } = useTheme();
+  const { colors, spacing, radii, preference, setPreference } = useTheme();
   const { email, userId, signOut } = useAuth();
   const navigation = useNavigation<TabScreenNavigation>();
   const { trips, activeTrip } = useTrip();
@@ -114,10 +117,30 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
-      <ListSection header="Account">
-        {name ? <ListRow leading={<Icon name="person-circle-outline" size={24} color="accent" />} title="Name" value={name} /> : null}
-        <ListRow leading={<Icon name="mail-outline" size={24} color="accent" />} title="Email" subtitle={email ?? 'Unknown'} />
-      </ListSection>
+      <Reveal>
+        <View
+          accessible
+          accessibilityLabel={`Signed in${name ? ` as ${name}` : ''}, ${email ?? 'email unknown'}`}
+          style={{
+            backgroundColor: colors.hero,
+            borderRadius: radii.xl,
+            padding: spacing.lg,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.md,
+          }}
+        >
+          <Avatar name={name} size={56} />
+          <View style={{ flexShrink: 1, gap: spacing.xxs }}>
+            <AppText variant="title2" color="onHero">
+              {name ?? 'Your account'}
+            </AppText>
+            <AppText variant="subhead" color="onHeroSecondary">
+              {email ?? 'Unknown'}
+            </AppText>
+          </View>
+        </View>
+      </Reveal>
 
       {activeTrip ? (
         <ListSection header="Current Trip">
