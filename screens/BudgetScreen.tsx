@@ -1,13 +1,10 @@
 import { useNavigation } from '@react-navigation/native';
 import { useLayoutEffect, useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { AppText } from '../components/AppText';
 import { Avatar } from '../components/Avatar';
-import { BudgetMeter } from '../components/BudgetMeter';
 import { Button } from '../components/Button';
-import { Card } from '../components/Card';
 import { CATEGORY_ICONS } from '../components/categoryIcons';
 import { EmptyState } from '../components/EmptyState';
+import { HeroStat } from '../components/HeroStat';
 import { HeaderButton } from '../components/HeaderButton';
 import { Icon } from '../components/Icon';
 import { InlineBanner } from '../components/InlineBanner';
@@ -18,7 +15,6 @@ import { Screen } from '../components/Screen';
 import { SkeletonList } from '../components/Skeleton';
 import { useAuth } from '../hooks/useAuth';
 import { useExpenses } from '../hooks/useExpenses';
-import { useTheme } from '../hooks/useTheme';
 import { useTrip } from '../hooks/useTrip';
 import { BudgetCalculator, BudgetSummary } from '../models/BudgetCalculator';
 import { CATEGORY_LABELS, ExpenseModel } from '../models/ExpenseModel';
@@ -31,7 +27,6 @@ import { TabScreenNavigation } from './types';
 
 /** Spent vs. budget on the navy hero card. The status line always says it in words, with an icon when over. */
 function SummaryCard({ summary }: { summary: BudgetSummary }) {
-  const { spacing } = useTheme();
   const hasBudget = summary.budgetCents > 0;
   const status = !hasBudget
     ? 'No budget set for this trip'
@@ -41,28 +36,15 @@ function SummaryCard({ summary }: { summary: BudgetSummary }) {
   const spoken = `Spent ${formatCents(summary.spentCents)}${hasBudget ? ` of ${formatCents(summary.budgetCents)}` : ''}. ${status}.`;
 
   return (
-    <Card variant="hero" accessible accessibilityLabel={spoken}>
-      <AppText variant="subheadStrong" color="onHeroSecondary">
-        Spent so far
-      </AppText>
-      <View style={[styles.amountLine, { gap: spacing.xs }]}>
-        <AppText variant="largeTitle" color="onHero" tabular>
-          {formatCents(summary.spentCents)}
-        </AppText>
-        {hasBudget ? (
-          <AppText variant="callout" color="onHeroSecondary" tabular>
-            {`of ${formatCents(summary.budgetCents)}`}
-          </AppText>
-        ) : null}
-      </View>
-      {summary.fractionUsed !== null ? <BudgetMeter fraction={summary.fractionUsed} /> : null}
-      <View style={[styles.inline, { gap: spacing.xxs + 2 }]}>
-        {summary.overBudget ? <Icon name="alert-circle" size={18} color="heroAccent" /> : null}
-        <AppText variant={summary.overBudget ? 'headline' : 'callout'} color="onHero">
-          {status}
-        </AppText>
-      </View>
-    </Card>
+    <HeroStat
+      eyebrow="Spent so far"
+      figure={formatCents(summary.spentCents)}
+      figureNote={hasBudget ? `of ${formatCents(summary.budgetCents)}` : undefined}
+      fraction={summary.fractionUsed}
+      status={status}
+      statusIcon={summary.overBudget ? 'alert-circle' : hasBudget ? 'wallet-outline' : 'information-circle-outline'}
+      accessibilityLabel={spoken}
+    />
   );
 }
 
@@ -76,7 +58,9 @@ export default function BudgetScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: activeTrip
-        ? () => <HeaderButton icon="add" accessibilityLabel="Add expense" onPress={() => navigation.navigate('Expense')} />
+        ? () => (
+            <HeaderButton icon="add" accessibilityLabel="Add expense" onPress={() => navigation.navigate('Expense')} />
+          )
         : undefined,
     });
   }, [navigation, activeTrip]);
@@ -90,7 +74,11 @@ export default function BudgetScreen() {
       BudgetCalculator.settleUp(
         BudgetCalculator.balances(
           expenses,
-          settlements.map((s) => ({ from: s.fromUser, to: s.toUser, amountCents: s.amountCents })),
+          settlements.map((s) => ({
+            from: s.fromUser,
+            to: s.toUser,
+            amountCents: s.amountCents,
+          })),
         ),
       ),
     [expenses, settlements],
@@ -129,7 +117,9 @@ export default function BudgetScreen() {
       confirmLabel: 'Mark as Paid',
       destructive: false,
       onConfirm: () =>
-        void recordPayment({ fromUser: from, toUser: to, amountCents }).then((r) => setPaymentError(r.ok ? null : r.error)),
+        void recordPayment({ fromUser: from, toUser: to, amountCents }).then((r) =>
+          setPaymentError(r.ok ? null : r.error),
+        ),
     });
 
   const confirmUndo = (id: string, from: string, to: string, amountCents: number) =>
@@ -204,7 +194,11 @@ export default function BudgetScreen() {
                     value={formatCents(payment.amountCents)}
                     trailing={canUndo ? 'chevron' : undefined}
                     accessibilityHint={canUndo ? 'Opens the option to undo this payment' : undefined}
-                    onPress={canUndo ? () => confirmUndo(payment.id, payment.fromUser, payment.toUser, payment.amountCents) : undefined}
+                    onPress={
+                      canUndo
+                        ? () => confirmUndo(payment.id, payment.fromUser, payment.toUser, payment.amountCents)
+                        : undefined
+                    }
                   />
                 );
               })}
@@ -239,7 +233,14 @@ export default function BudgetScreen() {
                   value={formatCents(expense.amountCents)}
                   trailing={editable ? 'chevron' : undefined}
                   accessibilityHint={editable ? 'Opens the expense to edit or delete it' : undefined}
-                  onPress={editable ? () => navigation.navigate('Expense', { expenseId: expense.id }) : undefined}
+                  onPress={
+                    editable
+                      ? () =>
+                          navigation.navigate('Expense', {
+                            expenseId: expense.id,
+                          })
+                      : undefined
+                  }
                 />
               );
             })}
@@ -249,8 +250,3 @@ export default function BudgetScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  amountLine: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap' },
-  inline: { flexDirection: 'row', alignItems: 'center' },
-});
