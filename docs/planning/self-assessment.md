@@ -51,3 +51,5 @@ Updated Oct 25. Talking points for each are in [[known-limits]]; usability sessi
 9. **Expo Router.** The project guide prefers Expo Router; TripHub uses React Navigation directly. Not a rating-sheet item, and switching now would be risky; mention it only if asked.
 
 Update Oct 25 (later): item 4 (vendored Apple HIG content) is now untracked and git-ignored; the files remain only on this computer. Delete the `tester@example.com` account before submission ([[bug-list-2026-10-25]]).
+
+Update Oct 26: item 6 (account controls) done: change name and delete account in Settings (migration 012, needs running in Supabase). The expense form now explains how splits work.

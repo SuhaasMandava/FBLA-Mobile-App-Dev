@@ -26,3 +26,5 @@ One entry per decision: what, why. Newest at the bottom. Dates come from `docs/p
 - **Keep the existing app icon** (Oct 25): it already matches the palette; a new one would not improve the score and risks looking unfinished. Icon exploration stays in `icon-options/`.
 - **Motion: one staggered entrance, nothing looping** (Oct 25, accessibility review): `Reveal` plus the Route fill; all honor Reduce Motion.
 - **Stay on the latest Expo SDK before the event** (Oct 26): iOS Expo Go cannot run older SDKs, so the demo phones force the version. Do not upgrade again before presenting unless Expo Go changes.
+
+- Delete account is a SECURITY DEFINER function (012), since the app can't touch `auth.users`. It refuses (`hand_over_trip`) if the user is the only organizer of a trip with other members, and deletes trips where they are the only member. Expenses they paid are deleted by the existing cascade.
