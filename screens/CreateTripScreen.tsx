@@ -81,7 +81,7 @@ export default function CreateTripScreen() {
         placeholder="e.g. 1500"
         keyboardType="decimal-pad"
         returnKeyType="done"
-        onSubmitEditing={form.submit}
+        onSubmitEditing={() => void form.submit()}
       />
 
       {form.submitError ? <InlineBanner tone="error" message={form.submitError} /> : null}

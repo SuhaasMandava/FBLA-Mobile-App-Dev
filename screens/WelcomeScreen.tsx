@@ -1,5 +1,5 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useEffect, useRef, useState } from 'react';
+import { ComponentRef, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../components/AppText';
@@ -47,7 +47,7 @@ export default function WelcomeScreen() {
   const route = useRoute();
   const { markSeen } = useIntro();
   const [index, setIndex] = useState(0);
-  const titleRef = useRef<View>(null);
+  const titleRef = useRef<ComponentRef<typeof View>>(null);
   const step = STEPS[index];
   const last = index === STEPS.length - 1;
   const replay = route.name === 'Intro'; // opened from Settings, as a sheet

@@ -42,7 +42,7 @@ function SignInForm() {
         autoComplete="current-password"
         textContentType="password"
         returnKeyType="done"
-        onSubmitEditing={form.submit}
+        onSubmitEditing={() => void form.submit()}
       />
       {form.submitError ? <InlineBanner tone="error" message={form.submitError} /> : null}
       <Button label="Sign In" onPress={form.submit} loading={form.submitting} />
@@ -106,7 +106,7 @@ function SignUpForm() {
         autoComplete="new-password"
         textContentType="newPassword"
         returnKeyType="done"
-        onSubmitEditing={form.submit}
+        onSubmitEditing={() => void form.submit()}
       />
       {form.submitError ? <InlineBanner tone="error" message={form.submitError} /> : null}
       <Button label="Create Account" onPress={form.submit} loading={form.submitting} />

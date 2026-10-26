@@ -1,4 +1,4 @@
-import { Ref, useState } from 'react';
+import { ComponentRef, Ref, useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, TextInputProps, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
 import { AppText } from './AppText';
@@ -13,7 +13,7 @@ interface TextFieldProps extends Omit<TextInputProps, 'style' | 'accessibilityLa
   success?: string | null;
   /** Visible guidance under the field (also spoken), e.g. the expected format. */
   helper?: string;
-  inputRef?: Ref<TextInput>;
+  inputRef?: Ref<ComponentRef<typeof TextInput>>;
   /** For secure fields: offer a Show/Hide button. Off where the text must stay hidden (choosing a new password). */
   revealable?: boolean;
   /** Larger, spaced monospace text, for the invite code. */

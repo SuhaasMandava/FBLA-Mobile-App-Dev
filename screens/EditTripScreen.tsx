@@ -96,7 +96,7 @@ function EditTripForm({ trip }: { trip: Trip }) {
         helper="The total for the whole trip, in dollars."
         keyboardType="decimal-pad"
         returnKeyType="done"
-        onSubmitEditing={form.submit}
+        onSubmitEditing={() => void form.submit()}
       />
       {form.submitError ? <InlineBanner tone="error" message={form.submitError} /> : null}
     </Sheet>

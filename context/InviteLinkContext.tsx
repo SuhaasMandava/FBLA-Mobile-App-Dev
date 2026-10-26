@@ -21,7 +21,7 @@ export function InviteLinkProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    const take = (url: string | null) => {
+    const take = (url: string | null | undefined) => {
       const code = parseJoinLink(url);
       if (active && code) setPendingCode(code);
     };

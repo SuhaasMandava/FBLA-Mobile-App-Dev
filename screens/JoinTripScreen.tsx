@@ -70,7 +70,7 @@ function JoinTripForm({ linkCode }: { linkCode?: string }) {
         autoComplete="off"
         maxLength={10}
         returnKeyType="done"
-        onSubmitEditing={form.submit}
+        onSubmitEditing={() => void form.submit()}
       />
     </Sheet>
   );
