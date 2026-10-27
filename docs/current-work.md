@@ -43,3 +43,5 @@ Update at the end of every session. Last updated: 2026-10-24, from `docs/plannin
 - Oct 26: README rewritten for judges and non-coders; old README moved to [[technical-reference]]. Home screenshots added (3, dark mode); all four tabs added (Home 3, others 2 each); Settings and light/dark added (3); optional extras (large text, trip summary, comments) not taken (`docs/screenshots/`, see its README). Re-check README claims (249 tests, features) after device testing.
 - Oct 26: migration 012 run in Supabase (Success). Delete Account and Your Name still to be tried with a throwaway account.
 - Oct 26: everything committed and pushed to origin/main (cafdc39): redesign, SDK 58 upgrade, Reveal width fix, notes. Local-only branches: `sdk-58-upgrade` (merged), `budget-tab`, `backup-before-rebase`. `docs/Untitled.base` and `Untitled.canvas` are empty Obsidian scratch files, not committed.
+
+- Oct 26: README rewrite and 12 screenshots committed and pushed to `main` (`9d8841b`). Repo visibility and the FBLA PDF check are in [[human-todo-later]].

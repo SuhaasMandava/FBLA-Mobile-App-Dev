@@ -34,3 +34,6 @@ Parked until the app is built and tested. Not needed now. The current list is [[
 - [ ] Delete the extra test user `verify.bot.1026@example.com` in Supabase (Authentication → Users) and fix or delete `tester@example.com` (its user has no `profiles` row, so it can't create trips)
 - [ ] Delete the empty Obsidian scratch files `docs/Untitled.base` and `docs/Untitled.canvas` (untracked)
 - [ ] Optionally delete the merged local branch `sdk-58-upgrade`
+
+- [ ] Before making the GitHub repo public (judges see the README screenshots only if it is): confirm `git ls-files docs/references/fbla` is empty (the FBLA PDF is copyrighted; checked Oct 26, it is git-ignored via `.gitignore`), and remove the vendored `.claude/skills/apple-design/` (see technical-reference → Before submitting).
+- [ ] Optional extra README screenshots: Trip Summary (Budget → Wrap Up), an activity comment thread, large-text Home. Add to `docs/screenshots/`, link in the README, describe in [[references/index|references]].
