@@ -63,6 +63,6 @@ Checklist
 - [ ] Checklist delete rule: only the adder or an organizer (matches itinerary). Keep, or let any member delete?
 - [ ] Skills from the TikTok list: install any yourself at user level after reading their hooks (see [[candidate-skills]]); I recommend only ponytail's review commands, and none in the submitted repo
 
-- [ ] Take 4 phone screenshots of the demo trip (home, itinerary, budget, checklist) and save them in `docs/screenshots/` with the names in its README; the root README embeds them.
+- [x] Take a screenshot of Checklist (Home, Itinerary and Budget done) and save as `checklist.png` in `docs/screenshots/`; hide the Expo dev-menu gear first (as in the Home shots).
 
 - Try Delete Account (Settings, bottom) with a throwaway account, including the "hand over the trip first" refusal as sole organizer of a trip with members. Try Settings → Your Name and check the new name shows on the other phone after a refresh.
