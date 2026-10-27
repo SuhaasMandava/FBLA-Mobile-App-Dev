@@ -19,6 +19,7 @@ Start here. Read only the notes you need for the task.
 
 - [[bug-list-2026-10-25]]: bugs found in the web pass, fixed and open
 
+- [[readme-guide]]: how the judge-facing README is structured and which claims to re-check before submitting
 - [[app-screens]]: screenshots of every tab with what each shows (light and dark)
 - [[trip-hub]]: the redesigned home screen; [[screen-changelog]] (before/after per screen); [[user-journey-and-accessibility]]
 - [[design-talking-points]]: 7-minute design segment and judge Q&A
