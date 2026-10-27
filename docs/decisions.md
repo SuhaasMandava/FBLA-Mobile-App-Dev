@@ -28,3 +28,7 @@ One entry per decision: what, why. Newest at the bottom. Dates come from `docs/p
 - **Stay on the latest Expo SDK before the event** (Oct 26): iOS Expo Go cannot run older SDKs, so the demo phones force the version. Do not upgrade again before presenting unless Expo Go changes.
 
 - Delete account is a SECURITY DEFINER function (012), since the app can't touch `auth.users`. It refuses (`hand_over_trip`) if the user is the only organizer of a trip with other members, and deletes trips where they are the only member. Expenses they paid are deleted by the existing cascade.
+
+- **README is for judges, the manual is `docs/technical-reference.md`** (Oct 26): FBLA judges and non-coders read the README first, so it is a short plain-language pitch (problem, features, topic mapping, accessibility, how to try it) with screenshots. The old 550-line README moved intact to `docs/technical-reference.md`; its SDK/font credits were corrected. Screenshots live in `docs/screenshots/` with fixed filenames.
+
+- Supabase MCP (so Claude could run SQL) was considered and skipped: needs an account-level access token, and migrations are run by hand in the SQL editor (about 30 seconds each). Revisit only if migrations become frequent. If added, scope with `--project-ref` and use a dev project only.

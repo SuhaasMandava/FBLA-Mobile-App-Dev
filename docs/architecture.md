@@ -1,6 +1,6 @@
 # Architecture
 
-MVVM. Full diagram: `README.md` → Architecture (MVVM). React Navigation (stack + bottom tabs), not Expo Router: routes in `screens/RootNavigator.tsx`, param types in `screens/types.ts`.
+MVVM. Full diagram: `docs/technical-reference.md` → Architecture (MVVM). React Navigation (stack + bottom tabs), not Expo Router: routes in `screens/RootNavigator.tsx`, param types in `screens/types.ts`.
 
 | Layer | Folder | Rule |
 | --- | --- | --- |

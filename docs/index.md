@@ -2,7 +2,7 @@
 
 Start here. Read only the notes you need for the task.
 
-**What it is:** TripHub, a group trip planner (Expo SDK 58, React Native, Supabase). Entry for the FBLA Mobile Application Development event, topic "Together We Go: Group Trip Planner". Full overview: `README.md`.
+**What it is:** TripHub, a group trip planner (Expo SDK 58, React Native, Supabase). Entry for the FBLA Mobile Application Development event, topic "Together We Go: Group Trip Planner". Friendly overview for judges: `README.md`; developer manual: [[technical-reference]].
 
 ## Notes
 - [[architecture]]: folders, MVVM layers, provider order, data flow
@@ -25,7 +25,9 @@ Start here. Read only the notes you need for the task.
 - [[candidate-skills]]: three third-party Claude Code skills, reviewed and deliberately not installed
 
 ## Existing docs (don't duplicate, link instead)
-- `README.md`: setup, EAS builds, demo steps, demo seed, database schema, Row Level Security, credits
+- `README.md`: short, non-technical overview for FBLA judges (problem, features, topic mapping, accessibility, screenshots)
+- `docs/technical-reference.md`: setup, EAS builds, demo steps, demo seed, architecture, database schema, Row Level Security, credits (the old README)
+- `docs/screenshots/`: PNGs the README embeds; `README.md` there lists the exact filenames
 - `docs/design-system.md`: tokens, components, UX audit (large; search it, don't read it whole)
 - `docs/planning/timeline.md`: milestones and definition of done
 - `docs/planning/requirements-map.md`: prompt and rating sheet mapped to features and code

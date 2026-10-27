@@ -4,7 +4,7 @@ created: 2026-10-25
 ---
 # Demo script (7 minutes)
 
-Timed run for the live demo. The README → Demo steps is the source; this adds the new payment beat and cut rules. Related: [[qa-cheatsheet]], [[backup-plan]], [[human-todo]] (section E), [[current-work]].
+Timed run for the live demo. The technical-reference → Demo steps is the source; this adds the new payment beat and cut rules. Related: [[qa-cheatsheet]], [[backup-plan]], [[human-todo]] (section E), [[current-work]].
 
 Setup (3 min allowed before): two phones, A = organizer, B = member, demo trip loaded, notifications on, phones charged. No QR codes or links for judges to open.
 

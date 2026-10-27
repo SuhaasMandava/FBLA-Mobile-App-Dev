@@ -33,3 +33,7 @@ Bugs, quirks and failed approaches. One or two lines each, newest at the bottom.
 - **Empty state text and buttons ran off both edges of the screen on iPhone (Expo Go)** → an Animated wrapper (`Reveal`) inside a centered column shrank to its content width; it now sets `alignSelf: "stretch"` (`components/Reveal.tsx`). Web did not show it, so check new wrappers on a phone.
 - **Creating a trip fails with "Something went wrong"; console: `Key (user_id) is not present in table "profiles"` (23503)** → that auth user has no `profiles` row (the signup trigger `on_auth_user_created` did not run for it; seen on `tester@example.com`, Oct 26). A fresh sign-up works. Fix by inserting the row in Supabase or using a new account.
 - `npx expo lint .` also lints `docs/.obsidian/plugins/*` (thousands of errors); lint the app folders instead: `npx eslint screens services models hooks context components scripts`.
+
+- Root README embeds `docs/screenshots/{home,itinerary,budget,checklist}.png`; until those files exist the images show as broken. Add them (names in `docs/screenshots/README.md`) before submitting. Links into the manual use `docs/technical-reference.md#anchor`.
+- Files here use CRLF line endings. Scripted edits with multi-line string matches silently fail to match; use the Edit tool or normalize first. Writing `\n` inside a JS string via Python must be `\n`, or the string breaks across lines.
+- "Success. No rows returned" in the Supabase SQL editor is the normal result for migrations (they create objects, they don't select rows).

@@ -3,7 +3,7 @@
 ## Commands
 ```bash
 npx expo start          # dev server (restart after changing .env)
-npx expo lint .         # lint. Bare `npx expo lint` only checks components/ (README)
+npx expo lint .         # lint. Bare `npx expo lint` only checks components/ (technical-reference)
 npx tsc --noEmit        # typecheck
 npm test                # unit tests (jest-expo): models/ and utils/
 npm run test:db         # database rules in in-memory Postgres (PGlite), scripts/test-database.mjs
@@ -25,9 +25,12 @@ Run lint, typecheck and tests before calling a task done.
 - No Claude/Co-Authored-By attribution in commits or PRs (`CLAUDE.md`).
 
 ## Definition of done (per feature)
-Migration + RLS + db test → zod model + unit tests → service → hook/context → screens → README updated. Typecheck, lint and tests pass. Source: `docs/planning/timeline.md`.
+Migration + RLS + db test → zod model + unit tests → service → hook/context → screens → README (if user-visible) and technical-reference updated. Typecheck, lint and tests pass. Source: `docs/planning/timeline.md`.
 
 - Product context lives in root `PRODUCT.md` (Impeccable); the design detector hook is enabled in `.impeccable/config.json`; `config.local.json` is git-ignored. Decisions: [[decisions]].
 - Impeccable (design plugin) runs inside the same Claude session, so it already has the Obsidian MCP. `PRODUCT.md` → Operating Context tells it which notes to read and where to record changes. Deny list stays: no `vault_delete`, no `command_execute` (`.claude/settings.json`).
 
 - Titles and numerals use the display font through type roles (`AppText variant`), never a raw `fontFamily`. New animated entrances go through `Reveal` so Reduce Motion is honored. Any new third-party asset gets a row in `docs/references/index.md` (name, URL, license) in the same change.
+
+- Lint the app folders, not the repo root: `npx eslint screens services models hooks context components scripts` (root lint also scans `docs/.obsidian`).
+- After adding a migration: add its checks to `scripts/test-database.mjs`, run `npm run test:db`, then run the file in the Supabase SQL editor and log it in [[current-work]].

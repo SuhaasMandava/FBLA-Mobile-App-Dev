@@ -17,7 +17,7 @@ Sign-up with weak/mismatched password errors; Create Trip validation (empty fiel
 - [x] Project upgraded to Expo SDK 58 so the App Store Expo Go can open it (Oct 26)
 - [x] Install Expo Go on both phones, run `npx expo start`, scan the QR code with each phone's Camera (same Wi-Fi, or a phone hotspot). Report any error text
 - [x] Create two accounts (one per phone) and make one the organizer; join the other with the invite code
-- [ ] Load the seed trip for realistic test data: create `demo.organizer@example.com` and `demo.member@example.com` in the app, then run `supabase/seed/demo_trip.sql` in the Supabase SQL editor (README → Demo mode)
+- [ ] Load the seed trip for realistic test data: create `demo.organizer@example.com` and `demo.member@example.com` in the app, then run `supabase/seed/demo_trip.sql` in the Supabase SQL editor (technical-reference → Demo mode)
 
 ## 2. Two-phone test: Budget and Checklist (money and shared list)
 Budget
@@ -62,3 +62,7 @@ Checklist
 ## 5. Decisions to confirm (lowest urgency; defaults already work)
 - [ ] Checklist delete rule: only the adder or an organizer (matches itinerary). Keep, or let any member delete?
 - [ ] Skills from the TikTok list: install any yourself at user level after reading their hooks (see [[candidate-skills]]); I recommend only ponytail's review commands, and none in the submitted repo
+
+- [ ] Take 4 phone screenshots of the demo trip (home, itinerary, budget, checklist) and save them in `docs/screenshots/` with the names in its README; the root README embeds them.
+
+- Try Delete Account (Settings, bottom) with a throwaway account, including the "hand over the trip first" refusal as sole organizer of a trip with members. Try Settings → Your Name and check the new name shows on the other phone after a refresh.

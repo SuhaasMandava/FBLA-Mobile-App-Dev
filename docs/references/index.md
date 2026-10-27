@@ -18,7 +18,10 @@ The Pin icon in four palettes, with hex values:
 Source of truth for the live palette is `theme/theme.ts`, not this image.
 
 ## Documents
-- (none yet)
+- [[technical-reference]]: the full developer manual (former README).
+
+## Screenshots for the README
+Folder `docs/screenshots/`; required names `home.png`, `itinerary.png`, `budget.png`, `checklist.png` (details in its README). When the user provides them, describe each here (what screen, which demo data).
 
 ## FBLA competition materials
 Folder for the official files: `docs/references/fbla/` (create it and drop them in). Suggested files: the event guidelines PDF, the rating sheet, the 2026-2027 topic/prompt, and any judge or coordinator emails. When one is added, catalog it here with its key numbers (time limits, point values per rating item, required deliverables) so Claude doesn't re-read the PDF.
