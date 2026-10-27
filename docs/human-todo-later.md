@@ -32,3 +32,5 @@ Parked until the app is built and tested. Not needed now. The current list is [[
 - [ ] Keep the sourcing table in `references/index.md` in the submission; judges require credits for the font and icons
 - [ ] Commit the vault edits in `docs/` when you are happy (still uncommitted in your working tree)
 - [ ] Delete the extra test user `verify.bot.1026@example.com` in Supabase (Authentication → Users) and fix or delete `tester@example.com` (its user has no `profiles` row, so it can't create trips)
+- [ ] Delete the empty Obsidian scratch files `docs/Untitled.base` and `docs/Untitled.canvas` (untracked)
+- [ ] Optionally delete the merged local branch `sdk-58-upgrade`

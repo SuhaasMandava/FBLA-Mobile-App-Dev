@@ -42,3 +42,4 @@ Update at the end of every session. Last updated: 2026-10-24, from `docs/plannin
 
 - Oct 26: README rewritten for judges and non-coders; old README moved to [[technical-reference]]. Waiting on the user's screenshots (`docs/screenshots/`, see its README). Re-check README claims (249 tests, features) after device testing.
 - Oct 26: migration 012 run in Supabase (Success). Delete Account and Your Name still to be tried with a throwaway account.
+- Oct 26: everything committed and pushed to origin/main (cafdc39): redesign, SDK 58 upgrade, Reveal width fix, notes. Local-only branches: `sdk-58-upgrade` (merged), `budget-tab`, `backup-before-rebase`. `docs/Untitled.base` and `Untitled.canvas` are empty Obsidian scratch files, not committed.
