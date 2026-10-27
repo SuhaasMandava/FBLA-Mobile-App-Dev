@@ -271,8 +271,9 @@ export function RouteProgress({
 
 const styles = StyleSheet.create({
   lineClip: { overflow: 'hidden', alignItems: 'center' },
-  lineVertical: { flex: 1, width: DOT },
-  lineHorizontal: { flex: 1, flexDirection: 'row', height: DOT },
+  // Absolutely placed so the 80 dots never set their container's height (they only fill the space it has).
+  lineVertical: { position: 'absolute', top: 0, bottom: 0, left: '50%', marginLeft: -DOT / 2, width: DOT },
+  lineHorizontal: { position: 'absolute', left: 0, right: 0, top: 0, height: DOT, flexDirection: 'row' },
   faded: { opacity: 0.45 },
   disc: {
     overflow: 'hidden',

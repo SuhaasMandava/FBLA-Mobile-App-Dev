@@ -27,3 +27,5 @@ One entry per screen: before, after, files, git checkpoint (roll back with `git 
 ## Fixes after first phone run (Oct 26)
 - `Reveal` now fills its parent's width (`alignSelf: stretch`): on iPhone the empty-state text and buttons ran off both screen edges because the animation wrapper shrank to its content (`components/Reveal.tsx`, commit "Fix empty states overflowing...").
 - Web check of Trip Hub, Itinerary, Budget, Checklist, Trip Summary with real data (single user) found no layout problems; see [[human-todo]] section 0.
+
+- Oct 26 (phone): Itinerary cards were huge on iPhone because of the dotted rail (`DottedLine`); fixed in `components/Route.tsx` (also used by the Trip Hub ticket perforation, checked on web).
