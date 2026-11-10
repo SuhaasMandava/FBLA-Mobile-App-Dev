@@ -119,6 +119,26 @@ await rows("an organizer deletes a member's comment", SAM, `delete from public.a
 await rows('an author deletes their own comment', SAM, `delete from public.activity_comments where created_by = $1 returning id`, 1, [SAM]);
 await as(ALEX, `insert into public.activity_comments (item_id, body) values ($1, 'Still here')`, [item.id]);
 
+console.log('\nGroup chat (013)');
+const [chat] = await rows('a member sends a message', ALEX,
+  `insert into public.trip_messages (trip_id, body) values ($1, 'Who is driving?') returning *`, 1, [trip.id]);
+check('the default fills in the author', chat?.created_by === ALEX && chat?.item_id === null);
+const [aboutItem] = await rows('a message can point at an activity on the trip', SAM,
+  `insert into public.trip_messages (trip_id, body, item_id) values ($1, 'Meet 10 minutes early', $2) returning *`, 1, [trip.id, item.id]);
+check('the link is kept', aboutItem?.item_id === item.id);
+await refused('an outsider cannot send', JO, `insert into public.trip_messages (trip_id, body) values ($1, 'hi')`, /row-level security/, [trip.id]);
+await refused('nobody can set the author', ALEX, `insert into public.trip_messages (trip_id, body, created_by) values ($1, 'x', $2)`, /permission denied/, [trip.id, SAM]);
+await refused('an activity that is not on the trip is refused', ALEX, `insert into public.trip_messages (trip_id, body, item_id) values ($1, 'x', gen_random_uuid())`, /activity_not_found/, [trip.id]);
+await refused('more than 500 characters is refused', ALEX, `insert into public.trip_messages (trip_id, body) values ($1, repeat('x', 501))`, /check constraint/, [trip.id]);
+await refused('blank text is refused', ALEX, `insert into public.trip_messages (trip_id, body) values ($1, '   ')`, /check constraint/, [trip.id]);
+await refused('messages cannot be edited', ALEX, `update public.trip_messages set body = 'changed'`, /permission denied/);
+await rows('a member reads the conversation', ALEX, `select * from public.trip_messages`, 2);
+await rows('an outsider reads none', JO, `select * from public.trip_messages`, 0);
+await rows("a member cannot delete someone else's message", ALEX, `delete from public.trip_messages where created_by = $1 returning id`, 0, [SAM]);
+await rows("an organizer deletes a member's message", SAM, `delete from public.trip_messages where id = $1 returning id`, 1, [chat.id]);
+await rows('an author deletes their own message', SAM, `delete from public.trip_messages where id = $1 returning id`, 1, [aboutItem.id]);
+await as(ALEX, `insert into public.trip_messages (trip_id, body) values ($1, 'Still here')`, [trip.id]);
+
 console.log('\nSettlements (010)');
 const pay = `insert into public.settlements (trip_id, from_user, to_user, amount_cents) values ($1, $2, $3, `;
 await refused('a payer cannot record their own payment', ALEX, `${pay}2500)`, /row-level security/, [trip.id, ALEX, SAM]);
@@ -194,12 +214,12 @@ console.log('\nLive updates (009)');
 const published = (await db.query(`select tablename from pg_publication_tables where pubname = 'supabase_realtime'`)).rows.map(
   (r) => r.tablename,
 );
-for (const table of ['itinerary_items', 'expenses', 'checklist_items', 'trip_announcements', 'activity_comments', 'settlements']) {
+for (const table of ['itinerary_items', 'expenses', 'checklist_items', 'trip_announcements', 'activity_comments', 'settlements', 'trip_messages']) {
   check(`${table} is in the realtime publication`, published.includes(table), published.join(', '));
 }
 
 console.log('\nSigned-out visitors');
-for (const table of ['trips', 'trip_members', 'itinerary_items', 'expenses', 'checklist_items', 'trip_announcements', 'activity_comments', 'settlements']) {
+for (const table of ['trips', 'trip_members', 'itinerary_items', 'expenses', 'checklist_items', 'trip_announcements', 'activity_comments', 'settlements', 'trip_messages']) {
   await db.exec('set role anon;');
   let error = null;
   try {

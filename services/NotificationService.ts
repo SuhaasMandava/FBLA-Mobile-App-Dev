@@ -1,4 +1,3 @@
-import { isRunningInExpoGo } from 'expo';
 import { Platform } from 'react-native';
 import { PlannedReminder } from '../models/ReminderModel';
 
@@ -11,11 +10,12 @@ const REMINDER_CHANNEL = 'reminders';
 const EXPENSE_CHANNEL = 'expenses';
 
 /**
- * Local notifications are skipped in Expo Go and on the web. Expo Go dropped notification
- * support in SDK 53, and merely importing expo-notifications there prints warnings, so the
- * module is only loaded where it's usable (development, preview and store builds).
+ * Local notifications work on phones everywhere TripHub runs, Expo Go included: what Expo Go lost
+ * in SDK 53 was remote push on Android, which TripHub never used (Expo docs: "Local notifications
+ * remain available in Expo Go"). Only the web is skipped. The module is still loaded lazily, and
+ * every call is wrapped, so a failure to load turns reminders off instead of breaking a screen.
  */
-const supported = Platform.OS !== 'web' && !isRunningInExpoGo();
+const supported = Platform.OS !== 'web';
 
 let modulePromise: Promise<NotificationsModule> | null = null;
 function load(): Promise<NotificationsModule> {

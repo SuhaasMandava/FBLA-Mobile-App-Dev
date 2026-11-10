@@ -9,7 +9,7 @@ MVVM. Full diagram: `docs/technical-reference.md` → Architecture (MVVM). React
 | Model | `models/` | Plain TypeScript: zod forms (`*Form.ts`, `validation.ts`), calculators (`BudgetCalculator.ts`). No React, no network. Tests in `models/__tests__/`. |
 | Services | `services/` | The only code that talks to Supabase or the device (`TripService`, `ExpenseService`, `SettlementService`, `NotificationService`, `RealtimeService`, `ShareService`, `CacheService`...). |
 | Utils | `utils/` | Pure helpers: `money.ts`, `dates.ts`, `inviteCode.ts`, `inviteLink.ts`, `shareTargets.ts`, `tripProgress.ts`. Tests in `utils/__tests__/`. |
-| Database | `supabase/` | `schema.sql` baseline, `migrations/001` to `012` (010 = settlements, 011 = audit fixes, 012 = account controls), `seed/demo_trip.sql`. |
+| Database | `supabase/` | `schema.sql` baseline, `migrations/001` to `013` (010 = settlements, 011 = audit fixes, 012 = account controls, 013 = trip chat), `seed/demo_trip.sql`. |
 
 ## Entry and provider order
 `index.ts` → `App.tsx` → `screens/RootNavigator.tsx`. In `App.tsx`, outer to inner: Theme, ErrorBoundary, Network, InviteLink, NotificationSettings, Intro, Auth, then `components/SessionProviders.tsx` (the per-trip providers). If the Supabase env vars are missing, `App.tsx` shows a "TripHub isn't set up yet" screen instead (`backendConfigError` in `services/supabase.ts`).

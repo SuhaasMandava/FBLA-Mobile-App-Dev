@@ -22,6 +22,7 @@ import { fonts } from '../theme/theme';
 import ActivityCommentsScreen from './ActivityCommentsScreen';
 import AnnouncementsScreen from './AnnouncementsScreen';
 import BudgetScreen from './BudgetScreen';
+import ChatScreen from './ChatScreen';
 import ChecklistItemScreen from './ChecklistItemScreen';
 import ChecklistScreen from './ChecklistScreen';
 import CreateTripScreen from './CreateTripScreen';
@@ -76,12 +77,18 @@ const tabHeaderOptions: NativeStackNavigationOptions =
     : {};
 
 /** Wraps a tab's screen in its own stack so it gets a native header: large title on iOS, top app bar on Android. */
-function tabStack(component: ComponentType, title: string) {
+function tabStack(Component: ComponentType, title: string) {
+  // Switching trips keeps the navigator and the open tab, but each screen starts fresh for the new trip
+  // (no leftover edit mode or error banner from the last one).
+  function PerTripScreen() {
+    const { activeTripId } = useTrip();
+    return <Component key={activeTripId ?? 'no-trip'} />;
+  }
   function TabStackScreen() {
     const headerOptions = useHeaderOptions();
     return (
       <TabStack.Navigator screenOptions={{ ...headerOptions, ...tabHeaderOptions }}>
-        <TabStack.Screen name="Main" component={component} options={{ title }} />
+        <TabStack.Screen name="Main" component={PerTripScreen} options={{ title }} />
       </TabStack.Navigator>
     );
   }
@@ -135,8 +142,7 @@ function DoneButton() {
 
 /**
  * Opens the Join screen for a join link (triphub://join/CODE) once someone is signed in.
- * Waits for their trips to load first: picking the first trip remounts the navigator
- * (see SessionProviders), which would close a Join screen opened any earlier.
+ * Waits for their trips to load first, so the Join screen opens over a settled Home screen.
  */
 function useOpenJoinLink(ready: boolean) {
   const { status } = useAuth();
@@ -240,6 +246,12 @@ export default function RootNavigator() {
             <Stack.Screen name="TripSummary" component={TripSummaryScreen} options={{ ...doneSheet, title: 'Trip Summary' }} />
             <Stack.Screen name="EditTrip" component={EditTripScreen} options={{ ...formSheet, title: 'Edit Trip' }} />
             <Stack.Screen name="Intro" component={WelcomeScreen} options={{ ...doneSheet, title: 'How TripHub Works' }} />
+            {/* The chat has its own composer and manages the keyboard itself. */}
+            <Stack.Screen
+              name="Chat"
+              component={ChatScreen}
+              options={{ ...doneSheet, title: 'Trip Chat', headerStyle: { backgroundColor: colors.background } }}
+            />
             <Stack.Screen name="Announcements" component={AnnouncementsScreen} options={{ ...doneSheet, title: 'Announcements' }} />
             <Stack.Screen name="ActivityComments" component={ActivityCommentsScreen} options={{ ...doneSheet, title: 'Comments' }} />
           </>

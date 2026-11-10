@@ -5,7 +5,7 @@ updated: 2026-10-26
 ---
 # Human to-do (build stage)
 
-Only what is needed to finish building and testing the app, highest priority first. Presentation, demo and submission tasks are parked in [[human-todo-later]]. Context: [[current-work]], [[index]]. Phones: two iPhones running Expo Go (SDK 58). In Expo Go, reminders and `triphub://join/` links don't work; test those later in an installed build or skip them.
+Only what is needed to finish building and testing the app, highest priority first. Presentation, demo and submission tasks are parked in [[human-todo-later]]. Context: [[current-work]], [[index]]. Phones: two iPhones running Expo Go (SDK 58). In Expo Go, reminders work (since Nov 10) but `triphub://join/` links don't; test links later in an installed build or skip them.
 
 ## 0. Already verified by Claude on web (Oct 26, one signed-in user, phone-width browser)
 Sign-up with weak/mismatched password errors; Create Trip validation (empty fields, end before start); trip creation; Trip Hub ticket ("Day 1 of 4"), invite code tiles; checklist quick add and tick ("Done by you", Home tile 1/3); itinerary add with time (today's stop highlighted); $0 expense rejected; over-budget expense; Budget, Home tile and Trip Summary all show over budget; Next stop tile opens Itinerary; delete trip confirm and delete. NOT covered here: a second user (RLS, live sync, who-can-edit), sharing to apps, VoiceOver, large text, reminders, real iPhone layout. Database rules for two users pass in `npm run test:db`.
@@ -49,7 +49,8 @@ Checklist
 - [ ] Live sync: a change on A shows on B without pull-to-refresh; falls back to refresh when offline
 - [ ] Organizer tools: edit trip, delete trip, leave trip, remove member (confirm prompts, RLS blocks plain members)
 - [ ] Checklist quick-add and the first-run intro behave
-- [ ] Not in Expo Go (needs an installed build): reminders firing, and `triphub://join/CODE` links
+- [ ] Reminders in Expo Go: Settings, turn on Activity reminders, allow notifications, add an activity starting 31 to 35 minutes from now, lock the phone and wait for the alert
+- [ ] Not in Expo Go (needs an installed build): `triphub://join/CODE` links
 
 ## 4. Look at the redesign on a real phone (see [[trip-hub]], [[screen-changelog]])
 - [ ] Trip Hub: ticket and countdown show the right day; invite code tiles are readable and Share, WhatsApp, Text open the right app; the Checklist tile fills as you tick items; the Next stop tile opens the Itinerary; pull to refresh works; airplane mode shows the offline banner
@@ -66,3 +67,4 @@ Checklist
 - [x] Take a screenshot of Checklist (Home, Itinerary and Budget done) and save as `checklist.png` in `docs/screenshots/`; hide the Expo dev-menu gear first (as in the Home shots).
 
 - Try Delete Account (Settings, bottom) with a throwaway account, including the "hand over the trip first" refusal as sole organizer of a trip with members. Try Settings → Your Name and check the new name shows on the other phone after a refresh.
+- [ ] Run `supabase/migrations/013_trip_chat.sql` in the Supabase SQL editor, then test chat with two phones: send from one, see it live on the other, tag an activity, long-press your own message to delete.

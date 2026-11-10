@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { PerTripProvider } from './PerTripProvider';
 import { useLiveSync } from '../hooks/useLiveSync';
 import { useNetwork } from '../hooks/useNetwork';
 import { useNotificationSettings } from '../hooks/useNotificationSettings';
@@ -75,11 +76,11 @@ async function fetchSettlements(tripId: string): Promise<Settlement[] | null> {
 }
 
 /**
- * The active trip's expenses and recorded payments. Mounted once per trip (the parent keys it on the
+ * The active trip's expenses and recorded payments. Runs once per trip (PerTripProvider keys it on the
  * trip id), so switching trips never shows the previous trip's spending.
  * Readable offline from the saved copy; changes need a connection.
  */
-export function ExpenseProvider({ tripId, children }: { tripId: string | null; children: ReactNode }) {
+function useExpenseStore(tripId: string | null): ExpenseContextValue {
   const { userId } = useAuth();
   const { online, onReconnect } = useNetwork();
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -275,5 +276,14 @@ export function ExpenseProvider({ tripId, children }: { tripId: string | null; c
     [expenses, loading, error, refresh, addExpense, updateExpense, deleteExpense, settlements, recordPayment, undoPayment],
   );
 
-  return <ExpenseContext.Provider value={value}>{children}</ExpenseContext.Provider>;
+  return value;
+}
+
+/** Provides the active trip's data. Changing `tripId` resets it without remounting what's inside. */
+export function ExpenseProvider({ tripId, children }: { tripId: string | null; children: ReactNode }) {
+  return (
+    <PerTripProvider tripId={tripId} context={ExpenseContext} useStore={useExpenseStore}>
+      {children}
+    </PerTripProvider>
+  );
 }

@@ -8,7 +8,7 @@ export interface NotificationSettingsValue {
   /** What the person wants (saved on this phone). Reminders only go out when `permission` is also 'granted'. */
   prefs: NotificationPrefs;
   setPref: (key: keyof NotificationPrefs, value: boolean) => void;
-  /** What the phone allows. 'unsupported' in Expo Go and on the web. */
+  /** What the phone allows. 'unsupported' on the web. */
   permission: NotificationPermission;
   /** Ask the phone for permission (only prompts if it hasn't been answered yet). */
   requestPermission: () => Promise<NotificationPermission>;

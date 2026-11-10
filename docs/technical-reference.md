@@ -80,7 +80,7 @@ The anon key in `.env` is public by design (it ships inside the app). Row Level 
 
 | Profile | What you get | Use it for |
 | --- | --- | --- |
-| `preview` | An installable Android `.apk`, and an iOS build for registered devices (internal distribution) | Judges' and teammates' phones, two-phone testing, reminders and invite links (none of which work in Expo Go) |
+| `preview` | An installable Android `.apk`, and an iOS build for registered devices (internal distribution) | Judges' and teammates' phones, two-phone testing and `triphub://` invite links (which don't open Expo Go) |
 | `preview-simulator` | The same, but an iOS Simulator build | Demoing on a Mac without an Apple Developer account |
 | `production` | Store builds (Android `.aab`, App Store iOS) with the build number bumped automatically | Publishing |
 
@@ -289,7 +289,7 @@ Local notifications, scheduled by the phone itself (`services/NotificationServic
 - **Activity reminders.** 30 minutes before every activity on the open trip that has a start time. They're rescheduled automatically when an activity is added, retimed, renamed, moved or deleted, including by someone else (live updates), and cleared when you leave or delete the trip, sign out, or turn them off. At most 20 per trip are kept scheduled (iOS allows 64 pending notifications per app).
 - **New-expense alerts.** When someone else on the trip logs an expense while TripHub is open or running: "Sam paid $42.50 for Dinner." Your own expenses never alert you.
 - **Settings → Reminders** has a switch for each. Both start on, but nothing appears until the phone grants permission: TripHub asks the first time you save an activity with a start time (or turn a switch on, or tap **Allow Notifications**). If notifications are off for TripHub in the phone's settings, the screen says so and links there.
-- **Where they work.** In development, preview and store builds. Expo Go (SDK 53 and later) and the web don't support them, so there the switches are disabled with an explanation. Reminders for a trip are refreshed whenever that trip is open. Alerts while the app is fully closed would need server push notifications, which TripHub doesn't use.
+- **Where they work.** On phones: Expo Go, development, preview and store builds (they are local notifications; Expo Go only lost remote push on Android). The web doesn't support them, so there the switches are disabled with an explanation. Reminders for a trip are refreshed whenever that trip is open. Alerts while the app is fully closed would need server push notifications, which TripHub doesn't use.
 
 ## Offline behavior
 

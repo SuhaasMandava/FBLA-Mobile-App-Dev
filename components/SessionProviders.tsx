@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { ChatProvider } from '../context/ChatContext';
 import { ChecklistProvider } from '../context/ChecklistContext';
 import { CommunicationProvider } from '../context/CommunicationContext';
 import { ExpenseProvider } from '../context/ExpenseContext';
@@ -14,17 +15,21 @@ function ActivityReminders() {
   return null;
 }
 
-/** The itinerary, expenses, checklist and messages belong to the active trip; keying on it resets them whenever the trip changes. */
+/**
+ * The itinerary, expenses, checklist and messages belong to the active trip. Each provider resets its own
+ * data when the trip changes (see PerTripProvider); the screens inside stay mounted.
+ */
 function ActiveTripData({ children }: { children: ReactNode }) {
   const { activeTripId } = useTrip();
-  const key = activeTripId ?? 'no-trip';
   return (
-    <ItineraryProvider key={key} tripId={activeTripId}>
-      <ExpenseProvider key={key} tripId={activeTripId}>
-        <ChecklistProvider key={key} tripId={activeTripId}>
-          <CommunicationProvider key={key} tripId={activeTripId}>
-            <ActivityReminders />
-            {children}
+    <ItineraryProvider tripId={activeTripId}>
+      <ExpenseProvider tripId={activeTripId}>
+        <ChecklistProvider tripId={activeTripId}>
+          <CommunicationProvider tripId={activeTripId}>
+            <ChatProvider tripId={activeTripId}>
+              <ActivityReminders />
+              {children}
+            </ChatProvider>
           </CommunicationProvider>
         </ChecklistProvider>
       </ExpenseProvider>

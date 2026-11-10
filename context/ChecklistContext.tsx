@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { PerTripProvider } from './PerTripProvider';
 import { useLiveSync } from '../hooks/useLiveSync';
 import { useNetwork } from '../hooks/useNetwork';
 import { ChecklistItem, ChecklistItemRow, ChecklistModel, NewChecklistItem } from '../models/ChecklistModel';
@@ -56,7 +57,7 @@ async function fetchItems(tripId: string): Promise<LoadResult> {
  * on the trip id), so switching trips never shows the previous trip's list.
  * Readable offline from the saved copy; changes need a connection.
  */
-export function ChecklistProvider({ tripId, children }: { tripId: string | null; children: ReactNode }) {
+function useChecklistStore(tripId: string | null): ChecklistContextValue {
   const { userId } = useAuth();
   const { online, onReconnect } = useNetwork();
   const [items, setItems] = useState<ChecklistItem[]>([]);
@@ -197,5 +198,14 @@ export function ChecklistProvider({ tripId, children }: { tripId: string | null;
     [items, loading, error, refresh, addItem, updateItem, setDone, deleteItem],
   );
 
-  return <ChecklistContext.Provider value={value}>{children}</ChecklistContext.Provider>;
+  return value;
+}
+
+/** Provides the active trip's data. Changing `tripId` resets it without remounting what's inside. */
+export function ChecklistProvider({ tripId, children }: { tripId: string | null; children: ReactNode }) {
+  return (
+    <PerTripProvider tripId={tripId} context={ChecklistContext} useStore={useChecklistStore}>
+      {children}
+    </PerTripProvider>
+  );
 }

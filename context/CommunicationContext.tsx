@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { PerTripProvider } from './PerTripProvider';
 import { useLiveSync } from '../hooks/useLiveSync';
 import { useNetwork } from '../hooks/useNetwork';
 import {
@@ -69,12 +70,12 @@ async function fetchMessages(tripId: string): Promise<LoadResult> {
 }
 
 /**
- * The active trip's announcements and activity comments. Mounted once per trip
- * (the parent keys it on the trip id), so switching trips never shows the
+ * The active trip's announcements and activity comments. Runs once per trip
+ * (PerTripProvider keys it on the trip id), so switching trips never shows the
  * previous trip's messages. Readable offline from the saved copy; posting needs
  * a connection.
  */
-export function CommunicationProvider({ tripId, children }: { tripId: string | null; children: ReactNode }) {
+function useCommunicationStore(tripId: string | null): CommunicationContextValue {
   const { userId } = useAuth();
   const { online, onReconnect } = useNetwork();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -227,5 +228,14 @@ export function CommunicationProvider({ tripId, children }: { tripId: string | n
     [announcements, comments, loading, error, refresh, postAnnouncement, deleteAnnouncement, addComment, deleteComment],
   );
 
-  return <CommunicationContext.Provider value={value}>{children}</CommunicationContext.Provider>;
+  return value;
+}
+
+/** Provides the active trip's data. Changing `tripId` resets it without remounting what's inside. */
+export function CommunicationProvider({ tripId, children }: { tripId: string | null; children: ReactNode }) {
+  return (
+    <PerTripProvider tripId={tripId} context={CommunicationContext} useStore={useCommunicationStore}>
+      {children}
+    </PerTripProvider>
+  );
 }

@@ -68,3 +68,25 @@ export function validateCommentForm(
   if (!result.success) return { ok: false, errors: firstIssuePerField(result.error) };
   return { ok: true, data: result.data.body };
 }
+
+export interface ChatFormContext {
+  /** Semantic rule: only people on the trip can send to its chat (you may have been removed meanwhile). */
+  isMember: boolean;
+  /** Semantic rule: an activity attached to the message must still be on the trip. True when nothing is attached. */
+  activityExists: boolean;
+}
+
+/** Validate a chat message and, if it passes, return the text to send. */
+export function validateChatForm(
+  values: MessageFormValues,
+  { isMember, activityExists }: ChatFormContext,
+): Validation<MessageFormValues, string> {
+  const schema = z.object({
+    body: bodySchema('Write a message first.')
+      .refine(() => isMember, { message: "You're not part of this trip anymore, so you can't send messages to it." })
+      .refine(() => activityExists, { message: 'That activity was removed. Take it off the message and send again.' }),
+  });
+  const result = schema.safeParse(values);
+  if (!result.success) return { ok: false, errors: firstIssuePerField(result.error) };
+  return { ok: true, data: result.data.body };
+}

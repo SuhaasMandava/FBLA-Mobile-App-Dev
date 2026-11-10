@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { PerTripProvider } from './PerTripProvider';
 import { useLiveSync } from '../hooks/useLiveSync';
 import { useNetwork } from '../hooks/useNetwork';
 import { ItineraryItem, ItineraryItemRow, ItineraryModel, NewItineraryItem } from '../models/ItineraryModel';
@@ -50,11 +51,11 @@ async function fetchItems(tripId: string): Promise<LoadResult> {
 }
 
 /**
- * The active trip's itinerary. Mounted once per trip (the parent keys it on the
+ * The active trip's itinerary. Runs once per trip (PerTripProvider keys it on the
  * trip id), so switching trips starts from a clean slate instead of showing the
  * previous trip's activities.
  */
-export function ItineraryProvider({ tripId, children }: { tripId: string | null; children: ReactNode }) {
+function useItineraryStore(tripId: string | null): ItineraryContextValue {
   const { userId } = useAuth();
   const { onReconnect } = useNetwork();
   const [items, setItems] = useState<ItineraryItem[]>([]);
@@ -192,5 +193,14 @@ export function ItineraryProvider({ tripId, children }: { tripId: string | null;
     [items, loading, error, refresh, addItem, updateItem, deleteItem, moveItem],
   );
 
-  return <ItineraryContext.Provider value={value}>{children}</ItineraryContext.Provider>;
+  return value;
+}
+
+/** Provides the active trip's data. Changing `tripId` resets it without remounting what's inside. */
+export function ItineraryProvider({ tripId, children }: { tripId: string | null; children: ReactNode }) {
+  return (
+    <PerTripProvider tripId={tripId} context={ItineraryContext} useStore={useItineraryStore}>
+      {children}
+    </PerTripProvider>
+  );
 }

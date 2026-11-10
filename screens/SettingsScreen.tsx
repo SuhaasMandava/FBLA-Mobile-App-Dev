@@ -45,7 +45,7 @@ function NotificationSettings() {
         header="Reminders"
         footer={
           unsupported
-            ? 'Reminders work in the installed app (a development or preview build), not in Expo Go or a web browser.'
+            ? 'Reminders work in the TripHub app on a phone, not in a web browser.'
             : 'Expense alerts appear while TripHub is open or running. Reminders are scheduled for the trip you have open.'
         }
       >

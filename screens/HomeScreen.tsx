@@ -21,6 +21,7 @@ import { TripTicket } from '../components/TripTicket';
 import { SkeletonList } from '../components/Skeleton';
 import { MessageRow } from '../components/MessageRow';
 import { useAuth } from '../hooks/useAuth';
+import { useChat } from '../hooks/useChat';
 import { useChecklist } from '../hooks/useChecklist';
 import { useCommunication } from '../hooks/useCommunication';
 import { useExpenses } from '../hooks/useExpenses';
@@ -28,6 +29,7 @@ import { useItinerary } from '../hooks/useItinerary';
 import { useTheme } from '../hooks/useTheme';
 import { useTrip } from '../hooks/useTrip';
 import { ChecklistModel } from '../models/ChecklistModel';
+import { ChatModel } from '../models/ChatModel';
 import { CommunicationModel } from '../models/CommunicationModel';
 import { ItineraryModel } from '../models/ItineraryModel';
 import { Trip, TripModel } from '../models/TripModel';
@@ -106,6 +108,26 @@ function InviteSection({ trip, sharing, onShare, onSend }: InviteSectionProps) {
 }
 
 /** The latest announcement, with the way to all of them (and, for organizers, to posting one). */
+/** The group chat's way in from Home: the latest message and how many are new. */
+function ChatCard({ trip, onOpen }: { trip: Trip; onOpen: () => void }) {
+  const { userId } = useAuth();
+  const { messages, unreadCount } = useChat();
+  const latest = ChatModel.latest(messages);
+  const who = latest ? CommunicationModel.authorName(trip, latest.createdBy, userId) : null;
+  const caption = latest ? `${who}: ${ChatModel.preview(latest.body)}` : 'Plan together without leaving the app.';
+  return (
+    <GlanceTile
+      icon="chatbubbles-outline"
+      label="Trip chat"
+      value={unreadCount > 0 ? (unreadCount === 1 ? '1 new message' : `${unreadCount} new messages`) : latest ? 'Up to date' : 'Say hello'}
+      caption={caption}
+      accessibilityLabel={`Trip chat, ${unreadCount > 0 ? `${unreadCount} new` : 'no new messages'}. ${caption}`}
+      hint="Opens the group chat"
+      onPress={onOpen}
+    />
+  );
+}
+
 function AnnouncementsSection({ trip, onOpen }: { trip: Trip; onOpen: () => void }) {
   const { userId } = useAuth();
   const { announcements } = useCommunication();
@@ -294,6 +316,10 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
+      </Reveal>
+
+      <Reveal index={alone ? 3 : 2}>
+        <ChatCard trip={activeTrip} onOpen={() => navigation.navigate('Chat')} />
       </Reveal>
 
       <Reveal index={alone ? 3 : 2}>

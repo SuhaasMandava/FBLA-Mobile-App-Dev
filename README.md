@@ -141,7 +141,7 @@ Details: [design system and UX audit](docs/design-system.md) · [user journey an
 
 3. To see a fully loaded trip, load the demo trip (**Smoky Mountains Weekend**, invite code `DEMO26`). Steps are in the [technical reference](docs/technical-reference.md#demo-mode).
 
-Reminders and invite links need an installed build instead of Expo Go; see [Building a preview](docs/technical-reference.md#building-a-preview-eas).
+Reminders work in Expo Go. `triphub://` invite links need an installed build instead of Expo Go; see [Building a preview](docs/technical-reference.md#building-a-preview-eas).
 
 ## Where to read more
 

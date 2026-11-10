@@ -84,7 +84,8 @@ function TripSettings({ trip }: { trip: Trip }) {
       title: `Leave "${trip.name}"?`,
       message: "You'll lose access to its plans, budget, checklist and messages. To come back, you'll need the invite code again.",
       confirmLabel: 'Leave Trip',
-      onConfirm: () => void tools.leave(),
+      // The trip is gone from this phone once this works, so close its settings.
+      onConfirm: () => void tools.leave().then((left) => left && navigation.popToTop()),
     });
   };
 
@@ -93,7 +94,7 @@ function TripSettings({ trip }: { trip: Trip }) {
       title: `Delete "${trip.name}" for everyone?`,
       message: 'This removes the trip, its itinerary, expenses, checklist and messages for every member. It cannot be undone.',
       confirmLabel: 'Delete Trip',
-      onConfirm: () => void tools.deleteTrip(),
+      onConfirm: () => void tools.deleteTrip().then((deleted) => deleted && navigation.popToTop()),
     });
 
   const spinner = (label: string) => <ActivityIndicator color={colors.accent} accessibilityLabel={label} />;

@@ -6,7 +6,7 @@ Bugs, quirks and failed approaches. One or two lines each, newest at the bottom.
 - **Sign-up never completes** → Supabase "Confirm email" must be off (Authentication → Providers → Email). Anonymous sign-ins aren't used.
 - **App shows "TripHub isn't set up yet"** → `EXPO_PUBLIC_SUPABASE_URL` / `_ANON_KEY` missing. Locally: `.env`, then restart `expo start`. EAS builds don't upload `.env`: set both with `eas env:set` for `preview` / `production` (README → Building a preview).
 - **Env var is `undefined` in a build** → `process.env.EXPO_PUBLIC_*` must be a static dot-notation reference, not destructured or dynamic (`services/supabase.ts`).
-- **Reminders and invite links don't work in Expo Go** → they need a preview or dev build (`eas.json` profile `preview`).
+- **Invite links (`triphub://`) don't work in Expo Go** → they need a preview or dev build (`eas.json` profile `preview`). Reminders DO work in Expo Go since Nov 10: they are local notifications, and Expo Go only dropped remote push on Android (the old `isRunningInExpoGo()` guard in `services/NotificationService.ts` was wrong). Expo Go on Android may log a push warning when the module loads; ignore it.
 - **Live updates never start** → `supabase/migrations/009_live_sync.sql` adds the tables to the realtime publication; without it the app silently falls back to pull-to-refresh.
 - **A migration fails `npm run test:db`** → `scripts/test-database.mjs` applies the schema and every migration twice, so each file must be safe to re-run.
 - **Saved data has the wrong shape after a model change** → bump `PREFIX` in `services/CacheService.ts`.
@@ -46,3 +46,7 @@ Bugs, quirks and failed approaches. One or two lines each, newest at the bottom.
 - **`expo-blur` ignores `borderRadius`** → clip with a parent that has `overflow: 'hidden'` (done in `Glass`). On Android it does not blur without a `BlurTargetView`, so `Glass` uses a solid fill there.
 - **Browser pane screenshots sometimes show only the left 60% of a 375 pt page** → a capture quirk of the preview pane, not a layout bug; check sizes with `getBoundingClientRect` or retake.
 - **Preview clicks by coordinate landed on the wrong row** → coordinates are in the screenshot frame (469x1015), not CSS pixels; click by `ref`.
+- **Tab bar drag starts from the wrong place** → the pill is positioned from the finger's `pageX` minus the row's measured left edge (`measureInWindow` in `onLayout`); `locationX` is relative to whichever child was touched, so don't use it.
+- **Testing the tab bar drag on web** → the preview's one-shot drag sends no move events, so nothing happens; dispatch `mousedown`, several `mousemove`, then `mouseup` from the page instead.
+- **Switching trips did nothing on iOS (sheet stayed open)** → providers were keyed on the trip id, which remounted the navigator under the open sheet. Fixed with `context/PerTripProvider.tsx`; don't key providers that wrap the navigator.
+- **Chat shows "Something went wrong"** → migration `013_trip_chat.sql` not run on the Supabase project (same symptom as the other late migrations).
