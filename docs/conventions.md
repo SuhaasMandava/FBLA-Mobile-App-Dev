@@ -34,3 +34,5 @@ Migration + RLS + db test → zod model + unit tests → service → hook/contex
 
 - Lint the app folders, not the repo root: `npx eslint screens services models hooks context components scripts` (root lint also scans `docs/.obsidian`).
 - After adding a migration: add its checks to `scripts/test-database.mjs`, run `npm run test:db`, then run the file in the Supabase SQL editor and log it in [[current-work]].
+- Glass is for navigation and pinned actions only, always through `components/Glass.tsx`; never import `GlassView` or `BlurView` in a screen. Shadows come from `shadowStyle(colors, scheme, level)`, never hand-written. Haptics go through `utils/haptics.ts`.
+- New color tokens used under text get a row in `scripts/check-contrast.js` in the same change.

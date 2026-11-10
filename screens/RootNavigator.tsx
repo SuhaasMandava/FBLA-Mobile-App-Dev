@@ -8,9 +8,10 @@ import {
 } from '@react-navigation/native';
 import { createNativeStackNavigator, NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import { ComponentType, useEffect, useState } from 'react';
-import { Platform, Text } from 'react-native';
+import { Platform } from 'react-native';
+import { GlassTabBar, TabBarSpace } from '../components/GlassTabBar';
 import { HeaderButton } from '../components/HeaderButton';
-import { Icon, IconName } from '../components/Icon';
+import { IconName } from '../components/Icon';
 import { LoadingScreen } from '../components/LoadingScreen';
 import { useAuth } from '../hooks/useAuth';
 import { useIntro } from '../hooks/useIntro';
@@ -59,12 +60,27 @@ function useHeaderOptions(): NativeStackNavigationOptions {
   };
 }
 
+/**
+ * iOS tab screens: a large title over a see-through bar, so content scrolls under it. iOS 26 draws the bar
+ * and its buttons as Liquid Glass; earlier versions blur. Screens there use `contentInsetAdjustmentBehavior`.
+ */
+const tabHeaderOptions: NativeStackNavigationOptions =
+  Platform.OS === 'ios'
+    ? {
+        headerLargeTitleEnabled: true,
+        headerTransparent: true,
+        headerBlurEffect: 'systemChromeMaterial',
+        headerStyle: { backgroundColor: 'transparent' },
+        headerLargeStyle: { backgroundColor: 'transparent' },
+      }
+    : {};
+
 /** Wraps a tab's screen in its own stack so it gets a native header: large title on iOS, top app bar on Android. */
 function tabStack(component: ComponentType, title: string) {
   function TabStackScreen() {
     const headerOptions = useHeaderOptions();
     return (
-      <TabStack.Navigator screenOptions={{ ...headerOptions, headerLargeTitleEnabled: Platform.OS === 'ios' }}>
+      <TabStack.Navigator screenOptions={{ ...headerOptions, ...tabHeaderOptions }}>
         <TabStack.Screen name="Main" component={component} options={{ title }} />
       </TabStack.Navigator>
     );
@@ -87,33 +103,21 @@ const tabIcons: Record<keyof TabParamList, [active: IconName, inactive: IconName
   Settings: ['settings', 'settings-outline'],
 };
 
+/** The tabs sit under a floating glass bar (`GlassTabBar`); screens pad their content with `useTabBarInset`. */
 function Tabs() {
-  const { colors } = useTheme();
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        // Explicit colors: the default inactive tint is a 50% blend that falls below the contrast minimum.
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.labelSecondary,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.separator },
-        // The bar's height is fixed by the system, so labels grow only so far with the text size.
-        tabBarLabel: ({ color, children }) => (
-          <Text maxFontSizeMultiplier={1.5} style={{ color, fontSize: 11, lineHeight: 13, fontWeight: '500' }}>
-            {children}
-          </Text>
-        ),
-        tabBarIcon: ({ focused, color, size }) => (
-          <Icon name={tabIcons[route.name][focused ? 0 : 1]} tint={color} size={size} fixedSize />
-        ),
-      })}
-    >
-      <Tab.Screen name="Home" component={HomeStack} />
-      <Tab.Screen name="Itinerary" component={ItineraryStack} />
-      <Tab.Screen name="Budget" component={BudgetStack} />
-      <Tab.Screen name="Checklist" component={ChecklistStack} />
-      <Tab.Screen name="Settings" component={SettingsStack} />
-    </Tab.Navigator>
+    <TabBarSpace>
+      <Tab.Navigator
+        tabBar={(props) => <GlassTabBar {...props} icons={tabIcons} />}
+        screenOptions={{ headerShown: false }}
+      >
+        <Tab.Screen name="Home" component={HomeStack} />
+        <Tab.Screen name="Itinerary" component={ItineraryStack} />
+        <Tab.Screen name="Budget" component={BudgetStack} />
+        <Tab.Screen name="Checklist" component={ChecklistStack} />
+        <Tab.Screen name="Settings" component={SettingsStack} />
+      </Tab.Navigator>
+    </TabBarSpace>
   );
 }
 
@@ -200,7 +204,7 @@ export default function RootNavigator() {
                 headerShown: false,
                 sheetAllowedDetents: [0.55, 0.92],
                 sheetGrabberVisible: true,
-                sheetCornerRadius: 24,
+                sheetCornerRadius: 28,
                 contentStyle: { backgroundColor: scheme === 'dark' ? colors.surfaceRaised : colors.background },
               }}
             />

@@ -44,6 +44,11 @@ const pairs = [
   ['onHero', 'heroPanel', 4.5],
   ['onHeroSecondary', 'heroPanel', 4.5],
   ['heroAccent', 'heroPanel', 3],
+  ['onHero', 'heroDeep', 4.5], // far corner of the hero gradient
+  ['onHeroSecondary', 'heroDeep', 4.5],
+  ['heroAccent', 'heroDeep', 3],
+  ['label', 'glassSolid', 4.5], // glass controls with Reduce Transparency on
+  ['labelSecondary', 'glassSolid', 4.5],
 ];
 
 let failures = 0;

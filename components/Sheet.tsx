@@ -1,9 +1,10 @@
 import { HeaderHeightContext } from '@react-navigation/elements';
-import { ReactNode, useContext } from 'react';
+import { ReactNode, useContext, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../hooks/useTheme';
 import { AppText } from './AppText';
+import { Glass } from './Glass';
 
 interface SheetProps {
   children: ReactNode;
@@ -21,7 +22,9 @@ interface SheetProps {
  * swipe to dismiss, and screen reader support; this only arranges what's inside.
  */
 export function Sheet({ children, title, subtitle, footer }: SheetProps) {
-  const { colors, spacing, layout, scheme } = useTheme();
+  const { colors, spacing, layout, radii, scheme } = useTheme();
+  // The footer floats over the content as glass, so the content is padded by the footer's measured height.
+  const [footerHeight, setFooterHeight] = useState(0);
   const insets = useSafeAreaInsets();
   // The keyboard is measured from the top of the screen, so account for the header above this view.
   const headerHeight = useContext(HeaderHeightContext) ?? 0;
@@ -36,7 +39,7 @@ export function Sheet({ children, title, subtitle, footer }: SheetProps) {
         contentContainerStyle={{
           padding: spacing.md,
           paddingTop: title ? spacing.lg + spacing.xxs : spacing.md,
-          paddingBottom: footer ? spacing.md : spacing.lg + insets.bottom,
+          paddingBottom: footer ? footerHeight + spacing.md : spacing.lg + insets.bottom,
         }}
         keyboardShouldPersistTaps="handled"
         contentInsetAdjustmentBehavior="automatic"
@@ -63,15 +66,16 @@ export function Sheet({ children, title, subtitle, footer }: SheetProps) {
       </ScrollView>
       {footer ? (
         <View
-          style={{
-            padding: spacing.md,
-            paddingBottom: spacing.md + insets.bottom,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.separator,
-            backgroundColor: background,
-          }}
+          pointerEvents="box-none"
+          onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
+          style={[
+            styles.footer,
+            { paddingHorizontal: spacing.sm, paddingTop: spacing.xs, paddingBottom: Math.max(insets.bottom, spacing.sm) },
+          ]}
         >
-          <View style={[styles.column, { maxWidth: layout.maxContentWidth, gap: spacing.sm }]}>{footer}</View>
+          <Glass radius={radii.xl} style={[styles.column, { maxWidth: layout.maxContentWidth, padding: spacing.sm }]}>
+            <View style={{ gap: spacing.xs }}>{footer}</View>
+          </Glass>
         </View>
       ) : null}
     </KeyboardAvoidingView>
@@ -80,5 +84,6 @@ export function Sheet({ children, title, subtitle, footer }: SheetProps) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  footer: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   column: { width: '100%', alignSelf: 'center' },
 });

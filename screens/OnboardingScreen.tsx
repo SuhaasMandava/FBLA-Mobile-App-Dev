@@ -3,6 +3,7 @@ import { useWatch } from 'react-hook-form';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../components/AppText';
+import { Backdrop } from '../components/Backdrop';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ControlledTextField } from '../components/ControlledTextField';
@@ -165,6 +166,7 @@ export default function OnboardingScreen() {
     // This screen has no header, so the safe-area padding sits outside the scroll view: the strip behind the
     // clock and battery stays solid and the form scrolls away underneath it instead of overlapping them.
     <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: colors.background }]}>
+      <Backdrop />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           contentContainerStyle={{ padding: spacing.md, paddingTop: spacing.xl, paddingBottom: spacing.lg + insets.bottom }}
@@ -194,7 +196,7 @@ export default function OnboardingScreen() {
               onChange={setMode}
             />
 
-            {mode === 'signIn' ? <SignInForm /> : <SignUpForm />}
+            <Card variant="form">{mode === 'signIn' ? <SignInForm /> : <SignUpForm />}</Card>
 
             {/* DEV BYPASS: development builds only; `__DEV__` is false in release so this and the require are stripped. */}
             {__DEV__ ? <DevBypassButton /> : null}

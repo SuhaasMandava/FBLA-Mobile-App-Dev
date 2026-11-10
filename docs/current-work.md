@@ -45,3 +45,7 @@ Update at the end of every session. Last updated: 2026-10-24, from `docs/plannin
 - Oct 26: everything committed and pushed to origin/main (cafdc39): redesign, SDK 58 upgrade, Reveal width fix, notes. Local-only branches: `sdk-58-upgrade` (merged), `budget-tab`, `backup-before-rebase`. `docs/Untitled.base` and `Untitled.canvas` are empty Obsidian scratch files, not committed.
 
 - Oct 26: README rewrite and 12 screenshots committed and pushed to `main` (`9d8841b`). Repo visibility and the FBLA PDF check are in [[human-todo-later]].
+
+- Nov 10: Liquid Glass overhaul (uncommitted). Floating glass tab bar, glass footer on form sheets, see-through large-title headers on iOS, soft-shadow cards, hero gradients, restyled Welcome and sign-in, field focus outline, haptics. tsc, eslint (app folders), 249 tests, contrast (75 pairs) pass; checked on web at 375 pt in light and dark. NOT yet seen on an iPhone: real Liquid Glass and the transparent headers only exist there, so open every tab in Expo Go before the demo ([[gotchas]] has the fallback switches). Screenshots in `docs/screenshots/` and [[app-screens]] now show the old look.
+- Nov 10: test data on the Supabase project: account `glass.qa.50646@example.com` with trip "Lisbon Getaway". Delete both in Supabase before submitting (with `tester@example.com`).
+- Still open from [[bug-list-2026-10-25]]: 1 (dev bypass), 3, 4, 5, 6, 7. Features are otherwise complete per [[self-assessment]]; what remains is device testing, usability sessions and rehearsal.

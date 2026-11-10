@@ -1,6 +1,7 @@
 import { Children, Fragment, ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
+import { shadowStyle } from '../theme/theme';
 import { AppText } from './AppText';
 import { SectionHeader } from './SectionHeader';
 
@@ -14,15 +15,21 @@ interface ListSectionProps {
 
 /** A grouped list: rounded container, inset separators between rows. */
 export function ListSection({ children, header, headerAction, footer }: ListSectionProps) {
-  const { colors, radii, spacing } = useTheme();
+  const { colors, radii, spacing, scheme } = useTheme();
   const rows = Children.toArray(children).filter(Boolean);
   return (
     <View style={{ gap: spacing.xs }}>
       {header ? <SectionHeader title={header} action={headerAction} /> : null}
+      {/* The outer view carries the shadow; the inner one clips rows to the rounded corners. */}
+      <View style={[{ borderRadius: radii.lg, backgroundColor: colors.surface }, shadowStyle(colors, scheme, 'card')]}>
       <View
         style={[
           styles.group,
-          { backgroundColor: colors.surface, borderRadius: radii.lg, borderColor: colors.separator },
+          {
+            borderRadius: radii.lg,
+            borderColor: colors.separator,
+            borderWidth: scheme === 'dark' ? StyleSheet.hairlineWidth : 0,
+          },
         ]}
       >
         {rows.map((row, i) => (
@@ -40,6 +47,7 @@ export function ListSection({ children, header, headerAction, footer }: ListSect
           </Fragment>
         ))}
       </View>
+      </View>
       {footer ? (
         <AppText variant="footnote" color="labelSecondary" style={{ paddingHorizontal: spacing.md }}>
           {footer}
@@ -50,5 +58,5 @@ export function ListSection({ children, header, headerAction, footer }: ListSect
 }
 
 const styles = StyleSheet.create({
-  group: { overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth },
+  group: { overflow: 'hidden' },
 });

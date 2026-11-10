@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
+import { successFeedback, tapFeedback } from '../utils/haptics';
 import { ChecklistItem } from '../models/ChecklistModel';
 import { AppText } from './AppText';
 import { Icon } from './Icon';
@@ -27,7 +28,12 @@ export function ChecklistRow({ item, detail, onToggle, onEdit }: ChecklistRowPro
         accessibilityLabel={item.title}
         accessibilityHint={item.done ? 'Marks it as not done' : 'Marks it as done'}
         accessibilityState={{ checked: item.done }}
-        onPress={onToggle}
+        onPress={() => {
+          // A small confirmation in the hand when something gets ticked off.
+          if (item.done) tapFeedback();
+          else successFeedback();
+          onToggle();
+        }}
         style={({ pressed }) => [
           styles.checkbox,
           { minWidth: layout.minTarget, minHeight: layout.minTarget, paddingLeft: spacing.xs },

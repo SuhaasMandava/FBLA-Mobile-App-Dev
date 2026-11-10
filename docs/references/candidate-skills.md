@@ -27,3 +27,14 @@ Prefer a user-level plugin install, not files in the repo, and inspect `hooks/` 
 
 ## Status
 - Oct 25: ponytail was installed at user level, used once (`/ponytail-audit`), then uninstalled and its marketplace removed at the user's request. The audit findings were not saved as a note; the key ones are in [[bug-list-2026-10-25]] and [[current-work]].
+
+## Second batch (Nov 10), cloned to a temp folder and listed, NOT installed
+Reviewed from the file tree, READMEs and `hooks.json`; scripts were not read line by line.
+
+| Repo | What it is | Fit for TripHub |
+| --- | --- | --- |
+| `jeffallan/claude-skills` | 66 generic "expert" skills (react-native-expert, typescript-pro, postgres-pro, test-master, security-reviewer...). | Low. The React Native one teaches Expo Router and general patterns from memory; `AGENTS.md` says to read the versioned Expo docs instead, and this app uses React Navigation. |
+| `ComposioHQ/awesome-claude-skills` | A list plus business skills (invoices, resumes, lead research) and Composio "connect" skills that need a Composio account. | None for a mobile app. `webapp-testing` overlaps the browser preview already used. |
+| `AgriciDaniel/claude-obsidian` | Turns a vault into an LLM wiki: ingest, lint, retrieve skills, plus SessionStart and Stop hooks that run a Python script. | Conflicts with this vault's rules (small notes, `docs/index.md` map, existing `notes-reminder.sh` hook). Would restructure `docs/`. |
+
+The overhaul used skills already installed: apple-design (HIG Liquid Glass and Materials reference).

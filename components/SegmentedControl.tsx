@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useLargeText } from '../hooks/useLargeText';
 import { useTheme } from '../hooks/useTheme';
+import { tapFeedback } from '../utils/haptics';
 import { AppText } from './AppText';
 
 interface SegmentedControlProps<T extends string> {
@@ -24,7 +25,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
         largeText && styles.stacked,
         {
           backgroundColor: scheme === 'dark' ? colors.surface : colors.separator,
-          borderRadius: radii.md,
+          borderRadius: radii.pill,
           padding: 3,
           gap: 3,
         },
@@ -38,13 +39,16 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
             accessibilityRole="tab"
             accessibilityLabel={option.label}
             accessibilityState={{ selected }}
-            onPress={() => onChange(option.value)}
+            onPress={() => {
+              if (!selected) tapFeedback();
+              onChange(option.value);
+            }}
             style={[
               styles.segment,
               !largeText && styles.segmentInRow,
               {
                 minHeight: layout.minTarget,
-                borderRadius: radii.md - 3,
+                borderRadius: radii.pill,
                 paddingHorizontal: spacing.xs,
               },
               selected && {

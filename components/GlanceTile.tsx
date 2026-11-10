@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
+import { shadowStyle } from '../theme/theme';
 import { AppText } from './AppText';
 import { BudgetMeter } from './BudgetMeter';
 import { Icon, IconName } from './Icon';
@@ -37,7 +38,7 @@ export function GlanceTile({
   onPress,
   children,
 }: GlanceTileProps) {
-  const { colors, spacing, radii, layout, motion } = useTheme();
+  const { colors, spacing, radii, layout, motion, scheme } = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
@@ -53,7 +54,9 @@ export function GlanceTile({
           gap: spacing.xs,
           minHeight: layout.minTarget,
           borderColor: alert ? colors.danger : colors.separator,
+          borderWidth: alert ? 1.5 : scheme === 'dark' ? StyleSheet.hairlineWidth : 0,
         },
+        shadowStyle(colors, scheme, 'card'),
         pressed && { opacity: motion.pressedOpacity, transform: [{ scale: 0.98 }] },
       ]}
     >
@@ -84,8 +87,8 @@ export function GlanceTile({
 }
 
 const styles = StyleSheet.create({
-  tile: { borderWidth: StyleSheet.hairlineWidth },
+  tile: {},
   head: { flexDirection: 'row', alignItems: 'center' },
-  badge: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  badge: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   label: { flexShrink: 1 },
 });

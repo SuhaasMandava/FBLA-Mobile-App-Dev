@@ -2,13 +2,16 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { ComponentRef, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '../components/AppText';
+import { Backdrop } from '../components/Backdrop';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Icon, IconName } from '../components/Icon';
 import { AppMark } from '../components/Route';
 import { useIntro } from '../hooks/useIntro';
 import { useTheme } from '../hooks/useTheme';
+import { shadowStyle } from '../theme/theme';
 import { RootNavigation } from './types';
 
 interface Step {
@@ -41,7 +44,7 @@ const STEPS: Step[] = [
  * Settings → How TripHub Works.
  */
 export default function WelcomeScreen() {
-  const { colors, spacing, layout, radii } = useTheme();
+  const { colors, spacing, layout, radii, scheme } = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute();
@@ -61,6 +64,7 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView edges={replay ? [] : ['top']} style={[styles.flex, { backgroundColor: colors.background }]}>
+      <Backdrop />
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingTop: spacing.lg, flexGrow: 1 }}>
         <View style={[styles.column, { maxWidth: layout.maxContentWidth, gap: spacing.lg }]}>
           <View style={[styles.topRow, { minHeight: layout.minTarget }]}>
@@ -90,9 +94,19 @@ export default function WelcomeScreen() {
 
           <View style={{ gap: spacing.sm }}>
             <View
-              style={[styles.badge, { backgroundColor: colors.accentTint, borderRadius: radii.xl, width: 72, height: 72 }]}
+              style={[
+                styles.badge,
+                { backgroundColor: colors.hero, borderRadius: radii.xl, width: 88, height: 88, marginBottom: spacing.xs },
+                shadowStyle(colors, scheme, 'raised'),
+              ]}
             >
-              <Icon name={step.icon} size={36} color="onAccentTint" />
+              <LinearGradient
+                colors={[colors.heroPanel, colors.heroDeep]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[StyleSheet.absoluteFill, { borderRadius: radii.xl }]}
+              />
+              <Icon name={step.icon} size={40} color="heroAccent" />
             </View>
             <View ref={titleRef} accessible accessibilityRole="header">
               <AppText variant="title1">{step.title}</AppText>
@@ -124,7 +138,7 @@ export default function WelcomeScreen() {
       <View
         style={[
           styles.footer,
-          { padding: spacing.md, paddingBottom: spacing.md + insets.bottom, gap: spacing.sm, borderTopColor: colors.separator },
+          { padding: spacing.md, paddingBottom: spacing.md + insets.bottom, gap: spacing.sm },
         ]}
       >
         <View style={[styles.column, { maxWidth: layout.maxContentWidth, gap: spacing.sm }]}>
@@ -145,5 +159,5 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   dots: { flexDirection: 'row', alignItems: 'center' },
   badge: { alignItems: 'center', justifyContent: 'center' },
-  footer: { borderTopWidth: StyleSheet.hairlineWidth },
+  footer: {},
 });

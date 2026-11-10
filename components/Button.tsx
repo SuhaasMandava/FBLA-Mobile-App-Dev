@@ -1,6 +1,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
-import { ColorTokens } from '../theme/theme';
+import { ColorTokens, shadowStyle } from '../theme/theme';
+import { pressFeedback } from '../utils/haptics';
 import { AppText } from './AppText';
 import { Icon, IconName } from './Icon';
 
@@ -40,7 +41,7 @@ export function Button({
   hint,
   compact = false,
 }: ButtonProps) {
-  const { colors, layout, radii, spacing, motion } = useTheme();
+  const { colors, layout, radii, spacing, motion, scheme } = useTheme();
   const inactive = disabled || loading;
   const fg = foreground[variant];
   const bezeled = variant === 'filled' || variant === 'tinted';
@@ -52,7 +53,10 @@ export function Button({
       accessibilityHint={hint}
       accessibilityState={{ disabled: inactive, busy: loading }}
       disabled={inactive}
-      onPress={onPress}
+      onPress={() => {
+        if (variant === 'filled') pressFeedback();
+        onPress();
+      }}
       style={({ pressed }) => [
         styles.base,
         {
@@ -64,6 +68,9 @@ export function Button({
         },
         compact && styles.compact,
         variant === 'filled' && { backgroundColor: pressed ? colors.accentPressed : colors.accent },
+        // The one primary action on a screen lifts off the page; it settles when pressed.
+        variant === 'filled' && !inactive && scheme === 'light' && { ...shadowStyle(colors, scheme, 'card'), shadowColor: colors.accent, shadowOpacity: 0.28 },
+        bezeled && pressed && { transform: [{ scale: 0.98 }] },
         variant === 'tinted' && { backgroundColor: colors.accentTint },
         !bezeled && pressed && { opacity: motion.pressedOpacity },
         variant === 'tinted' && pressed && { opacity: 0.85 },

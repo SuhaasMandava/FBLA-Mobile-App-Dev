@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
+import { useTabBarInset } from './GlassTabBar';
 
 interface ScreenProps {
   children: ReactNode;
@@ -14,11 +15,13 @@ interface ScreenProps {
  */
 export function Screen({ children, refreshing, onRefresh }: ScreenProps) {
   const { colors, spacing, layout } = useTheme();
+  const tabBarInset = useTabBarInset();
   return (
     <ScrollView
       style={{ backgroundColor: colors.background }}
       contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xl }}
+      contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xl + tabBarInset }}
+      scrollIndicatorInsets={{ bottom: tabBarInset }}
       refreshControl={
         onRefresh ? (
           <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} />

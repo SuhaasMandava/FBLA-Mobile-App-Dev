@@ -1,5 +1,5 @@
 import { ComponentRef, Ref, useState } from 'react';
-import { Platform, Pressable, StyleSheet, TextInput, TextInputProps, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, TextInput, TextInputProps, TextStyle, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
 import { AppText } from './AppText';
 import { FieldMessage } from './FieldMessage';
@@ -37,11 +37,13 @@ export function TextField({
 }: TextFieldProps) {
   const { colors, type, spacing, radii, layout } = useTheme();
   const [revealed, setRevealed] = useState(false);
+  const [focused, setFocused] = useState(false);
   const isSecret = secureTextEntry === true;
   const showToggle = isSecret && revealable;
   // Screen readers hear the error again whenever they return to the field, not only when it first appears.
   const spokenHint = error ? `Error: ${error}` : (success ?? helper);
-  const borderColor = error ? colors.danger : success ? colors.success : colors.fieldBorder;
+  // Focus is shown by a thicker accent outline, not by color alone.
+  const borderColor = error ? colors.danger : success ? colors.success : focused ? colors.accent : colors.fieldBorder;
 
   return (
     <View style={{ gap: spacing.xs - 2 }}>
@@ -62,7 +64,7 @@ export function TextField({
             borderRadius: radii.md,
             backgroundColor: colors.surface,
             borderColor,
-            borderWidth: error || success ? 2 : 1,
+            borderWidth: error || success || focused ? 2 : 1,
           },
         ]}
       >
@@ -84,8 +86,18 @@ export function TextField({
               paddingVertical: Platform.OS === 'ios' ? spacing.sm : spacing.xs,
             },
             variant === 'code' && styles.codeInput,
+            // The box draws its own focus outline; hide the browser's second one.
+            Platform.OS === 'web' && webNoOutline,
           ]}
           {...inputProps}
+          onFocus={(e) => {
+            setFocused(true);
+            inputProps.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            inputProps.onBlur?.(e);
+          }}
         />
         {showToggle ? (
           <Pressable
@@ -102,6 +114,8 @@ export function TextField({
     </View>
   );
 }
+
+const webNoOutline = { outlineStyle: 'none' } as unknown as TextStyle;
 
 const styles = StyleSheet.create({
   box: { flexDirection: 'row', alignItems: 'stretch' },

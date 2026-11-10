@@ -11,11 +11,13 @@ import { InlineBanner } from '../components/InlineBanner';
 import { OfflineBanner } from '../components/OfflineBanner';
 import { DottedLine, RouteStop } from '../components/Route';
 import { Screen } from '../components/Screen';
+import { useTabBarInset } from '../components/GlassTabBar';
 import { SkeletonList } from '../components/Skeleton';
 import { useCommunication } from '../hooks/useCommunication';
 import { useItinerary } from '../hooks/useItinerary';
 import { useLargeText } from '../hooks/useLargeText';
 import { useTheme } from '../hooks/useTheme';
+import { shadowStyle } from '../theme/theme';
 import { useTrip } from '../hooks/useTrip';
 import { CommunicationModel } from '../models/CommunicationModel';
 import { ItineraryItem, ItineraryModel } from '../models/ItineraryModel';
@@ -41,7 +43,7 @@ interface StopRowProps {
  * Otherwise a separate comments button (with the count) opens the activity's thread.
  */
 function StopRow({ item, state, first, last, editing, commentCount, onOpen, onMove, onComments }: StopRowProps) {
-  const { colors, spacing, radii, layout, motion } = useTheme();
+  const { colors, spacing, radii, layout, motion, scheme } = useTheme();
   const largeText = useLargeText();
   const spoken = [item.time ? formatClockTime(item.time) : null, item.title, item.location].filter(Boolean).join(', ');
 
@@ -67,6 +69,7 @@ function StopRow({ item, state, first, last, editing, commentCount, onOpen, onMo
             marginLeft: spacing.xs,
             borderColor: state === 'current' ? colors.accent : colors.separator,
           },
+          shadowStyle(colors, scheme, 'card'),
         ]}
       >
         <Pressable
@@ -171,6 +174,7 @@ function StopRow({ item, state, first, last, editing, commentCount, onOpen, onMo
 
 export default function ItineraryScreen() {
   const { colors, spacing, radii, layout } = useTheme();
+  const tabBarInset = useTabBarInset();
   const navigation = useNavigation<TabScreenNavigation>();
   const { activeTrip } = useTrip();
   const { items, loading, error, refresh, moveItem } = useItinerary();
@@ -252,7 +256,7 @@ export default function ItineraryScreen() {
         styles.content,
         {
           padding: spacing.md,
-          paddingBottom: spacing.xl,
+          paddingBottom: spacing.xl + tabBarInset,
           maxWidth: layout.maxContentWidth,
         },
       ]}

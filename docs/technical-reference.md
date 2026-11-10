@@ -509,7 +509,7 @@ TripHub's own code and artwork are by the TripHub team. Everything else it uses 
 
 | Package | Version | License |
 | --- | --- | --- |
-| [Expo](https://expo.dev) (`expo`, `expo-crypto`, `expo-font`, `expo-notifications`, `expo-splash-screen`, `expo-status-bar`, `@expo/metro-runtime`) | SDK 58 | MIT |
+| [Expo](https://expo.dev) (`expo`, `expo-blur`, `expo-crypto`, `expo-font`, `expo-glass-effect`, `expo-haptics`, `expo-linear-gradient`, `expo-notifications`, `expo-splash-screen`, `expo-status-bar`, `@expo/metro-runtime`) | SDK 58 | MIT |
 | [React](https://react.dev) and React DOM | 19.3 | MIT |
 | [React Native](https://reactnative.dev) | 0.88 | MIT |
 | [React Native Web](https://github.com/necolas/react-native-web) | 0.21 | MIT |

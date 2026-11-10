@@ -1,7 +1,9 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View } from 'react-native';
 import { useLargeText } from '../hooks/useLargeText';
 import { useTheme } from '../hooks/useTheme';
 import { Trip } from '../models/TripModel';
+import { shadowStyle } from '../theme/theme';
 import { formatDateRange, todayISO } from '../utils/dates';
 import { tripCountdown, tripProgress } from '../utils/tripProgress';
 import { AppText } from './AppText';
@@ -35,15 +37,16 @@ export function TripTicket({ trip }: { trip: Trip }) {
       style={[
         styles.ticket,
         { backgroundColor: colors.hero, borderRadius: radii.xl },
-        scheme === 'light' && {
-          shadowColor: colors.hero,
-          shadowOpacity: 0.28,
-          shadowRadius: 18,
-          shadowOffset: { width: 0, height: 8 },
-          elevation: 6,
-        },
+        scheme === 'light' && { ...shadowStyle(colors, scheme, 'raised'), shadowColor: colors.hero, shadowOpacity: 0.3 },
       ]}
     >
+      {/* Depth: the navy deepens toward the far corner. Both stops keep white text above 7:1. */}
+      <LinearGradient
+        colors={[colors.hero, colors.heroDeep]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
       <View style={{ padding: spacing.lg, paddingBottom: spacing.md, gap: spacing.xs }}>
         <AppText variant="caption" color="onHeroSecondary" style={styles.overline} numberOfLines={2}>
           {overline.toUpperCase()}

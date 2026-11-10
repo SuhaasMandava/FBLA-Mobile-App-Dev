@@ -1,5 +1,7 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
+import { shadowStyle } from '../theme/theme';
 import { AppText } from './AppText';
 import { BudgetMeter } from './BudgetMeter';
 import { Icon, IconName } from './Icon';
@@ -34,14 +36,24 @@ export function HeroStat({
   statusIcon,
   accessibilityLabel,
 }: HeroStatProps) {
-  const { colors, spacing, radii } = useTheme();
+  const { colors, spacing, radii, scheme } = useTheme();
   return (
     <Reveal>
       <View
         accessible
         accessibilityLabel={accessibilityLabel}
-        style={[styles.card, { backgroundColor: colors.hero, borderRadius: radii.xl }]}
+        style={[
+          styles.card,
+          { backgroundColor: colors.hero, borderRadius: radii.xl },
+          scheme === 'light' && { ...shadowStyle(colors, scheme, 'raised'), shadowColor: colors.hero, shadowOpacity: 0.3 },
+        ]}
       >
+        <LinearGradient
+          colors={[colors.hero, colors.heroDeep]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
         <View
           style={{
             padding: spacing.lg,

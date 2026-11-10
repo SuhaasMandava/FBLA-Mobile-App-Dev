@@ -1,4 +1,4 @@
-import { Platform, TextStyle } from 'react-native';
+import { Platform, TextStyle, ViewStyle } from 'react-native';
 
 /**
  * TripHub design tokens. docs/design-system.md explains each value and lists its
@@ -53,6 +53,16 @@ export interface ColorTokens {
   markPin: string;
   markSun: string;
   markPlanet: string;
+  /** Fill of floating glass controls where real Liquid Glass or blur isn't available (translucent). */
+  glassFill: string;
+  /** The same control with Reduce Transparency on: fully opaque. */
+  glassSolid: string;
+  /** The bright rim on a glass control (decorative). */
+  glassBorder: string;
+  /** Soft shadows under cards and floating controls. */
+  shadow: string;
+  /** Second stop of the hero gradient (deeper than `hero`). */
+  heroDeep: string;
 }
 
 export const lightColors: ColorTokens = {
@@ -82,6 +92,11 @@ export const lightColors: ColorTokens = {
   markPin: '#F4F6FA',
   markSun: '#D9822B',
   markPlanet: '#1E3F8F',
+  glassFill: 'rgba(255,255,255,0.72)',
+  glassSolid: '#FFFFFF',
+  glassBorder: 'rgba(255,255,255,0.85)',
+  shadow: '#1B2A4A',
+  heroDeep: '#0E1F47',
 };
 
 export const darkColors: ColorTokens = {
@@ -111,6 +126,11 @@ export const darkColors: ColorTokens = {
   markPin: '#F4F6FA',
   markSun: '#D9822B',
   markPlanet: '#1E3F8F',
+  glassFill: 'rgba(28,37,64,0.72)',
+  glassSolid: '#1C2540',
+  glassBorder: 'rgba(255,255,255,0.14)',
+  shadow: '#000000',
+  heroDeep: '#101A36',
 };
 
 /** Applied on top of a scheme when the system asks for more contrast. */
@@ -181,18 +201,41 @@ export const spacing = {
 } as const;
 
 export const radii = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  sm: 10,
+  md: 14,
+  lg: 20,
+  xl: 28,
   pill: 999,
 } as const;
+
+/**
+ * Soft, wide shadows (iOS/web) with a matching Android elevation. Light mode only: on dark
+ * backgrounds a shadow is invisible, so surfaces get a hairline rim instead (see `Card`).
+ */
+export function shadowStyle(colors: ColorTokens, scheme: ColorScheme, level: 'card' | 'raised' | 'floating'): ViewStyle {
+  if (scheme === 'dark' && level !== 'floating') return {};
+  const spec = {
+    card: { opacity: 0.07, radius: 14, y: 4, elevation: 2 },
+    raised: { opacity: 0.14, radius: 22, y: 10, elevation: 6 },
+    floating: { opacity: scheme === 'dark' ? 0.5 : 0.16, radius: 24, y: 10, elevation: 10 },
+  }[level];
+  return {
+    shadowColor: colors.shadow,
+    shadowOpacity: spec.opacity,
+    shadowRadius: spec.radius,
+    shadowOffset: { width: 0, height: spec.y },
+    elevation: spec.elevation,
+  };
+}
 
 export const layout = {
   /** Smallest tap target on any interactive element. */
   minTarget: 44,
   /** Height of buttons and fields. */
-  controlHeight: 50,
+  controlHeight: 52,
+  /** The floating glass tab bar: its height and its gap from the screen edges. */
+  tabBarHeight: 64,
+  tabBarMargin: 12,
   /** Content stops growing past this width on tablets. */
   maxContentWidth: 640,
   /** At or above this system font scale, horizontal rows stack vertically. */
